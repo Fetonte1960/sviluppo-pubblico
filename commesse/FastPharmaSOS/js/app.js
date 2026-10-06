@@ -101,8 +101,22 @@ async function sendMessage(message) {
     addMessage("assistant", response?.answer ?? "Nessuna risposta disponibile.", meta);
   } catch (error) {
     pending.remove();
-    const suffix = error?.status ? ` (HTTP ${error.status})` : "";
-    addMessage("error", `Non riesco a completare la richiesta${suffix}. Riprova tra poco.`);
+
+    const rateLimited =
+      error?.status === 429 ||
+      error?.body?.upstreamStatus === 429;
+
+    if (rateLimited) {
+      setStatus(aiStatus, "AI temporaneamente limitata", false);
+      addMessage(
+        "error",
+        "Gemini ha raggiunto il limite temporaneo del piano di collaudo. Attendi circa un minuto e riprova."
+      );
+    } else {
+      const suffix = error?.status ? ` (HTTP ${error.status})` : "";
+      addMessage("error", `Non riesco a completare la richiesta${suffix}. Riprova tra poco.`);
+    }
+
     console.error(error);
   } finally {
     setBusy(false);
