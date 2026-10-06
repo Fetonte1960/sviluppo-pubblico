@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="it" data-api-base="https://fastpharmasos.onrender.com">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Frontend minimale di collaudo PROGETTODUE per FastPharmaSOS.">
+  <title>PROGETTODUE · Assistente AI</title>
+  <link rel="stylesheet" href="./css/app.css">
+</head>
+<body>
+  <main class="page-shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">P2</span>
+        <div>
+          <strong>PROGETTODUE</strong>
+          <span>FastPharmaSOS · collaudo</span>
+        </div>
+      </div>
+      <div class="system-status" aria-label="Stato servizi">
+        <span id="api-status" class="status-pill">API…</span>
+        <span id="ai-status" class="status-pill">AI…</span>
+        <span id="db-status" class="status-pill">Archivio…</span>
+      </div>
+    </header>
+
+    <section class="hero">
+      <p class="eyebrow">Assistente conversazionale di commessa</p>
+      <h1>Chiedi. Consulta. Ricostruisci.</h1>
+      <p class="hero-copy">
+        Una chat unica per domande generali e per interrogare l'archivio delle commesse.
+        In questa V0 l'assistente consulta soltanto dati demo in lettura.
+      </p>
+
+      <div class="capabilities" aria-label="Funzioni di collaudo">
+        <span><b>AI</b> risponde a domande generali</span>
+        <span><b>Archivio</b> consulta le commesse demo</span>
+        <span><b>Harness</b> controlla gli accessi al database</span>
+      </div>
+    </section>
+
+    <section class="chat-card" aria-labelledby="chat-title">
+      <div class="chat-heading">
+        <div>
+          <p class="eyebrow">SOS AI</p>
+          <h2 id="chat-title">Come posso aiutarti?</h2>
+        </div>
+        <div id="archive-summary" class="archive-summary">Caricamento archivio demo…</div>
+      </div>
+
+      <div id="chat-messages" class="chat-messages" aria-live="polite">
+        <div class="message assistant">
+          <div class="message-label">SOS</div>
+          <div>Puoi farmi una domanda generale oppure chiedermi informazioni sulle commesse disponibili.</div>
+        </div>
+      </div>
+
+      <div class="quick-prompts" aria-label="Domande di esempio">
+        <button type="button" data-prompt="Quali commesse sono disponibili?">Quali commesse ci sono?</button>
+        <button type="button" data-prompt="Fammi un breve riepilogo delle commesse disponibili.">Riepiloga l'archivio</button>
+        <button type="button" data-prompt="Spiegami in modo semplice cosa fa questo programma.">Cosa fa il programma?</button>
+      </div>
+
+      <form id="chat-form" class="chat-form">
+        <label class="sr-only" for="chat-input">Scrivi una domanda</label>
+        <textarea id="chat-input" rows="3" maxlength="2000" placeholder="Scrivi qui la tua domanda…" required></textarea>
+        <div class="composer-footer">
+          <span>Dati sintetici di collaudo · sola lettura</span>
+          <button id="send-button" type="submit">Invia</button>
+        </div>
+      </form>
+    </section>
+
+    <footer>
+      PROGETTODUE · prototipo FastPharmaSOS · nessun dato reale deve essere inserito in questa fase
+    </footer>
+  </main>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
