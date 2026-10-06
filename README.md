@@ -27,6 +27,21 @@ sviluppo-pubblico/
         └── artifact pubblici autorizzati
 ```
 
+
+Il nome `<NomeCommessa>` deve coincidere esattamente con quello usato in `sviluppo-privato`.
+
+Quando l'artifact appartiene a un sottoprogetto tecnico, si mantiene anche il sottopercorso logico, per esempio:
+
+```text
+sviluppo-privato/
+└── commesse/<NomeCommessa>/app/android/...
+
+sviluppo-pubblico/
+└── commesse/<NomeCommessa>/app/android/<artifact-pubblico>
+```
+
+Non si replicano directory private vuote o non necessarie: nel pubblico esistono soltanto i rami necessari ai contenuti autorizzati.
+
 Una commessa/progetto presente in `sviluppo-privato` **non deve essere creata automaticamente qui**.
 
 La relativa cartella pubblica viene creata soltanto quando:
