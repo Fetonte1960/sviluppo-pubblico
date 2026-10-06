@@ -1,0 +1,38 @@
+name: Publish Powerstation 0.1.0
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/publish-powerstation-v010.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download verified build
+        shell: bash
+        run: |
+          curl -fL 'https://sdmntprpolandcentral.oaiusercontent.com/files/00000000-6848-820a-85c3-67a8cfcd1652/raw?se=2026-10-06T06%3A23%3A19Z&sp=r&sv=2026-02-06&sr=b&scid=8f7f3627-9ff4-5b23-b7dd-530d5f13bfc8&skoid=76024c37-11e2-4c92-aa07-7e519fbe2d0f&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-10-06T05%3A19%3A25Z&ske=2026-10-07T05%3A19%3A25Z&sks=b&skv=2026-02-06&sig=SUyW/Ly2XKEjYm63Rwt%2Bil3TXAIxvfXM7eCVkMzp%2B2g%3D' -o /tmp/powerstation.zip
+          rm -rf /tmp/powerstation-apk
+          mkdir -p /tmp/powerstation-apk
+          unzip -o /tmp/powerstation.zip -d /tmp/powerstation-apk
+          test "$(wc -c < /tmp/powerstation-apk/Powerstation.apk)" = "9554"
+          echo "36defe17072704fd2a2f14d8a5dc307bfb02e5b1034bac50a56723defb32915b  /tmp/powerstation-apk/Powerstation.apk" | sha256sum -c -
+
+      - name: Publish APK
+        shell: bash
+        run: |
+          cp /tmp/powerstation-apk/Powerstation.apk commesse/Powerstation/app/android/Powerstation.apk
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add commesse/Powerstation/app/android/Powerstation.apk
+          git commit -m "Pubblica Powerstation 0.1.0 APK verificato"
+          git push
