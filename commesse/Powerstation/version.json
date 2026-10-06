@@ -1,0 +1,10 @@
+{
+  "project": "Powerstation",
+  "artifact": "Powerstation.apk",
+  "version": "0.0.1-feasibility",
+  "source_repository": "Fetonte1960/sviluppo-privato",
+  "source_commit": "eb02ec7cd7a1c07005abaf8d16de23828ff76e7b",
+  "sha256": "67e5a13387ab8bb4990649d705fe1943e09d718c82b2700aff7308c318ea0915",
+  "size_bytes": 8691,
+  "status": "collaudo"
+}
