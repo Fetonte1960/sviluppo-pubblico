@@ -1,0 +1,36 @@
+name: Materializza Powerstation APK
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'commesse/Powerstation/app/android/Powerstation.apk.b64'
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Materializza APK
+        shell: bash
+        run: |
+          B64="commesse/Powerstation/app/android/Powerstation.apk.b64"
+          APK="commesse/Powerstation/app/android/Powerstation.apk"
+          if [ ! -f "$B64" ]; then
+            echo "Bootstrap già completato."
+            exit 0
+          fi
+          base64 --decode "$B64" > "$APK"
+          echo "67e5a13387ab8bb4990649d705fe1943e09d718c82b2700aff7308c318ea0915  $APK" | sha256sum -c -
+          rm "$B64"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$APK" "$B64"
+          git commit -m "Pubblica Powerstation.apk"
+          git push
