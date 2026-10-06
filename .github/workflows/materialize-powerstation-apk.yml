@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'commesse/Powerstation/app/android/Powerstation.apk.b64'
+      - 'commesse/Powerstation/app/android/Powerstation.publish'
 
 permissions:
   contents: write
@@ -20,17 +20,16 @@ jobs:
       - name: Materializza APK
         shell: bash
         run: |
-          B64="commesse/Powerstation/app/android/Powerstation.apk.b64"
-          APK="commesse/Powerstation/app/android/Powerstation.apk"
-          if [ ! -f "$B64" ]; then
-            echo "Bootstrap già completato."
-            exit 0
-          fi
-          base64 --decode "$B64" > "$APK"
-          echo "67e5a13387ab8bb4990649d705fe1943e09d718c82b2700aff7308c318ea0915  $APK" | sha256sum -c -
-          rm "$B64"
+          DIR="commesse/Powerstation/app/android"
+          cat "$DIR"/Powerstation.apk.part01               "$DIR"/Powerstation.apk.part02               "$DIR"/Powerstation.apk.part03               "$DIR"/Powerstation.apk.part04               "$DIR"/Powerstation.apk.part05 > "$DIR/Powerstation.apk.b64.complete"
+
+          base64 --decode "$DIR/Powerstation.apk.b64.complete" > "$DIR/Powerstation.apk"
+          echo "67e5a13387ab8bb4990649d705fe1943e09d718c82b2700aff7308c318ea0915  $DIR/Powerstation.apk" | sha256sum -c -
+
+          rm -f "$DIR/Powerstation.apk.b64"                 "$DIR/Powerstation.apk.b64.complete"                 "$DIR"/Powerstation.apk.part0*                 "$DIR/Powerstation.publish"
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "$APK" "$B64"
+          git add -A "$DIR"
           git commit -m "Pubblica Powerstation.apk"
           git push
