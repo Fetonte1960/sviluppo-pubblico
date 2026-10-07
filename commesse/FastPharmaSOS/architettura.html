@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FastPharmaSOS — Architettura</title>
+<style>
+  html,body{margin:0;min-height:100%;background:#061d29}
+  body{display:grid;place-items:center;overflow:auto}
+  svg{display:block;width:100vw;height:auto;min-width:1050px;max-width:1800px}
+  text{font-family:Inter,Segoe UI,Arial,sans-serif}
+</style>
+</head>
+<body>
+<svg viewBox="0 0 1600 900" role="img" aria-labelledby="title desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="title">FastPharmaSOS — Come dialogano Frontend, Server, Database e AI</title>
+  <desc id="desc">Schema grafico dell'interazione tra operatore, frontend, server applicativo, database e server AI.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#06354a"/>
+      <stop offset=".48" stop-color="#051b29"/>
+      <stop offset="1" stop-color="#073c49"/>
+    </linearGradient>
+    <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#46f0c8"/>
+      <stop offset="1" stop-color="#35cfff"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#65f0aa"/>
+      <stop offset="1" stop-color="#34d8c0"/>
+    </linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <marker id="arrowC" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#39d9ff"/></marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#55e9b1"/></marker>
+    <pattern id="grid" width="38" height="38" patternUnits="userSpaceOnUse"><path d="M38 0H0V38" fill="none" stroke="#5acfe0" stroke-opacity=".06"/></pattern>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <rect width="1600" height="900" fill="url(#grid)"/>
+  <path d="M0 105 C240 40 360 190 555 170 S860 40 1070 105 1380 180 1600 40" fill="none" stroke="#20a9d0" stroke-opacity=".15" stroke-width="2"/>
+  <path d="M0 740 C240 650 330 785 545 760 S840 665 1025 730 1350 840 1600 735" fill="none" stroke="#20a9d0" stroke-opacity=".12" stroke-width="2"/>
+
+  <text x="110" y="78" font-size="43" font-weight="800" fill="#f5fbff">FastPharma<tspan fill="#43ef9d">SOS</tspan><tspan fill="#f5fbff"> — Come dialogano Frontend, Server, Database e AI</tspan></text>
+  <text x="800" y="122" text-anchor="middle" font-size="27" fill="#b8dce9">Schema semplificato dell’architettura operativa</text>
+  <rect x="760" y="147" width="82" height="6" rx="3" fill="url(#cyan)"/>
+
+  <!-- Cards -->
+  <g fill="#082839" stroke="#25c9ea" stroke-width="1.5">
+    <rect x="42" y="255" width="205" height="286" rx="18"/>
+    <rect x="365" y="255" width="205" height="286" rx="18"/>
+    <rect x="700" y="255" width="205" height="286" rx="18"/>
+    <rect x="1030" y="255" width="205" height="286" rx="18"/>
+    <rect x="1350" y="255" width="205" height="286" rx="18"/>
+  </g>
+
+  <!-- Operator icon -->
+  <circle cx="145" cy="322" r="23" fill="none" stroke="#d9f8ff" stroke-width="6"/>
+  <path d="M102 405c0-38 20-61 43-61s43 23 43 61v3H102z" fill="none" stroke="#d9f8ff" stroke-width="6" stroke-linejoin="round"/>
+  <circle cx="181" cy="378" r="25" fill="#35e6aa"/>
+  <path d="M181 364v28M167 378h28" stroke="#062d33" stroke-width="8" stroke-linecap="round"/>
+  <text x="145" y="456" text-anchor="middle" fill="#fff" font-size="27" font-weight="800">Operatore</text>
+  <text x="145" y="490" text-anchor="middle" fill="#b8dce9" font-size="18"><tspan x="145">fa domande in</tspan><tspan x="145" dy="25">linguaggio naturale</tspan></text>
+
+  <!-- Frontend icon -->
+  <rect x="393" y="292" width="150" height="118" rx="12" fill="#0d5270" stroke="#49c8ff" stroke-width="3"/>
+  <line x1="393" y1="318" x2="543" y2="318" stroke="#49c8ff" stroke-width="3"/>
+  <circle cx="412" cy="305" r="5" fill="#40e6bf"/><circle cx="429" cy="305" r="5" fill="#40e6bf"/><circle cx="446" cy="305" r="5" fill="#40e6bf"/>
+  <rect x="415" y="337" width="81" height="34" rx="9" fill="#d6f6ff"/>
+  <rect x="458" y="373" width="69" height="31" rx="9" fill="#4de8ad"/>
+  <text x="468" y="456" text-anchor="middle" fill="#fff" font-size="27" font-weight="800">Frontend</text>
+  <text x="468" y="490" text-anchor="middle" fill="#b8dce9" font-size="18"><tspan x="468">interfaccia web</tspan><tspan x="468" dy="25">pubblica</tspan></text>
+
+  <!-- Server icon -->
+  <g stroke="#57d4ff" stroke-width="4" fill="#0f5170">
+    <rect x="746" y="300" width="115" height="32" rx="10"/><rect x="746" y="345" width="115" height="32" rx="10"/><rect x="746" y="390" width="115" height="32" rx="10"/>
+  </g>
+  <g fill="#48e6ac"><circle cx="842" cy="316" r="6"/><circle cx="842" cy="361" r="6"/><circle cx="842" cy="406" r="6"/></g>
+  <text x="803" y="453" text-anchor="middle" fill="#fff" font-size="25" font-weight="800"><tspan x="803">Server</tspan><tspan x="803" dy="29">applicativo</tspan></text>
+  <text x="803" y="510" text-anchor="middle" fill="#b8dce9" font-size="17"><tspan x="803">orchestra logica,</tspan><tspan x="803" dy="23">API e sicurezza</tspan></text>
+
+  <!-- Database icon -->
+  <ellipse cx="1132" cy="310" rx="50" ry="18" fill="#6bbbea" stroke="#b9edff" stroke-width="3"/>
+  <path d="M1082 310v92c0 13 22 23 50 23s50-10 50-23v-92" fill="#398fc2" stroke="#9fe1ff" stroke-width="3"/>
+  <path d="M1082 341c0 13 22 23 50 23s50-10 50-23M1082 372c0 13 22 23 50 23s50-10 50-23" fill="none" stroke="#a4e4ff" stroke-width="3"/>
+  <circle cx="1160" cy="344" r="5" fill="#4bf0ad"/><circle cx="1160" cy="377" r="5" fill="#4bf0ad"/>
+  <text x="1132" y="456" text-anchor="middle" fill="#fff" font-size="27" font-weight="800">Database</text>
+  <text x="1132" y="490" text-anchor="middle" fill="#b8dce9" font-size="17"><tspan x="1132">archivio commesse,</tspan><tspan x="1132" dy="23">documenti e storico</tspan></text>
+
+  <!-- AI icon -->
+  <rect x="1410" y="296" width="86" height="86" rx="19" fill="none" stroke="#45e8c0" stroke-width="4"/>
+  <path d="M1453 316c-13 0-20 9-20 20 0 6 2 10 7 14-5 4-7 9-7 15 0 12 8 20 20 20M1453 316c13 0 20 9 20 20 0 6-2 10-7 14 5 4 7 9 7 15 0 12-8 20-20 20M1453 320v60" fill="none" stroke="#d9f8ff" stroke-width="3" stroke-linecap="round"/>
+  <g stroke="#45e8c0" stroke-width="3"><path d="M1423 285v11M1453 285v11M1483 285v11M1423 382v12M1453 382v12M1483 382v12M1398 311h12M1398 339h12M1398 367h12M1496 311h12M1496 339h12M1496 367h12"/></g>
+  <text x="1453" y="456" text-anchor="middle" fill="#fff" font-size="27" font-weight="800">Server AI</text>
+  <text x="1453" y="490" text-anchor="middle" fill="#b8dce9" font-size="17"><tspan x="1453">interpreta la richiesta</tspan><tspan x="1453" dy="23">e genera la risposta</tspan></text>
+
+  <!-- Main arrows -->
+  <g fill="none" stroke-width="5" stroke-linecap="round" filter="url(#glow)">
+    <path d="M257 342H352" stroke="#39d9ff" marker-end="url(#arrowC)"/>
+    <path d="M352 414H257" stroke="#55e9b1" marker-end="url(#arrowG)"/>
+    <path d="M580 342H685" stroke="#39d9ff" marker-end="url(#arrowC)"/>
+    <path d="M685 414H580" stroke="#55e9b1" marker-end="url(#arrowG)"/>
+    <path d="M915 342H1017" stroke="#39d9ff" marker-end="url(#arrowC)"/>
+    <path d="M1017 414H915" stroke="#55e9b1" marker-end="url(#arrowG)"/>
+    <path d="M803 245V218Q803 205 816 205H1445Q1460 205 1460 220V246" stroke="url(#cyan)" marker-end="url(#arrowC)"/>
+    <path d="M1453 552V590Q1453 607 1435 607H820Q803 607 803 590V553" stroke="url(#green)" marker-end="url(#arrowG)"/>
+  </g>
+
+  <!-- Arrow labels -->
+  <g font-size="16" font-weight="700" fill="#e8f8ff">
+    <text x="304" y="323" text-anchor="middle">richiesta</text>
+    <text x="304" y="446" text-anchor="middle">output</text>
+    <text x="632" y="323" text-anchor="middle">API / chat</text>
+    <text x="632" y="446" text-anchor="middle">risposta finale</text>
+    <text x="965" y="323" text-anchor="middle">query dati</text>
+    <text x="965" y="446" text-anchor="middle">dati strutturati</text>
+    <text x="1185" y="190" text-anchor="middle">prompt + contesto</text>
+    <text x="1175" y="635" text-anchor="middle">risposta AI</text>
+  </g>
+
+  <!-- Bottom cards -->
+  <g>
+    <rect x="42" y="680" width="360" height="140" rx="18" fill="#072c3d" stroke="#2ebeea"/>
+    <rect x="420" y="680" width="360" height="140" rx="18" fill="#073944" stroke="#3de7af"/>
+    <rect x="798" y="680" width="360" height="140" rx="18" fill="#072c3d" stroke="#2ebeea"/>
+    <rect x="1176" y="680" width="380" height="140" rx="18" fill="#073944" stroke="#3de7af"/>
+
+    <circle cx="92" cy="725" r="23" fill="#338fc8"/><text x="92" y="733" text-anchor="middle" font-size="23" font-weight="800" fill="#fff">1</text>
+    <text x="142" y="720" font-size="22" font-weight="800" fill="#fff">1. Frontend</text>
+    <text x="142" y="754" font-size="17" fill="#c4e0ea"><tspan x="142">Raccoglie input</tspan><tspan x="142" dy="23">e mostra le risposte</tspan></text>
+
+    <circle cx="470" cy="725" r="23" fill="#39c77f"/><text x="470" y="733" text-anchor="middle" font-size="23" font-weight="800" fill="#fff">2</text>
+    <text x="520" y="720" font-size="22" font-weight="800" fill="#fff">2. Server</text>
+    <text x="520" y="754" font-size="17" fill="#c4e0ea"><tspan x="520">Controlla il flusso</tspan><tspan x="520" dy="23">e applica le regole</tspan></text>
+
+    <circle cx="848" cy="725" r="23" fill="#338fc8"/><text x="848" y="733" text-anchor="middle" font-size="23" font-weight="800" fill="#fff">3</text>
+    <text x="898" y="720" font-size="22" font-weight="800" fill="#fff">3. Database</text>
+    <text x="898" y="754" font-size="17" fill="#c4e0ea"><tspan x="898">Conserva archivio</tspan><tspan x="898" dy="23">e informazioni di progetto</tspan></text>
+
+    <circle cx="1226" cy="725" r="23" fill="#39c77f"/><text x="1226" y="733" text-anchor="middle" font-size="23" font-weight="800" fill="#fff">4</text>
+    <text x="1276" y="720" font-size="22" font-weight="800" fill="#fff">4. AI</text>
+    <text x="1276" y="754" font-size="17" fill="#c4e0ea"><tspan x="1276">Comprende la domanda</tspan><tspan x="1276" dy="23">e aiuta nella sintesi</tspan></text>
+  </g>
+
+  <line x1="500" y1="858" x2="620" y2="858" stroke="#9fc8d5" stroke-opacity=".55"/>
+  <text x="800" y="865" text-anchor="middle" font-size="16" fill="#9fc8d5">Demo concettuale — non rappresenta dati reali</text>
+  <line x1="980" y1="858" x2="1100" y2="858" stroke="#9fc8d5" stroke-opacity=".55"/>
+</svg>
+</body>
+</html>
