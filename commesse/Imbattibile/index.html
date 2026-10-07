@@ -1,60 +1,87 @@
 <!doctype html>
-<html lang="it">
+<html lang="it" data-api-base="https://imbattibile-api.onrender.com">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="#Imbattibile — gestionale in fase di sviluppo.">
-  <title>#Imbattibile · Lavori in corso</title>
-  <style>
-    * { box-sizing: border-box; }
-    html, body { height: 100%; }
-    body {
-      margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      background: #0f172a;
-      color: #f8fafc;
-      display: grid;
-      place-items: center;
-    }
-    main {
-      width: min(720px, calc(100% - 40px));
-      text-align: center;
-      padding: 56px 28px;
-    }
-    .tag {
-      display: inline-block;
-      margin-bottom: 24px;
-      padding: 8px 14px;
-      border: 1px solid rgba(248,250,252,.28);
-      border-radius: 999px;
-      font-size: 15px;
-      letter-spacing: .04em;
-    }
-    h1 {
-      margin: 0;
-      font-size: clamp(42px, 9vw, 84px);
-      line-height: .95;
-    }
-    p {
-      margin: 26px auto 0;
-      max-width: 560px;
-      color: #cbd5e1;
-      font-size: clamp(18px, 3vw, 24px);
-      line-height: 1.5;
-    }
-    footer {
-      margin-top: 50px;
-      color: #64748b;
-      font-size: 14px;
-    }
-  </style>
+  <meta name="description" content="#Imbattibile — demo gestionale magazzino e fatturazione.">
+  <title>#Imbattibile · Gestionale demo</title>
+  <link rel="stylesheet" href="./css/app.css">
 </head>
 <body>
-  <main>
-    <div class="tag">#Imbattibile</div>
-    <h1>Lavori in corso</h1>
-    <p>Stiamo preparando il nuovo gestionale #Imbattibile.</p>
-    <footer>#Imbattibile · Reggio Calabria</footer>
+  <header class="topbar">
+    <div>
+      <strong>#Imbattibile</strong>
+      <span>Gestionale demo</span>
+    </div>
+    <div id="connection-status" class="status">Connessione…</div>
+  </header>
+
+  <main class="shell">
+    <nav class="tabs" aria-label="Sezioni">
+      <button class="tab active" data-view="dashboard">Dashboard</button>
+      <button class="tab" data-view="warehouse">Magazzino</button>
+      <button class="tab" data-view="invoices">Fatture</button>
+    </nav>
+
+    <section id="view-dashboard" class="view active">
+      <div class="heading">
+        <div><p class="eyebrow">Panoramica</p><h1>Magazzino e fatturazione</h1></div>
+        <button id="refresh-all" class="secondary">Aggiorna</button>
+      </div>
+      <div id="metrics" class="metrics"></div>
+      <div class="panel">
+        <h2>Scopo della demo</h2>
+        <p>Prima versione senza AI: dati di prova su PostgreSQL/Neon, gestione giacenze e creazione fatture con XML FatturaPA scaricabile.</p>
+      </div>
+    </section>
+
+    <section id="view-warehouse" class="view">
+      <div class="heading"><div><p class="eyebrow">Magazzino</p><h1>Articoli e movimenti</h1></div></div>
+      <div class="grid two">
+        <div class="panel">
+          <h2>Nuovo movimento</h2>
+          <form id="movement-form" class="form">
+            <label>Articolo<select id="movement-product" required></select></label>
+            <label>Tipo<select id="movement-direction"><option value="IN">Carico</option><option value="OUT">Scarico</option></select></label>
+            <label>Quantità<input id="movement-quantity" type="number" min="0.01" step="0.01" value="1" required></label>
+            <label>Motivo<input id="movement-reason" placeholder="Es. acquisto fornitore"></label>
+            <button type="submit">Registra movimento</button>
+          </form>
+        </div>
+        <div class="panel">
+          <h2>Ultimi movimenti</h2>
+          <div class="table-wrap"><table><thead><tr><th>Data</th><th>Articolo</th><th>Tipo</th><th>Qtà</th><th>Motivo</th></tr></thead><tbody id="movements-body"></tbody></table></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Giacenze</h2>
+        <div class="table-wrap"><table><thead><tr><th>SKU</th><th>Articolo</th><th>Categoria</th><th>Giacenza</th><th>Prezzo</th></tr></thead><tbody id="products-body"></tbody></table></div>
+      </div>
+    </section>
+
+    <section id="view-invoices" class="view">
+      <div class="heading"><div><p class="eyebrow">Vendite</p><h1>Fatturazione</h1></div></div>
+      <div class="grid two">
+        <div class="panel">
+          <h2>Nuova fattura</h2>
+          <form id="invoice-form" class="form">
+            <label>Cliente<select id="invoice-customer" required></select></label>
+            <label>Data<input id="invoice-date" type="date" required></label>
+            <div id="invoice-lines" class="invoice-lines"></div>
+            <button id="add-line" class="secondary" type="button">+ Aggiungi riga</button>
+            <button type="submit">Crea fattura</button>
+          </form>
+        </div>
+        <div class="panel">
+          <h2>Fatture emesse</h2>
+          <div class="table-wrap"><table><thead><tr><th>Numero</th><th>Data</th><th>Cliente</th><th>Totale</th><th>XML</th></tr></thead><tbody id="invoices-body"></tbody></table></div>
+        </div>
+      </div>
+    </section>
+
+    <div id="message" class="message" hidden></div>
   </main>
+
+  <script type="module" src="./js/app.js"></script>
 </body>
 </html>
