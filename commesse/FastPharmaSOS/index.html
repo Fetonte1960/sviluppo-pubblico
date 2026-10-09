@@ -45,7 +45,16 @@
           <p class="eyebrow">SOS AI</p>
           <h2 id="chat-title">Come posso aiutarti?</h2>
         </div>
-        <div id="archive-summary" class="archive-summary">Caricamento archivio demo…</div>
+        <div class="chat-controls">
+          <label class="provider-picker" for="ai-provider">
+            <span>Provider AI</span>
+            <select id="ai-provider" aria-label="Scegli il provider AI">
+              <option value="Gemini">Gemini</option>
+              <option value="NvidiaNim">NVIDIA NIM · DeepSeek</option>
+            </select>
+          </label>
+          <div id="archive-summary" class="archive-summary">Caricamento archivio demo…</div>
+        </div>
       </div>
 
       <div id="chat-messages" class="chat-messages" aria-live="polite">

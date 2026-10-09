@@ -9,6 +9,7 @@ const messages = $("chat-messages");
 const form = $("chat-form");
 const input = $("chat-input");
 const sendButton = $("send-button");
+const providerSelect = $("ai-provider");
 const quickButtons = [...document.querySelectorAll("[data-prompt]")];
 
 function setStatus(element, text, ok) {
@@ -43,15 +44,17 @@ function addMessage(role, text, meta = "") {
 function setBusy(busy) {
   input.disabled = busy;
   sendButton.disabled = busy;
+  providerSelect.disabled = busy;
   quickButtons.forEach(button => { button.disabled = busy; });
   sendButton.textContent = busy ? "Attendi…" : "Invia";
 }
 
 async function refreshStatus() {
+  const selectedProvider = providerSelect.value;
   const [healthResult, dbResult, aiResult, commesseResult] = await Promise.allSettled([
     getHealth(),
     getDbHealth(),
-    getAiHealth(),
+    getAiHealth(selectedProvider),
     getCommesse()
   ]);
 
@@ -67,10 +70,15 @@ async function refreshStatus() {
     dbResult.status === "fulfilled"
   );
 
-  if (aiResult.status === "fulfilled" && aiResult.value?.status === "configured") {
-    setStatus(aiStatus, `AI ${aiResult.value.model ?? "configurata"}`, true);
+  const aiPayload = aiResult.status === "fulfilled"
+    ? aiResult.value
+    : aiResult.reason?.body;
+  updateProviderOptions(aiPayload?.providers);
+
+  if (aiPayload?.status === "configured") {
+    setStatus(aiStatus, `AI ${aiPayload.provider} · ${aiPayload.model}`, true);
   } else {
-    setStatus(aiStatus, "AI non configurata", false);
+    setStatus(aiStatus, `AI ${selectedProvider} non configurata`, false);
   }
 
   if (commesseResult.status === "fulfilled" && Array.isArray(commesseResult.value)) {
@@ -90,13 +98,27 @@ async function probeComponents() {
   const [server, database, ai] = await Promise.allSettled([
     getHealth(),
     getDbHealth(),
-    getAiHealth()
+    getAiHealth(providerSelect.value)
   ]);
   return {
     server: server.status === "fulfilled",
     database: database.status === "fulfilled",
     aiConfigured: ai.status === "fulfilled" && ai.value?.status === "configured"
   };
+}
+
+function updateProviderOptions(providers) {
+  if (!Array.isArray(providers)) return;
+
+  const statusByProvider = new Map(
+    providers.map(item => [String(item.provider).toLowerCase(), item.status])
+  );
+
+  [...providerSelect.options].forEach(option => {
+    const status = statusByProvider.get(option.value.toLowerCase());
+    option.disabled = status != null && status !== "configured";
+    option.title = option.disabled ? "Provider non ancora configurato sul server" : "";
+  });
 }
 
 async function explainFailure(error) {
@@ -227,11 +249,12 @@ async function sendMessage(message) {
   addMessage("user", clean);
   input.value = "";
   setBusy(true);
+  const selectedProvider = providerSelect.value;
 
-  const pending = addMessage("assistant", "Sto elaborando la richiesta…");
+  const pending = addMessage("assistant", `Sto elaborando la richiesta con ${providerSelect.selectedOptions[0]?.textContent ?? selectedProvider}…`);
 
   try {
-    const response = await askAssistant(clean);
+    const response = await askAssistant(clean, selectedProvider);
     pending.remove();
 
     const meta = [
@@ -269,6 +292,10 @@ input.addEventListener("keydown", event => {
 
 quickButtons.forEach(button => {
   button.addEventListener("click", () => sendMessage(button.dataset.prompt ?? ""));
+});
+
+providerSelect.addEventListener("change", () => {
+  refreshStatus();
 });
 
 refreshStatus();

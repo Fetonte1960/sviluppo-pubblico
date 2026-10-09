@@ -55,14 +55,18 @@ async function request(path, options = {}, timeoutMs = 20000) {
 
 export const getHealth = () => request("/health", {}, 10000);
 export const getDbHealth = () => request("/health/db", {}, 10000);
-export const getAiHealth = () => request("/health/ai", {}, 10000);
+export const getAiHealth = provider => request(
+  `/health/ai${provider ? `?provider=${encodeURIComponent(provider)}` : ""}`,
+  {},
+  10000
+);
 export const getCommesse = () => request("/api/fastpharmasos/v1/commesse", {}, 15000);
-export const askAssistant = message => request(
+export const askAssistant = (message, provider) => request(
   "/api/fastpharmasos/v1/chat",
   {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message, commessaId: null })
+    body: JSON.stringify({ message, commessaId: null, provider })
   },
   90000
 );
