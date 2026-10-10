@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="it" data-sh-base="https://sh-intelligenceengine.onrender.com">
+<html lang="it" data-sh-base="https://sh-intelligenceengine.onrender.com" data-fastpharma-base="https://fastpharmasos.onrender.com">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -20,6 +20,7 @@
       <div class="system-status" aria-label="Stato servizi">
         <span id="api-status" class="status-pill">SH…</span>
         <span id="det-status" class="status-pill">Motore locale…</span>
+        <span id="db-status" class="status-pill">Database…</span>
         <span class="status-pill warn">AI esclusa dal test</span>
       </div>
     </header>
@@ -29,12 +30,13 @@
       <h1>Deterministico prima dell'AI.</h1>
       <p class="hero-copy">
         Questo harness prova Frasario, Catalyst + Pidgin, similitudine Top-N e conferma utente.
-        In questa fase non viene effettuata alcuna chiamata AI.
+        Quando il comando è valido lo esegue realmente, in sola lettura, sul database demo FastPharmaSOS-Test. Nessuna AI viene chiamata.
       </p>
 
       <div class="capabilities" aria-label="Funzioni di collaudo">
         <span><b>Frasario</b> match esatto + Top-N</span>
         <span><b>Catalyst</b> seconda/ prima via locale</span>
+        <span><b>Database</b> esecuzione reale read-only su Neon</span>
         <span><b>Fallimenti</b> registrati per analisi successive</span>
       </div>
     </section>
@@ -66,13 +68,13 @@
           <div class="message-label">HARNESS</div>
           <div>
             Prova una frase corretta oppure una formulazione volutamente sbagliata.
-            Se il motore fallisce mostrerò i candidati più simili e registrerò il fallimento.
+            Se il motore interpreta la frase, il comando QUERY viene validato ed eseguito dal backend FastPharmaSOS sul database demo. Se fallisce mostrerò i candidati più simili e registrerò il fallimento.
           </div>
         </div>
       </div>
 
       <div class="quick-prompts" aria-label="Domande di esempio">
-        <button type="button" data-prompt="Dammi tutte le farmacie di Roma">Frasario esatto</button>
+        <button type="button" data-prompt="Dammi tutte le farmacie di Milano">Frasario + DB</button>
         <button type="button" data-prompt="Quante pratiche aperte ci sono?">Catalyst</button>
         <button type="button" data-prompt="Dammi tutti i farmacii i Roma">Similitudine</button>
         <button type="button" data-prompt="Portami un caffè">Fallimento</button>
@@ -82,7 +84,7 @@
         <label class="sr-only" for="chat-input">Scrivi una domanda</label>
         <textarea id="chat-input" rows="3" maxlength="2000" placeholder="Scrivi qui la richiesta…" required></textarea>
         <div class="composer-footer">
-          <span>Harness tecnico · nessun dato reale · AI disabilitata</span>
+          <span>Harness tecnico · dataset sintetico FastPharmaSOS-Test · AI disabilitata</span>
           <button id="send-button" type="submit">Invia</button>
         </div>
       </form>
