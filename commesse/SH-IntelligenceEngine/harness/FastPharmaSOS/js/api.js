@@ -1,4 +1,5 @@
 const SH_BASE = document.documentElement.dataset.shBase?.replace(/\/$/, "") ?? "";
+const FASTPHARMA_BASE = document.documentElement.dataset.fastpharmaBase?.replace(/\/$/, "") ?? "";
 
 function clientError(kind, message, cause = null) {
   const error = new Error(message);
@@ -7,14 +8,14 @@ function clientError(kind, message, cause = null) {
   return error;
 }
 
-async function request(path, options = {}, timeoutMs = 30000) {
+async function request(base, path, options = {}, timeoutMs = 30000) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     let response;
     try {
-      response = await fetch(`${SH_BASE}${path}`, {
+      response = await fetch(`${base}${path}`, {
         ...options,
         headers: {
           Accept: "application/json",
@@ -24,9 +25,9 @@ async function request(path, options = {}, timeoutMs = 30000) {
       });
     } catch (cause) {
       if (cause?.name === "AbortError") {
-        throw clientError("timeout", "SH-IntelligenceEngine non ha risposto entro il tempo massimo.", cause);
+        throw clientError("timeout", "Il servizio non ha risposto entro il tempo massimo.", cause);
       }
-      throw clientError("network", "Il browser non riesce a raggiungere SH-IntelligenceEngine.", cause);
+      throw clientError("network", "Il browser non riesce a raggiungere il servizio richiesto.", cause);
     }
 
     const text = await response.text();
@@ -48,10 +49,17 @@ async function request(path, options = {}, timeoutMs = 30000) {
   }
 }
 
-export const getHealth = () => request("/health", {}, 15000);
+export const getHealth = () => request(SH_BASE, "/health", {}, 15000);
+
+export const getFastPharmaHealth = () =>
+  request(FASTPHARMA_BASE, "/health", {}, 15000);
+
+export const getFastPharmaDbHealth = () =>
+  request(FASTPHARMA_BASE, "/health/db", {}, 15000);
 
 export const interpretHarness = (question, order, topN) =>
   request(
+    SH_BASE,
     "/api/v1/harness/interpreta",
     {
       method: "POST",
@@ -68,6 +76,7 @@ export const interpretHarness = (question, order, topN) =>
 
 export const confirmCandidate = (question, candidateId, failureId) =>
   request(
+    SH_BASE,
     "/api/v1/harness/conferma",
     {
       method: "POST",
@@ -80,4 +89,20 @@ export const confirmCandidate = (question, candidateId, failureId) =>
       })
     },
     60000
+  );
+
+export const executeFastPharmaQuery = command =>
+  request(
+    FASTPHARMA_BASE,
+    "/api/fastpharmasos/v1/harness/query",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tipo: command.tipo,
+        queryId: command.queryId,
+        parameters: command.parameters ?? {}
+      })
+    },
+    30000
   );
