@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Harness pubblico FastPharmaSOS per il collaudo di SH-IntelligenceEngine.">
-  <title>SH IntelligenceEngine · FastPharmaSOS Harness</title>
+  <meta name="description" content="Harness pubblico FastPharmaSOS per il collaudo deterministico di SH-IntelligenceEngine.">
+  <title>SH IntelligenceEngine · Harness deterministico</title>
   <link rel="stylesheet" href="./css/app.css">
 </head>
 <body>
@@ -19,24 +19,23 @@
       </div>
       <div class="system-status" aria-label="Stato servizi">
         <span id="api-status" class="status-pill">SH…</span>
-        <span id="det-status" class="status-pill">Deterministico…</span>
-        <span id="ai-status" class="status-pill">AI Gateway…</span>
+        <span id="det-status" class="status-pill">Motore locale…</span>
+        <span class="status-pill warn">AI esclusa dal test</span>
       </div>
     </header>
 
     <section class="hero">
-      <p class="eyebrow">Harness di integrazione</p>
-      <h1>FastPharmaSOS senza toccare FastPharmaSOS.</h1>
+      <p class="eyebrow">Primo test frasario</p>
+      <h1>Deterministico prima dell'AI.</h1>
       <p class="hero-copy">
-        Questa copia pubblica collauda il protocollo SH in isolamento:
-        interpretazione deterministica, validazione della commessa e fallback al gateway AI.
-        Non usa il backend, il database o il link consegnato al committente FastPharmaSOS.
+        Questo harness prova Frasario, Catalyst + Pidgin, similitudine Top-N e conferma utente.
+        In questa fase non viene effettuata alcuna chiamata AI.
       </p>
 
       <div class="capabilities" aria-label="Funzioni di collaudo">
-        <span><b>SH</b> interpreta la domanda</span>
-        <span><b>Commessa</b> valida il comando</span>
-        <span><b>AI Gateway</b> riceve la domanda originale in fallback</span>
+        <span><b>Frasario</b> match esatto + Top-N</span>
+        <span><b>Catalyst</b> seconda/ prima via locale</span>
+        <span><b>Fallimenti</b> registrati per analisi successive</span>
       </div>
     </section>
 
@@ -44,20 +43,21 @@
       <div class="chat-heading">
         <div>
           <p class="eyebrow">FastPharmaSOS Harness</p>
-          <h2 id="chat-title">Prova il motore SH</h2>
+          <h2 id="chat-title">Prova il motore locale</h2>
         </div>
         <div class="chat-controls">
-          <label class="provider-picker" for="ai-model">
-            <span>Modello AI</span>
-            <select id="ai-model" aria-label="Scegli il modello AI">
-              <option value="">Caricamento…</option>
+          <label class="provider-picker" for="order-mode">
+            <span>Ordine prova</span>
+            <select id="order-mode">
+              <option value="FRASARIO_FIRST">Frasario → Catalyst</option>
+              <option value="CATALYST_FIRST">Catalyst → Frasario</option>
             </select>
           </label>
-          <label class="reject-toggle" for="force-reject">
-            <input id="force-reject" type="checkbox">
-            <span>Forza rifiuto del comando deterministico</span>
+          <label class="provider-picker" for="top-n">
+            <span>Top-N similitudine</span>
+            <input id="top-n" type="number" min="1" max="10" value="3">
           </label>
-          <div class="archive-summary">Programmazione: <b>FastPharmaSOS</b></div>
+          <div class="archive-summary">Profilo test: <b>FastPharmaSOS</b></div>
         </div>
       </div>
 
@@ -65,30 +65,31 @@
         <div class="message assistant">
           <div class="message-label">HARNESS</div>
           <div>
-            Prova “Quante pratiche aperte ci sono?” per il percorso deterministico.
-            Una domanda non programmata passerà al gateway AI.
+            Prova una frase corretta oppure una formulazione volutamente sbagliata.
+            Se il motore fallisce mostrerò i candidati più simili e registrerò il fallimento.
           </div>
         </div>
       </div>
 
       <div class="quick-prompts" aria-label="Domande di esempio">
-        <button type="button" data-prompt="Quante pratiche aperte ci sono?">Deterministico</button>
-        <button type="button" data-prompt="Quante pratiche chiuse ci sono?">FAULT → AI</button>
-        <button type="button" data-prompt="Che tempo farà domani?">Domanda estranea</button>
+        <button type="button" data-prompt="Dammi tutte le farmacie di Roma">Frasario esatto</button>
+        <button type="button" data-prompt="Quante pratiche aperte ci sono?">Catalyst</button>
+        <button type="button" data-prompt="Dammi tutti i farmacii i Roma">Similitudine</button>
+        <button type="button" data-prompt="Portami un caffè">Fallimento</button>
       </div>
 
       <form id="chat-form" class="chat-form">
         <label class="sr-only" for="chat-input">Scrivi una domanda</label>
-        <textarea id="chat-input" rows="3" maxlength="2000" placeholder="Scrivi qui la domanda…" required></textarea>
+        <textarea id="chat-input" rows="3" maxlength="2000" placeholder="Scrivi qui la richiesta…" required></textarea>
         <div class="composer-footer">
-          <span>Harness tecnico · nessun dato reale · nessun accesso al database FastPharmaSOS</span>
+          <span>Harness tecnico · nessun dato reale · AI disabilitata</span>
           <button id="send-button" type="submit">Invia</button>
         </div>
       </form>
     </section>
 
     <footer>
-      SH-IntelligenceEngine · harness pubblico derivato dal frontend FastPharmaSOS · uso di collaudo
+      SH-IntelligenceEngine · harness pubblico di collaudo · primo test senza AI
     </footer>
   </main>
 
