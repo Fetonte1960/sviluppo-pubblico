@@ -1,8 +1,16 @@
-import { confirmCandidate, getHealth, interpretHarness } from "./api.js";
+import {
+  confirmCandidate,
+  executeFastPharmaQuery,
+  getFastPharmaDbHealth,
+  getFastPharmaHealth,
+  getHealth,
+  interpretHarness
+} from "./api.js";
 
 const $ = id => document.getElementById(id);
 const apiStatus = $("api-status");
 const detStatus = $("det-status");
+const dbStatus = $("db-status");
 const messages = $("chat-messages");
 const form = $("chat-form");
 const input = $("chat-input");
@@ -70,7 +78,38 @@ function validateCommand(response) {
   return { valid: true, reason: `QUERY ${command.queryId} ammessa` };
 }
 
-function showSuccess(response) {
+function formatDatabaseResult(dbResponse) {
+  const result = dbResponse?.risultato;
+  if (!result) return "Il database non ha restituito un risultato.";
+
+  if (typeof result.count === "number" && !Array.isArray(result.items)) {
+    const city = result.city ? ` per ${result.city}` : "";
+    return `Risultato database${city}: ${result.count}`;
+  }
+
+  if (Array.isArray(result.items)) {
+    if (result.items.length === 0) {
+      return result.city
+        ? `Nessuna farmacia trovata a ${result.city}.`
+        : "Nessuna farmacia trovata.";
+    }
+
+    const header = result.city
+      ? `${result.count} farmacia/e trovata/e a ${result.city}:`
+      : `${result.count} farmacia/e trovata/e:`;
+
+    const rows = result.items.map(item => {
+      const place = item.localizzazione ? ` — ${item.localizzazione}` : "";
+      return `• ${item.nome} [${item.codice}] — stato: ${item.stato}${place}`;
+    });
+
+    return [header, ...rows].join("\n");
+  }
+
+  return JSON.stringify(result, null, 2);
+}
+
+async function showSuccess(response) {
   const validation = validateCommand(response);
 
   if (!validation.valid) {
@@ -90,6 +129,38 @@ function showSuccess(response) {
     JSON.stringify(response.comando, null, 2),
     Array.isArray(response.percorso) ? response.percorso.join(" → ") : "comando strutturato"
   );
+
+  const pending = addMessage(
+    "assistant",
+    "Esecuzione read-only sul database FastPharmaSOS-Test…",
+    response.comando.queryId
+  );
+
+  try {
+    const dbResponse = await executeFastPharmaQuery(response.comando);
+    pending.remove();
+
+    if (dbResponse?.esito !== "SUCCESS") {
+      throw new Error(dbResponse?.risposta ?? "Risposta database non valida");
+    }
+
+    setStatus(dbStatus, "Neon QUERY OK", "ok");
+    addMessage(
+      "assistant",
+      formatDatabaseResult(dbResponse),
+      `${dbResponse.sorgente} · ${dbResponse.queryId}`
+    );
+  } catch (error) {
+    pending.remove();
+    setStatus(dbStatus, "Errore database/API", "error");
+    addMessage(
+      "diagnostic",
+      error?.body?.risposta
+        ? `Esecuzione database rifiutata: ${error.body.risposta}`
+        : `Errore durante l'esecuzione reale: ${error?.message ?? "errore sconosciuto"}`,
+      error?.status ? `HTTP ${error.status}` : "FastPharmaSOS backend"
+    );
+  }
 }
 
 function showCandidates(originalQuestion, response) {
@@ -128,7 +199,7 @@ function showCandidates(originalQuestion, response) {
 
         if (confirmed?.esito === "SUCCESS") {
           item.remove();
-          showSuccess(confirmed);
+          await showSuccess(confirmed);
         } else {
           addMessage(
             "diagnostic",
@@ -164,6 +235,18 @@ async function refreshStatus() {
     setStatus(apiStatus, "SH offline", "error");
     setStatus(detStatus, "Motore non disponibile", "error");
   }
+
+  try {
+    await getFastPharmaHealth();
+    const dbHealth = await getFastPharmaDbHealth();
+    setStatus(
+      dbStatus,
+      dbHealth?.status === "ok" ? "Neon online" : "Database non pronto",
+      dbHealth?.status === "ok" ? "ok" : "warn"
+    );
+  } catch {
+    setStatus(dbStatus, "FastPharma/DB offline", "error");
+  }
 }
 
 async function sendMessage(message) {
@@ -187,7 +270,7 @@ async function sendMessage(message) {
     pending.remove();
 
     if (response?.esito === "SUCCESS") {
-      showSuccess(response);
+      await showSuccess(response);
       return;
     }
 
