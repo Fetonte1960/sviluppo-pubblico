@@ -1,21 +1,33 @@
 {
   "schema_version": 1,
-  "generated_at": null,
+  "generated_at": "2026-10-10T18:08:30.214Z",
   "activities": [
     {
       "id": "6aca3c370ac4819188aa796576659c81",
       "title": "Revisione oraria fallimenti SOS",
       "project": "FastPharmaSOS",
       "frequency": "Ogni ora",
-      "last_run_at": null,
-      "last_result": "NON_VERIFICATO",
-      "new_initial": null,
-      "new_final": null,
-      "implemented": null,
-      "vocabulary": null,
-      "discarded": null,
-      "note": "In attesa della prima esecuzione documentata.",
-      "history": []
+      "last_run_at": "2026-10-10T18:08:12.166Z",
+      "last_result": "COMPLETATA",
+      "new_initial": 0,
+      "new_final": 0,
+      "implemented": 0,
+      "vocabulary": 0,
+      "discarded": 0,
+      "note": "Verifica read-only: 0 nuovi fallimenti su 19 record storici; nessun intervento applicativo necessario.",
+      "history": [
+        {
+          "run_id": "SOS-20261010T180812166Z",
+          "at": "2026-10-10T18:08:12.166Z",
+          "result": "COMPLETATA",
+          "new_initial": 0,
+          "new_final": 0,
+          "implemented": 0,
+          "vocabulary": 0,
+          "discarded": 0,
+          "note": "Verifica read-only: 0 nuovi fallimenti su 19 record storici; nessun intervento applicativo necessario."
+        }
+      ]
     }
   ]
 }
