@@ -1,4 +1,4 @@
-import { askAssistant, getAiHealth, getCommesse, getDbHealth, getHealth } from "./api.js";
+import { askAssistant, confirmEngineCandidate, getAiHealth, getCommesse, getDbHealth, getHealth } from "./api.js";
 
 const $ = id => document.getElementById(id);
 const apiStatus = $("api-status");
@@ -197,6 +197,18 @@ async function explainFailure(error) {
         meta: `Componente: AI · upstream HTTP ${body.upstreamStatus ?? "non disponibile"}`
       };
 
+    case "engine_unavailable":
+      return {
+        text: "Motore SH non disponibile — FastPharmaSOS non riesce temporaneamente a raggiungere SH-IntelligenceEngine. Nessuna richiesta è stata inoltrata all'AI.",
+        meta: "Componente: SH-IntelligenceEngine · riprova possibile"
+      };
+
+    case "engine_query_rejected":
+      return {
+        text: "Richiesta rifiutata dal validatore FastPharmaSOS — il comando proposto dal motore non è tra quelli autorizzati.",
+        meta: "Componente: validazione applicativa · nessuna AI chiamata"
+      };
+
     case "ai_orchestration_error":
       return {
         text: "Errore SERVER/AI — il provider ha risposto, ma il Server Harness non è riuscito a completare il ciclo di orchestrazione dei tool. Non è un errore del browser.",
@@ -242,6 +254,77 @@ async function explainFailure(error) {
   };
 }
 
+function showEngineCandidates(question, response) {
+  const candidates = Array.isArray(response?.candidates) ? response.candidates : [];
+  if (!candidates.length) return;
+
+  const item = document.createElement("div");
+  item.className = "message assistant";
+  item.style.width = "100%";
+  item.style.maxWidth = "100%";
+
+  const label = document.createElement("div");
+  label.className = "message-label";
+  label.textContent = "PROPOSTE";
+
+  const intro = document.createElement("div");
+  intro.textContent = "Forse intendevi una di queste richieste:";
+
+  const list = document.createElement("div");
+  list.className = "engine-candidates";
+
+  candidates.forEach(candidate => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "engine-candidate";
+    const percent = Math.round((candidate.similarity ?? 0) * 100);
+    button.textContent = `${candidate.text} · ${percent}%`;
+
+    button.addEventListener("click", async () => {
+      setBusy(true);
+      button.disabled = true;
+      const pending = addMessage("assistant", "Verifico la proposta scelta…");
+
+      try {
+        const confirmed = await confirmEngineCandidate(
+          question,
+          candidate.id,
+          response.failureId
+        );
+        pending.remove();
+
+        if (confirmed?.esito === "SUCCESS") {
+          item.remove();
+          addMessage(
+            "assistant",
+            confirmed.answer ?? "Richiesta eseguita.",
+            confirmed.queryId ? `Motore deterministico · ${confirmed.queryId}` : "Motore deterministico"
+          );
+        } else {
+          addMessage(
+            "assistant",
+            confirmed?.answer ?? "La proposta non ha superato la verifica deterministica.",
+            "Nessuna AI chiamata"
+          );
+        }
+      } catch (error) {
+        pending.remove();
+        const diagnostic = await explainFailure(error);
+        addMessage("error", diagnostic.text, diagnostic.meta);
+      } finally {
+        setBusy(false);
+        input.focus();
+      }
+    });
+
+    list.append(button);
+  });
+
+  item.append(label, intro, list);
+  messages.append(item);
+  messages.scrollTop = messages.scrollHeight;
+}
+
 async function sendMessage(message) {
   const clean = message.trim();
   if (!clean) return;
@@ -249,24 +332,35 @@ async function sendMessage(message) {
   addMessage("user", clean);
   input.value = "";
   setBusy(true);
-  const selectedProvider = providerSelect.value;
 
-  const pending = addMessage("assistant", `Sto elaborando la richiesta con ${providerSelect.selectedOptions[0]?.textContent ?? selectedProvider}…`);
+  const pending = addMessage("assistant", "Sto elaborando la richiesta…");
 
   try {
-    const response = await askAssistant(clean, selectedProvider);
+    const response = await askAssistant(clean);
     pending.remove();
 
-    const meta = [
-      response?.provider,
-      response?.model,
-      Number.isInteger(response?.toolIterations)
-        ? `${response.toolIterations} consultazioni archivio`
-        : null
-    ].filter(Boolean).join(" · ");
+    if (response?.esito === "SUCCESS") {
+      addMessage(
+        "assistant",
+        response.answer ?? "Richiesta eseguita.",
+        response.queryId ? `Motore deterministico · ${response.queryId}` : "Motore deterministico"
+      );
+      return;
+    }
 
-    addMessage("assistant", response?.answer ?? "Nessuna risposta disponibile.", meta);
-    refreshStatus();
+    if (response?.esito === "FAULT") {
+      addMessage(
+        "assistant",
+        response.answer ?? "Non sono riuscito a interpretare la richiesta.",
+        response.failureId
+          ? "Richiesta registrata · nessuna AI chiamata"
+          : "Nessuna AI chiamata"
+      );
+      showEngineCandidates(clean, response);
+      return;
+    }
+
+    throw new Error("Risposta del motore non riconosciuta.");
   } catch (error) {
     pending.remove();
     const diagnostic = await explainFailure(error);
