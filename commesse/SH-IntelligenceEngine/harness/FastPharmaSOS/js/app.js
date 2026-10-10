@@ -1,16 +1,23 @@
-import { askAi, getHealth, getModels, interpret } from "./api.js";
+import { confirmCandidate, getHealth, interpretHarness } from "./api.js";
 
 const $ = id => document.getElementById(id);
 const apiStatus = $("api-status");
 const detStatus = $("det-status");
-const aiStatus = $("ai-status");
 const messages = $("chat-messages");
 const form = $("chat-form");
 const input = $("chat-input");
 const sendButton = $("send-button");
-const modelSelect = $("ai-model");
-const forceReject = $("force-reject");
+const orderMode = $("order-mode");
+const topNInput = $("top-n");
 const quickButtons = [...document.querySelectorAll("[data-prompt]")];
+
+const allowedQueries = new Set([
+  "COUNT_PHARMACIES",
+  "LIST_PHARMACIES",
+  "LIST_PHARMACIES_BY_CITY",
+  "COUNT_PHARMACIES_BY_CITY",
+  "COUNT_OPEN_CASES"
+]);
 
 function setStatus(element, text, state = "ok") {
   element.textContent = text;
@@ -47,89 +54,116 @@ function addMessage(role, text, meta = "") {
 function setBusy(busy) {
   input.disabled = busy;
   sendButton.disabled = busy;
-  modelSelect.disabled = busy;
-  forceReject.disabled = busy;
+  orderMode.disabled = busy;
+  topNInput.disabled = busy;
   quickButtons.forEach(button => { button.disabled = busy; });
   sendButton.textContent = busy ? "Attendi…" : "Invia";
 }
 
 function validateCommand(response) {
-  if (forceReject.checked) {
-    return { valid: false, reason: "rifiuto forzato dal tester" };
-  }
-
   const command = response?.comando;
-  if (!command || command.tipo !== "COUNT" || command.entita !== "pratica") {
+
+  if (!command || command.tipo !== "QUERY" || !allowedQueries.has(command.queryId)) {
     return { valid: false, reason: "comando non ammesso dall'harness" };
   }
 
-  const openFilter = Array.isArray(command.filtri) && command.filtri.some(item =>
-    item?.campo === "stato" &&
-    item?.operatore === "equals" &&
-    item?.valore === "aperta"
-  );
-
-  if (!openFilter) {
-    return { valid: false, reason: "filtro non riconosciuto dalla commessa" };
-  }
-
-  return { valid: true, reason: "comando Hello FastPharmaSOS validato" };
+  return { valid: true, reason: `QUERY ${command.queryId} ammessa` };
 }
 
-async function refreshStatus() {
-  const [health, models] = await Promise.allSettled([getHealth(), getModels()]);
+function showSuccess(response) {
+  const validation = validateCommand(response);
 
-  setStatus(
-    apiStatus,
-    health.status === "fulfilled" ? "SH online" : "SH offline",
-    health.status === "fulfilled" ? "ok" : "error"
-  );
-
-  if (models.status === "fulfilled" && Array.isArray(models.value)) {
-    modelSelect.replaceChildren();
-    models.value
-      .filter(item => item.disponibile)
-      .forEach(item => {
-        const option = document.createElement("option");
-        option.value = item.id;
-        option.textContent = `${item.nome} · ${item.provider}`;
-        modelSelect.append(option);
-      });
-
-    if (modelSelect.options.length) {
-      setStatus(aiStatus, `${modelSelect.options.length} modello/i AI`, "ok");
-    } else {
-      const option = document.createElement("option");
-      option.value = "";
-      option.textContent = "Nessun modello";
-      modelSelect.append(option);
-      setStatus(aiStatus, "Nessun modello AI", "error");
-    }
-  } else {
-    modelSelect.innerHTML = '<option value="">Catalogo non disponibile</option>';
-    setStatus(aiStatus, "Catalogo AI offline", "error");
-  }
-
-  setStatus(detStatus, "Deterministico pronto", "ok");
-}
-
-async function fallbackToAi(originalQuestion, reason) {
-  const model = modelSelect.value;
-  if (!model) {
-    addMessage("diagnostic", "Fallback AI non eseguibile: nessun modello disponibile.", reason);
+  if (!validation.valid) {
+    setStatus(detStatus, "Comando rifiutato", "error");
+    addMessage("diagnostic", "Il validatore harness ha rifiutato il comando.", validation.reason);
     return;
   }
 
-  setStatus(aiStatus, "AI Gateway in corso…", "warn");
-  addMessage("diagnostic", "La commessa inoltra al gateway AI la domanda originale senza reinterpretazione.", reason);
-
-  const ai = await askAi(originalQuestion, model);
-  setStatus(aiStatus, "AI Gateway OK", "ok");
+  setStatus(detStatus, "SUCCESS locale", "ok");
   addMessage(
     "assistant",
-    ai?.risposta ?? "Nessuna risposta AI disponibile.",
-    [ai?.sorgente, ai?.modelloAi, "domanda originale inoltrata"].filter(Boolean).join(" · ")
+    "Interpretazione locale accettata. Nessuna AI utilizzata.",
+    [response.sorgente, response.regolaId, validation.reason].filter(Boolean).join(" · ")
   );
+  addMessage(
+    "diagnostic",
+    JSON.stringify(response.comando, null, 2),
+    Array.isArray(response.percorso) ? response.percorso.join(" → ") : "comando strutturato"
+  );
+}
+
+function showCandidates(originalQuestion, response) {
+  const candidates = Array.isArray(response?.candidati) ? response.candidati : [];
+  if (!candidates.length) return;
+
+  const item = document.createElement("div");
+  item.className = "message diagnostic candidate-box";
+
+  const label = document.createElement("div");
+  label.className = "message-label";
+  label.textContent = "SIMILITUDINE";
+
+  const intro = document.createElement("div");
+  intro.textContent = "Nessun match certo. Conferma un candidato se corrisponde a ciò che intendevi:";
+  item.append(label, intro);
+
+  const list = document.createElement("div");
+  list.className = "candidate-list";
+
+  candidates.forEach((candidate, index) => {
+    const row = document.createElement("button");
+    row.type = "button";
+    row.className = "candidate-button";
+    const percent = Math.round((candidate.similarita ?? 0) * 100);
+    row.textContent = `${index + 1}. ${candidate.formaCanonica} · ${percent}%`;
+
+    row.addEventListener("click", async () => {
+      setBusy(true);
+      try {
+        const confirmed = await confirmCandidate(
+          originalQuestion,
+          candidate.id,
+          response.fallimentoId
+        );
+
+        if (confirmed?.esito === "SUCCESS") {
+          item.remove();
+          showSuccess(confirmed);
+        } else {
+          addMessage(
+            "diagnostic",
+            confirmed?.risposta ?? "Conferma non accettata.",
+            candidate.id
+          );
+        }
+      } catch (error) {
+        addMessage(
+          "diagnostic",
+          `Errore durante la conferma: ${error?.message ?? "errore sconosciuto"}`
+        );
+      } finally {
+        setBusy(false);
+        input.focus();
+      }
+    });
+
+    list.append(row);
+  });
+
+  item.append(list);
+  messages.append(item);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+async function refreshStatus() {
+  try {
+    const health = await getHealth();
+    setStatus(apiStatus, `SH online · ${health.version ?? "versione?"}`, "ok");
+    setStatus(detStatus, "Motore locale pronto", "ok");
+  } catch {
+    setStatus(apiStatus, "SH offline", "error");
+    setStatus(detStatus, "Motore non disponibile", "error");
+  }
 }
 
 async function sendMessage(message) {
@@ -140,34 +174,34 @@ async function sendMessage(message) {
   input.value = "";
   setBusy(true);
 
-  const pending = addMessage("assistant", "Interrogazione del livello deterministico SH…");
+  const order = orderMode.value;
+  const topN = Math.max(1, Math.min(10, Number.parseInt(topNInput.value, 10) || 3));
+  const pending = addMessage(
+    "assistant",
+    "Ricerca locale in corso…",
+    `${order} · Top-${topN} · AI OFF`
+  );
 
   try {
-    const response = await interpret(clean, modelSelect.value);
+    const response = await interpretHarness(clean, order, topN);
     pending.remove();
 
     if (response?.esito === "SUCCESS") {
-      setStatus(detStatus, "SUCCESS da validare", "warn");
-      const validation = validateCommand(response);
-
-      if (validation.valid) {
-        setStatus(detStatus, "Comando validato", "ok");
-        addMessage(
-          "assistant",
-          "Interpretazione accettata dalla commessa. In produzione FastPharmaSOS eseguirebbe ora il comando sul proprio dominio dati.",
-          [response?.sorgente, response?.regolaId, validation.reason].filter(Boolean).join(" · ")
-        );
-        addMessage("diagnostic", JSON.stringify(response.comando, null, 2), "comando strutturato");
-      } else {
-        setStatus(detStatus, "Comando rifiutato", "error");
-        await fallbackToAi(clean, `SUCCESS rifiutato: ${validation.reason}`);
-      }
+      showSuccess(response);
       return;
     }
 
     if (response?.esito === "FAULT") {
-      setStatus(detStatus, "FAULT", "warn");
-      await fallbackToAi(clean, response?.risposta ?? "STRINGA_NON_INTERPRETATA");
+      setStatus(detStatus, "FAULT registrato", "warn");
+      addMessage(
+        "assistant",
+        response.risposta ?? "Richiesta non interpretata.",
+        [
+          response.fallimentoId ? `fallimento ${response.fallimentoId}` : null,
+          Array.isArray(response.percorso) ? response.percorso.join(" → ") : null
+        ].filter(Boolean).join(" · ")
+      );
+      showCandidates(clean, response);
       return;
     }
 
