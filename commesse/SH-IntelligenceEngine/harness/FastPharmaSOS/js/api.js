@@ -50,35 +50,34 @@ async function request(path, options = {}, timeoutMs = 30000) {
 
 export const getHealth = () => request("/health", {}, 15000);
 
-export const getModels = () =>
-  request("/api/v1/ai/modelli?programmazioneId=FastPharmaSOS", {}, 15000);
-
-export const interpret = (question, model) =>
+export const interpretHarness = (question, order, topN) =>
   request(
-    "/api/v1/interpreta",
+    "/api/v1/harness/interpreta",
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         programmazioneId: "FastPharmaSOS",
-        modelloAi: model || null,
-        domanda: question
+        domanda: question,
+        ordine: order,
+        topN
       })
     },
     60000
   );
 
-export const askAi = (question, model) =>
+export const confirmCandidate = (question, candidateId, failureId) =>
   request(
-    "/api/v1/ai",
+    "/api/v1/harness/conferma",
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         programmazioneId: "FastPharmaSOS",
-        modelloAi: model,
-        domanda: question
+        domandaOriginale: question,
+        candidateId,
+        fallimentoId: failureId || null
       })
     },
-    90000
+    60000
   );
