@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "generated_at": null,
+  "activities": [
+    {
+      "id": "6aca3c370ac4819188aa796576659c81",
+      "title": "Revisione oraria fallimenti SOS",
+      "project": "FastPharmaSOS",
+      "frequency": "Ogni ora",
+      "last_run_at": null,
+      "last_result": "NON_VERIFICATO",
+      "new_initial": null,
+      "new_final": null,
+      "implemented": null,
+      "vocabulary": null,
+      "discarded": null,
+      "note": "In attesa del primo aggiornamento verificabile dal registro privato."
+    }
+  ]
+}
