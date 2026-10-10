@@ -61,12 +61,22 @@ export const getAiHealth = provider => request(
   10000
 );
 export const getCommesse = () => request("/api/fastpharmasos/v1/commesse", {}, 15000);
-export const askAssistant = (message, provider) => request(
-  "/api/fastpharmasos/v1/chat",
+export const askAssistant = message => request(
+  "/api/fastpharmasos/v1/assistant/engine",
   {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message, commessaId: null, provider })
+    body: JSON.stringify({ message })
   },
-  90000
+  60000
+);
+
+export const confirmEngineCandidate = (message, candidateId, failureId) => request(
+  "/api/fastpharmasos/v1/assistant/engine/confirm",
+  {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message, candidateId, failureId: failureId || null })
+  },
+  60000
 );
