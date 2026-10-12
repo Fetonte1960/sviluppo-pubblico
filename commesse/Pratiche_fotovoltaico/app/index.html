@@ -144,7 +144,7 @@ for(const [scope,btnId,selectId] of [["client","delclient","clients"],["case","d
    if(typed!==id){if(typed!==null)alert("Identificativo non corrispondente: nessuna eliminazione.");return;}
    if(!confirm("Ultima conferma: eliminare definitivamente "+label+" e tutti gli elementi indicati?"))return;
    el(btnId).disabled=true;
-   await api("/api/v1/entities/"+scope+"/"+encodeURIComponent(id),{method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify({confirmId:id})});
+   await api("/api/v1/entities/"+scope+"/"+encodeURIComponent(id)+"?confirmId="+encodeURIComponent(id),{method:"DELETE"});
    await clients();el("refreshStatus").textContent="Eliminazione completata. Origine: "+label;
   }catch(e){alert("Eliminazione non riuscita: "+e.message);}
   finally{el(btnId).disabled=false;}
