@@ -1,3 +1,4 @@
+import { getCommesse } from "./api.js";
 const MAX_IMAGES = 24;
 const MAX_FILE_BYTES = 25 * 1024 * 1024;
 
@@ -54,11 +55,61 @@ export function initializeImageManager() {
   if (!fileInput || !clearButton || !gallery || !count || !status) return;
 
   const images = [];
-  let selectedPharmacy = "";
-
+  let selectedPharmacy = null;
+  const pharmacySelect = document.getElementById("image-pharmacy-select");
+  const pharmacyInfo = document.getElementById("image-pharmacy-target-info");
+  const pharmacyList = new Map();
+  const updateTarget = () => {
+    const valid = Boolean(selectedPharmacy?.id);
+    fileInput.disabled = !valid;
+    const addButton = document.querySelector('label[for="image-files"]');
+    if (addButton) {
+      addButton.classList.toggle("is-disabled", !valid);
+      addButton.setAttribute("aria-disabled", String(!valid));
+    }
+    pharmacyInfo.textContent = valid
+      ? [selectedPharmacy.codice, selectedPharmacy.nome, selectedPharmacy.localizzazione].filter(Boolean).join(" · ")
+      : "Nessuna farmacia selezionata. Selezionane una per aggiungere immagini.";
+    pharmacySelect.value = valid ? String(selectedPharmacy.id) : "";
+  };
   window.addEventListener("fastpharma:pharmacy-selected", event => {
-    selectedPharmacy = event.detail?.nome || "";
+    const item = event.detail;
+    selectedPharmacy = item?.id ? item : null;
+    updateTarget();
   });
+  pharmacySelect.addEventListener("change", () => {
+    const selected = pharmacyList.get(pharmacySelect.value) || null;
+    const archiveSelect = document.getElementById("pharmacy-select");
+    if (archiveSelect) {
+      if (selected && ![...archiveSelect.options].some(o => o.value === String(selected.id))) {
+        const option = document.createElement("option");
+        option.value = selected.id;
+        option.textContent = [selected.codice, selected.cliente || selected.titolo].filter(Boolean).join(" · ");
+        archiveSelect.append(option);
+      }
+      archiveSelect.value = selected ? String(selected.id) : "";
+      archiveSelect.dispatchEvent(new Event("change"));
+    }
+    selectedPharmacy = selected ? {
+      id: selected.id, codice: selected.codice,
+      nome: selected.cliente || selected.titolo,
+      localizzazione: selected.localizzazioneIntervento
+    } : null;
+    updateTarget();
+  });
+  getCommesse("").then(items => {
+    items.forEach(item => {
+      pharmacyList.set(String(item.id), item);
+      const option = document.createElement("option");
+      option.value = String(item.id);
+      option.textContent = [item.codice, item.cliente || item.titolo, item.localizzazioneIntervento].filter(Boolean).join(" · ");
+      pharmacySelect.append(option);
+    });
+    updateTarget();
+  }).catch(() => {
+    pharmacyInfo.textContent = "Impossibile caricare le farmacie. Ricaricare la pagina.";
+  });
+  updateTarget();
 
   const setStatus = message => {
     status.textContent = message;
@@ -125,7 +176,7 @@ export function initializeImageManager() {
       fields.className = "image-fields";
 
       fields.append(
-        createField("Farmacia / commessa", createTextInput("es. Farmacia Aurora", item.farmacia, value => { item.farmacia = value; })),
+        createField("Farmacia / commessa (associazione fissa)", createTextInput("", item.farmacia, () => {})),
         createField("Sopralluogo", createTextInput("es. Sopralluogo 17/10/2026", item.sopralluogo, value => { item.sopralluogo = value; })),
         createField("Locale", createTextInput("es. locale tecnico", item.locale, value => { item.locale = value; })),
         createField("Componente / apparato", createTextInput("es. quadro Q1", item.componente, value => { item.componente = value; })),
@@ -155,6 +206,8 @@ export function initializeImageManager() {
       const noteField = createField("Descrizione / note", description);
       noteField.classList.add("image-field-wide");
       fields.append(noteField);
+      const pharmacyField = fields.querySelector("input");
+      if (pharmacyField) pharmacyField.readOnly = true;
 
       card.append(preview, header, fields);
       gallery.append(card);
@@ -162,6 +215,11 @@ export function initializeImageManager() {
   };
 
   fileInput.addEventListener("change", () => {
+    if (!selectedPharmacy?.id) {
+      fileInput.value = "";
+      setStatus("Seleziona prima una farmacia destinataria.");
+      return;
+    }
     const selected = [...(fileInput.files ?? [])];
     let skipped = 0;
 
@@ -180,7 +238,9 @@ export function initializeImageManager() {
         id: crypto.randomUUID ? crypto.randomUUID() : `img-${Date.now()}-${Math.random()}`,
         file,
         objectUrl: URL.createObjectURL(file),
-        farmacia: selectedPharmacy,
+        farmaciaId: selectedPharmacy.id,
+        farmaciaCodice: selectedPharmacy.codice,
+        farmacia: [selectedPharmacy.codice, selectedPharmacy.nome].filter(Boolean).join(" · "),
         sopralluogo: "",
         locale: "",
         componente: "",
