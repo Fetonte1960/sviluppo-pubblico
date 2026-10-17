@@ -3,18 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Frontend minimale di collaudo PROGETTODUE per FastPharmaSOS.">
-  <title>PROGETTODUE · Assistente AI</title>
+  <meta name="description" content="Back-office di collaudo FastPharmaSOS per gestione archivi e immagini.">
+  <title>FastPharma SOS · Gestione archivi</title>
   <link rel="stylesheet" href="./css/app.css">
 </head>
 <body>
   <main class="page-shell">
     <header class="topbar">
       <div class="brand">
-        <span class="brand-mark" aria-hidden="true">P2</span>
+        <span class="brand-mark" aria-hidden="true">SOS</span>
         <div>
-          <strong>PROGETTODUE</strong>
-          <span>FastPharmaSOS · collaudo</span>
+          <strong>FastPharma SOS</strong>
+          <span>Gestione archivi · collaudo</span>
         </div>
       </div>
       <div class="system-status" aria-label="Stato servizi">
@@ -24,9 +24,42 @@
       </div>
     </header>
 
+    <nav class="admin-nav" aria-label="Navigazione gestione archivi">
+      <a href="./service-shell.html">← Servizio</a>
+      <a href="#image-management">Gestione immagini</a>
+    </nav>
+
     <div class="engine-caption">
       Motore deterministico SH attivo in background · sui fallimenti propone alternative senza interrogare l'AI.
     </div>
+
+    <section class="admin-card image-manager" id="image-management" aria-labelledby="image-management-title">
+      <div class="admin-heading">
+        <div>
+          <p class="eyebrow">Archivio sopralluoghi</p>
+          <h2 id="image-management-title">Gestione immagini</h2>
+        </div>
+        <div class="image-toolbar">
+          <label class="primary-action" for="image-files">Aggiungi immagini</label>
+          <input id="image-files" type="file" accept="image/*" multiple hidden>
+          <button id="image-clear" class="secondary-action" type="button">Svuota selezione</button>
+          <span id="image-count" class="image-count">0 immagini</span>
+        </div>
+      </div>
+
+      <p class="prototype-warning">
+        Prototipo locale: le immagini e i metadati restano soltanto in questa sessione del browser.
+        Nessun file viene ancora inviato al server o salvato in archivio.
+      </p>
+
+      <div id="image-manager-status" class="image-manager-status" aria-live="polite"></div>
+
+      <div id="image-gallery" class="image-gallery">
+        <div class="image-empty">
+          Seleziona fotografie di planimetrie, apparati, targhette, quadri, valvole o schemi.
+        </div>
+      </div>
+    </section>
 
     <section class="chat-card" aria-labelledby="chat-title">
       <div class="chat-heading">
@@ -68,7 +101,7 @@
     </section>
 
     <footer>
-      PROGETTODUE · prototipo FastPharmaSOS · nessun dato reale deve essere inserito in questa fase
+      FastPharma SOS · Gestione archivi · nessun dato reale deve essere inserito in questa fase
     </footer>
   </main>
 

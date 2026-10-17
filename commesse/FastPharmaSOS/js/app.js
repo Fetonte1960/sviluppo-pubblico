@@ -1,3 +1,4 @@
+import { initializeImageManager } from "./images.js";
 import { askAssistant, confirmEngineCandidate, getAiHealth, getCommesse, getDbHealth, getHealth } from "./api.js";
 
 const $ = id => document.getElementById(id);
@@ -392,4 +393,5 @@ providerSelect.addEventListener("change", () => {
   refreshStatus();
 });
 
+initializeImageManager();
 refreshStatus();
