@@ -127,6 +127,18 @@
           <span id="pharmacy-workspace-status" class="workspace-status" aria-live="polite"></span>
         </div>
 
+        <section id="pharmacy-catalog" class="pharmacy-catalog" aria-label="Elenco farmacie">
+          <div class="catalog-heading"><h3>Elenco farmacie</h3><span id="pharmacy-catalog-count"></span></div>
+          <div class="catalog-filters">
+            <label>Località <select id="pharmacy-filter-city"><option value="">Tutte le località</option></select></label>
+            <label>Stato <select id="pharmacy-filter-state"><option value="">Tutti gli stati</option></select></label>
+            <label>Ordina per <select id="pharmacy-sort"><option value="name">Nome A–Z</option><option value="city">Località A–Z</option><option value="code">Codice</option><option value="state">Stato</option></select></label>
+            <button id="pharmacy-reset-filters" type="button" class="secondary-action">Azzera filtri</button>
+          </div>
+          <div class="catalog-table-wrap"><table class="catalog-table"><thead><tr><th>Codice</th><th>Farmacia / cliente</th><th>Località</th><th>Stato</th><th></th></tr></thead><tbody id="pharmacy-catalog-rows"></tbody></table></div>
+        </section>
+        <div id="pharmacy-detail" hidden>
+        <button id="pharmacy-back-list" type="button" class="secondary-action pharmacy-back">← Torna all'elenco</button>
         <div class="archive-tabs" role="tablist" aria-label="Sezioni farmacia">
           <button type="button" class="archive-tab is-active" data-archive-tab="anagrafica">Anagrafica</button>
           <button type="button" class="archive-tab" data-archive-tab="sopralluoghi">Sopralluoghi</button>
@@ -201,6 +213,7 @@
           </section>
         </div>
 
+        </div>
         <p class="prototype-warning">
           Versione demo: la modifica anagrafica è locale alla sessione del browser. La protezione amministrativa e la persistenza delle modifiche sono rinviate.
           Non inserire dati reali o riservati.
