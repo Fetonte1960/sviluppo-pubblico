@@ -102,12 +102,30 @@ button {
   font-size: .75rem;
 }
 
+.archive-link,
 .account-button {
   border: 1px solid #31555e;
   border-radius: 999px;
   padding: 7px 12px;
-  color: #9bb7bb;
   background: #0a2027;
+}
+
+.archive-link {
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color .15s ease, background-color .15s ease, color .15s ease;
+}
+
+.archive-link:hover,
+.archive-link:focus-visible {
+  border-color: var(--accent);
+  background: #0d2930;
+  color: var(--accent);
+  outline: none;
+}
+
+.account-button {
+  color: #9bb7bb;
   opacity: .9;
 }
 
