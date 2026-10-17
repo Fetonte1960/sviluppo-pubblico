@@ -130,6 +130,64 @@ export function initializeArchiveWorkspace() {
   if (!select || !search || !searchButton || !newButton || !status) return;
 
   let currentItems = [];
+  let catalogItems = [];
+  let fetchSequence = 0;
+  const catalog = $("pharmacy-catalog");
+  const detailView = $("pharmacy-detail");
+  const city = $("pharmacy-filter-city");
+  const state = $("pharmacy-filter-state");
+  const sort = $("pharmacy-sort");
+  const rows = $("pharmacy-catalog-rows");
+  const showDetail = visible => { catalog.hidden = visible; detailView.hidden = !visible; };
+  const comparison = (a,b) => String(a || "").localeCompare(String(b || ""), "it", {numeric:true,sensitivity:"base"});
+  const updateChoices = (control, values) => {
+    const before = control.value;
+    control.length = 1;
+    [...new Set(values.filter(Boolean))].sort(comparison).forEach(value => control.add(new Option(value,value)));
+    control.value = [...control.options].some(option => option.value === before) ? before : "";
+  };
+  const renderCatalog = () => {
+    const filtered = catalogItems.filter(item =>
+      (!city.value || item.localizzazioneIntervento === city.value) &&
+      (!state.value || item.stato === state.value));
+    const field = {
+      name: item => item.cliente || item.titolo,
+      city: item => item.localizzazioneIntervento,
+      code: item => item.codice,
+      state: item => item.stato
+    }[sort.value] || (item => item.cliente || item.titolo);
+    filtered.sort((a,b) => comparison(field(a),field(b)) || comparison(a.codice,b.codice));
+    rows.replaceChildren();
+    $("pharmacy-catalog-count").textContent = filtered.length + " su " + catalogItems.length + " farmacie";
+    if (!filtered.length) {
+      const cell = rows.insertRow().insertCell();
+      cell.colSpan = 5;
+      cell.textContent = "Nessuna farmacia trovata.";
+    }
+    filtered.forEach(item => {
+      const tr = rows.insertRow();
+      [item.codice,item.cliente || item.titolo,item.localizzazioneIntervento,item.stato].forEach(value => {
+        tr.insertCell().textContent = value || "—";
+      });
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "secondary-action";
+      button.textContent = "Apri";
+      button.addEventListener("click", () => {
+        if (![...select.options].some(option => option.value === String(item.id))) fillSelect(catalogItems);
+        select.value = String(item.id);
+        loadSelected(item.id);
+      });
+      tr.insertCell().append(button);
+    });
+  };
+  [city,state,sort].forEach(control => control.addEventListener("change",renderCatalog));
+  $("pharmacy-reset-filters").addEventListener("click", () => {
+    city.value = ""; state.value = ""; sort.value = "name";
+    search.value = ""; loadItems("");
+  });
+  $("pharmacy-back-list").addEventListener("click", () => { select.value = ""; loadSelected(""); });
+
   let selectedItem = null;
   let originalItem = null;
   let newDraftMode = false;
@@ -209,13 +267,23 @@ export function initializeArchiveWorkspace() {
   };
 
   const loadItems = async query => {
+    const sequence = ++fetchSequence;
     status.textContent = "Caricamento…";
     try {
-      currentItems = await getCommesse(query);
+      const result = await getCommesse(query);
+      if (sequence !== fetchSequence) return;
+      currentItems = result;
+      catalogItems = result;
+      updateChoices(city,result.map(item => item.localizzazioneIntervento));
+      updateChoices(state,result.map(item => item.stato));
+      renderCatalog();
       fillSelect(currentItems);
       if (!query) updateDashboardMetrics(currentItems);
       status.textContent = `${currentItems.length} farmacie trovate`;
     } catch (error) {
+      if (sequence !== fetchSequence) return;
+      catalogItems = [];
+      renderCatalog();
       fillSelect([]);
       status.textContent = "Archivio non raggiungibile";
       console.error(error);
@@ -224,6 +292,7 @@ export function initializeArchiveWorkspace() {
 
   const loadSelected = async id => {
     if (!id) {
+      showDetail(false);
       selectedItem = null;
       originalItem = null;
       newDraftMode = false;
@@ -258,6 +327,8 @@ export function initializeArchiveWorkspace() {
       renderDocuments(documents, docs);
       renderInteractions(interactions, timeline);
       emitSelection(detail);
+      showDetail(true);
+      showTab("anagrafica");
       status.textContent = [detail.codice, detail.cliente || detail.titolo].filter(Boolean).join(" · ");
     } catch (error) {
       status.textContent = "Errore durante l'apertura della farmacia";
@@ -317,6 +388,7 @@ export function initializeArchiveWorkspace() {
 
   newButton.addEventListener("click", () => {
     newDraftMode = true;
+    showDetail(true);
     editMode = false;
     selectedItem = null;
     originalItem = null;
@@ -355,5 +427,6 @@ export function initializeArchiveWorkspace() {
     });
   });
 
+  showDetail(false);
   loadItems("");
 }
