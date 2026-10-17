@@ -13,8 +13,10 @@ function setValue(id, value) {
 }
 
 function setReadonly(readonly) {
+  const code = $("pharmacy-code");
+  if (code) code.readOnly = true;
+
   [
-    "pharmacy-code",
     "pharmacy-name",
     "pharmacy-location",
     "pharmacy-state",
@@ -118,6 +120,8 @@ export function initializeArchiveWorkspace() {
   const status = $("pharmacy-workspace-status");
   const documents = $("pharmacy-documents");
   const interactions = $("pharmacy-interactions");
+  const editButton = $("edit-pharmacy");
+  const cancelEditButton = $("cancel-pharmacy-edit");
   const saveDraft = $("save-pharmacy-draft");
   const modeNote = $("pharmacy-mode-note");
   const tabs = [...document.querySelectorAll("[data-archive-tab]")];
@@ -127,7 +131,10 @@ export function initializeArchiveWorkspace() {
 
   let currentItems = [];
   let selectedItem = null;
+  let originalItem = null;
   let newDraftMode = false;
+  let editMode = false;
+  const localEdits = new Map();
 
   const showTab = name => {
     tabs.forEach(button => button.classList.toggle("is-active", button.dataset.archiveTab === name));
@@ -156,6 +163,22 @@ export function initializeArchiveWorkspace() {
     });
   };
 
+  const updateEditControls = () => {
+    editButton.disabled = !selectedItem || newDraftMode || editMode;
+    editButton.hidden = newDraftMode || editMode;
+    cancelEditButton.hidden = !editMode;
+    saveDraft.hidden = !editMode;
+  };
+
+  const readForm = () => ({
+    ...selectedItem,
+    cliente: $("pharmacy-name")?.value ?? "",
+    localizzazioneIntervento: $("pharmacy-location")?.value ?? "",
+    stato: $("pharmacy-state")?.value ?? "",
+    responsabile: $("pharmacy-owner")?.value ?? "",
+    descrizione: $("pharmacy-description")?.value ?? ""
+  });
+
   const populateForm = item => {
     setValue("pharmacy-code", item?.codice);
     setValue("pharmacy-name", item?.cliente || item?.titolo);
@@ -181,10 +204,12 @@ export function initializeArchiveWorkspace() {
   const loadSelected = async id => {
     if (!id) {
       selectedItem = null;
+      originalItem = null;
       newDraftMode = false;
+      editMode = false;
       populateForm(null);
       setReadonly(true);
-      saveDraft.disabled = true;
+      updateEditControls();
       modeNote.textContent = "Seleziona una farmacia esistente oppure crea una nuova bozza locale.";
       clearList(documents, "Seleziona una farmacia per leggere i documenti già presenti.");
       clearList(interactions, "Seleziona una farmacia per leggere la cronologia disponibile.");
@@ -193,8 +218,8 @@ export function initializeArchiveWorkspace() {
     }
 
     newDraftMode = false;
+    editMode = false;
     setReadonly(true);
-    saveDraft.disabled = true;
     modeNote.textContent = "Dati letti da Neon tramite API FastPharmaSOS.";
 
     try {
@@ -205,8 +230,10 @@ export function initializeArchiveWorkspace() {
         getCommessaInterazioni(id)
       ]);
 
-      selectedItem = detail;
-      populateForm(detail);
+      selectedItem = localEdits.get(detail.id) ?? detail;
+      originalItem = JSON.parse(JSON.stringify(selectedItem));
+      populateForm(selectedItem);
+      updateEditControls();
       renderDocuments(documents, docs);
       renderInteractions(interactions, timeline);
       emitSelection(detail);
@@ -216,6 +243,40 @@ export function initializeArchiveWorkspace() {
       console.error(error);
     }
   };
+
+  editButton.addEventListener("click", () => {
+    if (!selectedItem) return;
+    originalItem = JSON.parse(JSON.stringify(selectedItem));
+    editMode = true;
+    setReadonly(false);
+    $("pharmacy-code").readOnly = true;
+    updateEditControls();
+    modeNote.textContent = "Modifica demo attiva: le variazioni restano solo in questa sessione.";
+    $("pharmacy-name")?.focus();
+  });
+
+  cancelEditButton.addEventListener("click", () => {
+    if (!originalItem) return;
+    selectedItem = JSON.parse(JSON.stringify(originalItem));
+    populateForm(selectedItem);
+    editMode = false;
+    setReadonly(true);
+    updateEditControls();
+    modeNote.textContent = "Modifiche annullate.";
+  });
+
+  saveDraft.addEventListener("click", () => {
+    if (!editMode || !selectedItem?.id) return;
+    selectedItem = readForm();
+    localEdits.set(selectedItem.id, JSON.parse(JSON.stringify(selectedItem)));
+    originalItem = JSON.parse(JSON.stringify(selectedItem));
+    editMode = false;
+    setReadonly(true);
+    updateEditControls();
+    modeNote.textContent = "Modifica demo applicata nella sessione del browser.";
+    status.textContent = [selectedItem.codice, selectedItem.cliente || selectedItem.titolo, "modifica locale"].filter(Boolean).join(" · ");
+    emitSelection(selectedItem);
+  });
 
   searchButton.addEventListener("click", () => loadItems(search.value.trim()));
 
@@ -230,7 +291,9 @@ export function initializeArchiveWorkspace() {
 
   newButton.addEventListener("click", () => {
     newDraftMode = true;
+    editMode = false;
     selectedItem = null;
+    originalItem = null;
     select.value = "";
     populateForm({
       codice: "",
@@ -241,7 +304,7 @@ export function initializeArchiveWorkspace() {
       descrizione: ""
     });
     setReadonly(false);
-    saveDraft.disabled = true;
+    updateEditControls();
     modeNote.textContent = "Nuova farmacia: bozza locale non ancora salvata nel database.";
     status.textContent = "Bozza locale";
     clearList(documents, "I documenti saranno collegabili dopo la creazione della farmacia nel database.");

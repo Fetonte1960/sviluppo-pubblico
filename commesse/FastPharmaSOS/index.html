@@ -86,7 +86,11 @@
           </div>
           <div class="draft-actions">
             <span id="pharmacy-mode-note">Seleziona una farmacia esistente oppure crea una nuova bozza locale.</span>
-            <button id="save-pharmacy-draft" class="primary-action" type="button" disabled>Salvataggio DB non ancora abilitato</button>
+            <div class="record-actions">
+              <button id="edit-pharmacy" class="secondary-action" type="button" disabled>Modifica</button>
+              <button id="cancel-pharmacy-edit" class="secondary-action" type="button" hidden>Annulla</button>
+              <button id="save-pharmacy-draft" class="primary-action" type="button" hidden>Applica modifica demo</button>
+            </div>
           </div>
         </section>
 
@@ -134,8 +138,8 @@
       </div>
 
       <p class="prototype-warning">
-        Fase attuale: lettura reale dei dati sintetici da Neon; una nuova farmacia viene preparata come bozza locale ma non viene ancora scritta nel database.
-        Le scritture verranno abilitate solo tramite API FastPharmaSOS, non direttamente dal browser.
+        Versione demo: puoi selezionare una farmacia e usare Modifica per provare l'editing dell'anagrafica.
+        Le modifiche restano nella sessione del browser e non alterano Neon; la persistenza verrà collegata in una fase successiva.
       </p>
     </section>
 
