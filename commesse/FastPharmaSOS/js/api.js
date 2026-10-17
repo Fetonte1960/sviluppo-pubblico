@@ -60,7 +60,14 @@ export const getAiHealth = provider => request(
   {},
   10000
 );
-export const getCommesse = () => request("/api/fastpharmasos/v1/commesse", {}, 15000);
+export const getCommesse = q => request(
+  `/api/fastpharmasos/v1/commesse${q ? `?q=${encodeURIComponent(q)}` : ""}`,
+  {},
+  15000
+);
+export const getCommessa = id => request(`/api/fastpharmasos/v1/commesse/${encodeURIComponent(id)}`, {}, 15000);
+export const getCommessaDocumenti = id => request(`/api/fastpharmasos/v1/commesse/${encodeURIComponent(id)}/documenti`, {}, 15000);
+export const getCommessaInterazioni = id => request(`/api/fastpharmasos/v1/commesse/${encodeURIComponent(id)}/interazioni?limit=100`, {}, 15000);
 export const askAssistant = message => request(
   "/api/fastpharmasos/v1/assistant/engine",
   {

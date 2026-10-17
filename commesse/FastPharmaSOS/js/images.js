@@ -54,6 +54,11 @@ export function initializeImageManager() {
   if (!fileInput || !clearButton || !gallery || !count || !status) return;
 
   const images = [];
+  let selectedPharmacy = "";
+
+  window.addEventListener("fastpharma:pharmacy-selected", event => {
+    selectedPharmacy = event.detail?.nome || "";
+  });
 
   const setStatus = message => {
     status.textContent = message;
@@ -173,7 +178,7 @@ export function initializeImageManager() {
         id: crypto.randomUUID ? crypto.randomUUID() : `img-${Date.now()}-${Math.random()}`,
         file,
         objectUrl: URL.createObjectURL(file),
-        farmacia: "",
+        farmacia: selectedPharmacy,
         sopralluogo: "",
         locale: "",
         componente: "",

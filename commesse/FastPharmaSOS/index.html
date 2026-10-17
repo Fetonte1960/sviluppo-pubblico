@@ -33,6 +33,112 @@
       Motore deterministico SH attivo in background · sui fallimenti propone alternative senza interrogare l'AI.
     </div>
 
+    <section class="admin-card archive-workspace" id="archive-workspace" aria-labelledby="archive-workspace-title">
+      <div class="admin-heading">
+        <div>
+          <p class="eyebrow">Popolamento database</p>
+          <h2 id="archive-workspace-title">Farmacie / commesse</h2>
+        </div>
+        <div class="archive-toolbar">
+          <input id="pharmacy-search" type="search" placeholder="Cerca farmacia, codice o città…" aria-label="Cerca farmacia">
+          <button id="pharmacy-search-button" class="secondary-action" type="button">Cerca</button>
+          <button id="new-pharmacy" class="primary-action" type="button">Nuova farmacia</button>
+        </div>
+      </div>
+
+      <div class="population-flow" aria-label="Flusso di popolamento">
+        <span>1 · Anagrafica</span>
+        <span>2 · Sopralluoghi</span>
+        <span>3 · Documenti</span>
+        <span>4 · Immagini</span>
+        <span>5 · Locali e componenti</span>
+        <span>6 · Impianti / relazioni</span>
+        <span>7 · Revisione</span>
+      </div>
+
+      <div class="archive-selector">
+        <label for="pharmacy-select">Farmacia selezionata</label>
+        <select id="pharmacy-select">
+          <option value="">Caricamento farmacie…</option>
+        </select>
+        <span id="pharmacy-workspace-status" class="workspace-status" aria-live="polite"></span>
+      </div>
+
+      <div class="archive-tabs" role="tablist" aria-label="Sezioni farmacia">
+        <button type="button" class="archive-tab is-active" data-archive-tab="anagrafica">Anagrafica</button>
+        <button type="button" class="archive-tab" data-archive-tab="sopralluoghi">Sopralluoghi</button>
+        <button type="button" class="archive-tab" data-archive-tab="documenti">Documenti</button>
+        <button type="button" class="archive-tab" data-archive-tab="immagini">Immagini</button>
+        <button type="button" class="archive-tab" data-archive-tab="locali">Locali e componenti</button>
+        <button type="button" class="archive-tab" data-archive-tab="impianti">Impianti / relazioni</button>
+        <button type="button" class="archive-tab" data-archive-tab="cronologia">Cronologia</button>
+      </div>
+
+      <div class="archive-panels">
+        <section class="archive-panel is-active" data-archive-panel="anagrafica">
+          <div class="data-grid">
+            <label>Codice<input id="pharmacy-code" type="text" readonly></label>
+            <label>Farmacia / cliente<input id="pharmacy-name" type="text" readonly></label>
+            <label>Località<input id="pharmacy-location" type="text" readonly></label>
+            <label>Stato<input id="pharmacy-state" type="text" readonly></label>
+            <label>Responsabile<input id="pharmacy-owner" type="text" readonly></label>
+            <label class="span-2">Descrizione<textarea id="pharmacy-description" rows="4" readonly></textarea></label>
+          </div>
+          <div class="draft-actions">
+            <span id="pharmacy-mode-note">Seleziona una farmacia esistente oppure crea una nuova bozza locale.</span>
+            <button id="save-pharmacy-draft" class="primary-action" type="button" disabled>Salvataggio DB non ancora abilitato</button>
+          </div>
+        </section>
+
+        <section class="archive-panel" data-archive-panel="sopralluoghi">
+          <div class="module-placeholder">
+            <strong>Sopralluoghi</strong>
+            <span>Qui verranno registrati data, tecnico, stato e note di ogni visita. La farmacia potrà avere più sopralluoghi senza sovrascrivere lo storico.</span>
+            <button type="button" class="secondary-action" disabled>Nuovo sopralluogo · prossima fase</button>
+          </div>
+        </section>
+
+        <section class="archive-panel" data-archive-panel="documenti">
+          <div id="pharmacy-documents" class="archive-list">
+            <div class="module-placeholder">Seleziona una farmacia per leggere i documenti già presenti.</div>
+          </div>
+        </section>
+
+        <section class="archive-panel" data-archive-panel="immagini">
+          <div class="module-placeholder">
+            <strong>Immagini della farmacia</strong>
+            <span>Le fotografie vengono catalogate per sopralluogo, locale e componente.</span>
+            <a class="primary-action inline-link" href="#image-management">Apri Gestione immagini</a>
+          </div>
+        </section>
+
+        <section class="archive-panel" data-archive-panel="locali">
+          <div class="module-placeholder">
+            <strong>Locali e componenti</strong>
+            <span>Struttura prevista: locale → componente/apparato → posizione fisica. La persistenza verrà collegata dopo la definizione dello schema definitivo.</span>
+          </div>
+        </section>
+
+        <section class="archive-panel" data-archive-panel="impianti">
+          <div class="module-placeholder">
+            <strong>Impianti / relazioni funzionali</strong>
+            <span>Le relazioni funzionali resteranno separate dalla posizione fisica: collegamenti elettrici, idraulici, FV/off-grid e dipendenze fra apparati.</span>
+          </div>
+        </section>
+
+        <section class="archive-panel" data-archive-panel="cronologia">
+          <div id="pharmacy-interactions" class="archive-list">
+            <div class="module-placeholder">Seleziona una farmacia per leggere la cronologia disponibile.</div>
+          </div>
+        </section>
+      </div>
+
+      <p class="prototype-warning">
+        Fase attuale: lettura reale dei dati sintetici da Neon; una nuova farmacia viene preparata come bozza locale ma non viene ancora scritta nel database.
+        Le scritture verranno abilitate solo tramite API FastPharmaSOS, non direttamente dal browser.
+      </p>
+    </section>
+
     <section class="admin-card image-manager" id="image-management" aria-labelledby="image-management-title">
       <div class="admin-heading">
         <div>

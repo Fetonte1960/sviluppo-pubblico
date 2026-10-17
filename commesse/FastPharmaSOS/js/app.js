@@ -1,3 +1,4 @@
+import { initializeArchiveWorkspace } from "./archive.js";
 import { initializeImageManager } from "./images.js";
 import { askAssistant, confirmEngineCandidate, getAiHealth, getCommesse, getDbHealth, getHealth } from "./api.js";
 
@@ -399,5 +400,6 @@ providerSelect.addEventListener("change", () => {
   refreshStatus();
 });
 
+initializeArchiveWorkspace();
 initializeImageManager();
 refreshStatus();
