@@ -59,6 +59,20 @@ export function initializeImageManager() {
   const pharmacySelect = document.getElementById("image-pharmacy-select");
   const pharmacyInfo = document.getElementById("image-pharmacy-target-info");
   const pharmacyList = new Map();
+  const ensureOption = item => {
+    if (!item?.id) return;
+    pharmacyList.set(String(item.id), item);
+    if (![...pharmacySelect.options].some(option => option.value === String(item.id))) {
+      const option = document.createElement("option");
+      option.value = String(item.id);
+      option.textContent = [item.codice,item.cliente || item.titolo,item.localizzazioneIntervento].filter(Boolean).join(" · ");
+      pharmacySelect.append(option);
+    }
+  };
+  window.addEventListener("fastpharma:demo-pharmacies", event => {
+    (event.detail || []).forEach(ensureOption);
+    updateTarget();
+  });
   const updateTarget = () => {
     const valid = Boolean(selectedPharmacy?.id);
     fileInput.disabled = !valid;
@@ -75,7 +89,11 @@ export function initializeImageManager() {
   window.addEventListener("fastpharma:pharmacy-selected", event => {
     const item = event.detail;
     selectedPharmacy = item?.id ? item : null;
+    if (selectedPharmacy && !pharmacyList.has(String(selectedPharmacy.id))) {
+      ensureOption({id:item.id,codice:item.codice,cliente:item.nome,localizzazioneIntervento:item.localizzazione});
+    }
     updateTarget();
+    render();
   });
   pharmacySelect.addEventListener("change", () => {
     const selected = pharmacyList.get(pharmacySelect.value) || null;
@@ -98,13 +116,7 @@ export function initializeImageManager() {
     updateTarget();
   });
   getCommesse("").then(items => {
-    items.forEach(item => {
-      pharmacyList.set(String(item.id), item);
-      const option = document.createElement("option");
-      option.value = String(item.id);
-      option.textContent = [item.codice, item.cliente || item.titolo, item.localizzazioneIntervento].filter(Boolean).join(" · ");
-      pharmacySelect.append(option);
-    });
+    items.forEach(ensureOption);
     updateTarget();
   }).catch(() => {
     pharmacyInfo.textContent = "Impossibile caricare le farmacie. Ricaricare la pagina.";
@@ -130,12 +142,17 @@ export function initializeImageManager() {
 
   const render = () => {
     gallery.replaceChildren();
-    count.textContent = `${images.length} ${images.length === 1 ? "immagine" : "immagini"}`;
+    const visibleImages = images.filter(item => item.farmaciaId === selectedPharmacy?.id);
+    count.textContent = visibleImages.length + " della farmacia · " + images.length + " nella sessione";
+    const hint = document.getElementById("image-visibility-hint");
+    if (hint) hint.textContent = selectedPharmacy?.id
+      ? "Visualizzate solo le foto associate alla farmacia attiva. Le altre restano nella sessione."
+      : "Seleziona una farmacia per visualizzare le sue foto.";
     const metric = document.getElementById("metric-images");
     if (metric) metric.textContent = String(images.length);
     clearButton.disabled = images.length === 0;
 
-    if (!images.length) {
+    if (!visibleImages.length) {
       const empty = document.createElement("div");
       empty.className = "image-empty";
       empty.textContent = "Seleziona fotografie di planimetrie, apparati, targhette, quadri, valvole o schemi.";
@@ -143,7 +160,7 @@ export function initializeImageManager() {
       return;
     }
 
-    images.forEach(item => {
+    visibleImages.forEach(item => {
       const card = document.createElement("article");
       card.className = "image-card";
 
@@ -262,6 +279,7 @@ export function initializeImageManager() {
   });
 
   clearButton.addEventListener("click", () => {
+    if (!images.length || !window.confirm("Rimuovere tutte le fotografie temporanee della sessione?")) return;
     images.forEach(releaseImage);
     images.splice(0, images.length);
     setStatus("Selezione locale svuotata.");
