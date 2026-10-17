@@ -198,3 +198,22 @@ footer{text-align:center;color:#64748b;font-size:11px;margin-top:18px}
   .archive-summary{text-align:left}
   .message{max-width:94%}
 }
+
+/* Elenco iniziale farmacie */
+.pharmacy-catalog{margin-top:20px}
+.pharmacy-catalog[hidden],#pharmacy-detail[hidden]{display:none!important}
+.catalog-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.catalog-heading h3{font-size:19px;margin:0}
+.catalog-heading span{color:var(--muted);font-size:13px}
+.catalog-filters{display:flex;align-items:end;flex-wrap:wrap;gap:12px;margin-bottom:16px}
+.catalog-filters label{display:grid;gap:6px;min-width:185px;flex:1;color:#cbd5e1;font-size:13px}
+.catalog-filters select{width:100%;background:var(--panel-2);color:var(--text);border:1px solid var(--line-soft);border-radius:9px;padding:10px}
+.catalog-table-wrap{width:100%;overflow-x:auto;max-height:540px;overflow-y:auto;border:1px solid var(--line);border-radius:11px}
+.catalog-table{width:100%;border-collapse:collapse;text-align:left;font-size:13px}
+.catalog-table th{position:sticky;top:0;background:#1e293b;color:#e2e8f0;font-weight:700}
+.catalog-table td,.catalog-table th{padding:11px 13px;border-bottom:1px solid var(--line)}
+.catalog-table tr:hover td{background:#172033}
+.catalog-table td:last-child{text-align:right}
+.catalog-table .secondary-action{padding:7px 12px}
+.pharmacy-back{margin:15px 0}
+@media(max-width:650px){.catalog-filters label{min-width:100%}}
