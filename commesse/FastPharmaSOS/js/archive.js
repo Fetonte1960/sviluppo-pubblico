@@ -193,6 +193,10 @@ export function initializeArchiveWorkspace() {
   let newDraftMode = false;
   let editMode = false;
   const localEdits = new Map();
+  const demoPharmacies = new Map();
+  const confirmNew = $("confirm-new-pharmacy");
+  const combinedItems = items => [...items, ...demoPharmacies.values()];
+  const notifyDemoList = () => window.dispatchEvent(new CustomEvent("fastpharma:demo-pharmacies", {detail:[...demoPharmacies.values()]}));
 
   const showTab = name => {
     tabs.forEach(button => button.classList.toggle("is-active", button.dataset.archiveTab === name));
@@ -223,6 +227,7 @@ export function initializeArchiveWorkspace() {
 
   const updateEditControls = () => {
     editButton.disabled = !selectedItem || newDraftMode || editMode;
+    confirmNew.hidden = !newDraftMode;
     editButton.hidden = newDraftMode || editMode;
     cancelEditButton.hidden = !editMode;
     saveDraft.hidden = !editMode;
@@ -273,11 +278,11 @@ export function initializeArchiveWorkspace() {
       const result = await getCommesse(query);
       if (sequence !== fetchSequence) return;
       currentItems = result;
-      catalogItems = result;
-      updateChoices(city,result.map(item => item.localizzazioneIntervento));
-      updateChoices(state,result.map(item => item.stato));
+      catalogItems = combinedItems(result);
+      updateChoices(city,catalogItems.map(item => item.localizzazioneIntervento));
+      updateChoices(state,catalogItems.map(item => item.stato));
       renderCatalog();
-      fillSelect(currentItems);
+      fillSelect(catalogItems);
       if (!query) updateDashboardMetrics(currentItems);
       status.textContent = `${currentItems.length} farmacie trovate`;
     } catch (error) {
@@ -310,6 +315,20 @@ export function initializeArchiveWorkspace() {
     newDraftMode = false;
     editMode = false;
     setReadonly(true);
+    if (demoPharmacies.has(String(id))) {
+      selectedItem = localEdits.get(String(id)) ?? demoPharmacies.get(String(id));
+      originalItem = JSON.parse(JSON.stringify(selectedItem));
+      populateForm(selectedItem);
+      updateEditControls();
+      clearList(documents, "Farmacia demo locale: nessun documento.");
+      clearList(interactions, "Farmacia demo locale: nessuna cronologia.");
+      emitSelection(selectedItem);
+      showDetail(true);
+      showTab("anagrafica");
+      status.textContent = selectedItem.codice + " · DEMO locale";
+      modeNote.textContent = "Bozza locale, non presente in Neon.";
+      return;
+    }
     modeNote.textContent = "Dati letti da Neon tramite API FastPharmaSOS.";
 
     try {
@@ -415,6 +434,37 @@ export function initializeArchiveWorkspace() {
     });
     showTab("anagrafica");
     $("pharmacy-name")?.focus();
+  });
+
+  confirmNew.addEventListener("click", () => {
+    if (!newDraftMode) return;
+    const name = $("pharmacy-name").value.trim();
+    const location = $("pharmacy-location").value.trim();
+    if (!name || !location) {
+      modeNote.textContent = "Inserisci farmacia/cliente e località prima di confermare.";
+      return;
+    }
+    const id = "demo-" + (crypto.randomUUID ? crypto.randomUUID() : Date.now());
+    const code = "LOCAL-" + String(demoPharmacies.size + 1).padStart(3, "0");
+    const draft = {...readForm(), id, codice:code, cliente:name, localizzazioneIntervento:location, stato:"BOZZA DEMO"};
+    demoPharmacies.set(id, draft);
+    newDraftMode = false;
+    selectedItem = draft;
+    originalItem = JSON.parse(JSON.stringify(draft));
+    populateForm(draft);
+    setReadonly(true);
+    updateEditControls();
+    catalogItems = combinedItems(currentItems);
+    fillSelect(catalogItems);
+    select.value = id;
+    updateChoices(city,catalogItems.map(item => item.localizzazioneIntervento));
+    updateChoices(state,catalogItems.map(item => item.stato));
+    renderCatalog();
+    notifyDemoList();
+    emitSelection(draft);
+    modeNote.textContent = "Bozza demo confermata nella sessione: puoi aggiungere immagini. Nessuna scrittura Neon.";
+    status.textContent = code + " · " + name + " · locale";
+    showTab("immagini");
   });
 
   $("pharmacy-name")?.addEventListener("input", event => {
