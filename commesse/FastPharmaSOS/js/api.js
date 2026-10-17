@@ -68,7 +68,7 @@ export const askAssistant = message => request(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ message })
   },
-  60000
+  120000
 );
 
 export const confirmEngineCandidate = (message, candidateId, failureId) => request(
@@ -78,5 +78,5 @@ export const confirmEngineCandidate = (message, candidateId, failureId) => reque
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ message, candidateId, failureId: failureId || null })
   },
-  60000
+  120000
 );

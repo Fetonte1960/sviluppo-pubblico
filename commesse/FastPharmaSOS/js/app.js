@@ -198,10 +198,16 @@ async function explainFailure(error) {
         meta: `Componente: AI · upstream HTTP ${body.upstreamStatus ?? "non disponibile"}`
       };
 
+    case "engine_wakeup_timeout":
+      return {
+        text: "Motore SH in risveglio — il servizio gratuito era inattivo e non è riuscito ad avviarsi entro il tempo di attesa. FastPharmaSOS ha già effettuato più tentativi. Attendi qualche secondo e riprova.",
+        meta: "Componente: SH-IntelligenceEngine · cold start Render · nessuna AI chiamata"
+      };
+
     case "engine_unavailable":
       return {
-        text: "Motore SH non disponibile — FastPharmaSOS non riesce temporaneamente a raggiungere SH-IntelligenceEngine. Nessuna richiesta è stata inoltrata all'AI.",
-        meta: "Componente: SH-IntelligenceEngine · riprova possibile"
+        text: "Motore SH non disponibile — FastPharmaSOS ha raggiunto il servizio, ma la chiamata al motore non è andata a buon fine. Nessuna richiesta è stata inoltrata all'AI.",
+        meta: "Componente: SH-IntelligenceEngine · errore dopo il risveglio · riprova possibile"
       };
 
     case "engine_query_rejected":
