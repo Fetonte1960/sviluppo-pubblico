@@ -80,6 +80,8 @@ export function initializeImageManager() {
   const render = () => {
     gallery.replaceChildren();
     count.textContent = `${images.length} ${images.length === 1 ? "immagine" : "immagini"}`;
+    const metric = document.getElementById("metric-images");
+    if (metric) metric.textContent = String(images.length);
     clearButton.disabled = images.length === 0;
 
     if (!images.length) {

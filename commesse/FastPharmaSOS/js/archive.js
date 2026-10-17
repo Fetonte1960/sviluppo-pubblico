@@ -188,11 +188,32 @@ export function initializeArchiveWorkspace() {
     setValue("pharmacy-description", item?.descrizione);
   };
 
+  const updateDashboardMetrics = items => {
+    const total = document.getElementById("metric-pharmacies");
+    const open = document.getElementById("metric-open");
+    const locations = document.getElementById("metric-locations");
+
+    if (total) total.textContent = String(items.length);
+    if (open) {
+      open.textContent = String(items.filter(item =>
+        String(item.stato || "").toLowerCase() === "aperta"
+      ).length);
+    }
+    if (locations) {
+      locations.textContent = String(new Set(
+        items
+          .map(item => String(item.localizzazioneIntervento || "").trim().toLowerCase())
+          .filter(Boolean)
+      ).size);
+    }
+  };
+
   const loadItems = async query => {
     status.textContent = "Caricamento…";
     try {
       currentItems = await getCommesse(query);
       fillSelect(currentItems);
+      if (!query) updateDashboardMetrics(currentItems);
       status.textContent = `${currentItems.length} farmacie trovate`;
     } catch (error) {
       fillSelect([]);
@@ -288,6 +309,11 @@ export function initializeArchiveWorkspace() {
   });
 
   select.addEventListener("change", () => loadSelected(select.value));
+
+  window.addEventListener("fastpharma:refresh-archive", () => {
+    search.value = "";
+    loadItems("");
+  });
 
   newButton.addEventListener("click", () => {
     newDraftMode = true;

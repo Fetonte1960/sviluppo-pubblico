@@ -3,215 +3,303 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Back-office di collaudo FastPharmaSOS per gestione archivi e immagini.">
-  <title>FastPharma SOS · Gestione archivi</title>
+  <meta name="description" content="Dashboard demo FastPharmaSOS per gestione archivi, immagini e assistente SOS.">
+  <title>FastPharma SOS · Gestionale demo</title>
   <link rel="stylesheet" href="./css/app.css">
 </head>
 <body>
-  <main class="page-shell">
-    <header class="topbar">
-      <div class="brand">
-        <span class="brand-mark" aria-hidden="true">SOS</span>
-        <div>
-          <strong>FastPharma SOS</strong>
-          <span>Gestione archivi · collaudo</span>
-        </div>
+  <header class="topbar">
+    <div class="topbar-brand">
+      <span class="brand-mark" aria-hidden="true">SOS</span>
+      <div>
+        <strong>FastPharma SOS</strong>
+        <span>Gestionale demo</span>
       </div>
-      <div class="system-status" aria-label="Stato servizi">
-        <span id="api-status" class="status-pill">API…</span>
-        <span id="ai-status" class="status-pill">AI…</span>
-        <span id="db-status" class="status-pill">Archivio…</span>
-      </div>
-    </header>
-
-    <nav class="admin-nav" aria-label="Navigazione gestione archivi">
-      <a href="./service-shell.html">← Servizio</a>
-      <a href="#image-management">Gestione immagini</a>
-    </nav>
-
-    <div class="engine-caption">
-      Motore deterministico SH attivo in background · sui fallimenti propone alternative senza interrogare l'AI.
     </div>
 
-    <section class="admin-card archive-workspace" id="archive-workspace" aria-labelledby="archive-workspace-title">
-      <div class="admin-heading">
+    <div class="topbar-right">
+      <div class="system-status" aria-label="Stato servizi">
+        <span id="api-status" class="status-pill">API…</span>
+        <span id="db-status" class="status-pill">Database…</span>
+        <span id="ai-status" class="status-pill">AI…</span>
+      </div>
+      <a class="service-link" href="./service-shell.html">Servizio</a>
+    </div>
+  </header>
+
+  <main class="shell">
+    <nav class="main-tabs" aria-label="Sezioni principali">
+      <button type="button" class="main-tab active" data-main-view="dashboard">Dashboard</button>
+      <button type="button" class="main-tab" data-main-view="archive">Farmacie</button>
+      <button type="button" class="main-tab" data-main-view="images">Immagini</button>
+      <button type="button" class="main-tab" data-main-view="chat">SOS AI</button>
+    </nav>
+
+    <section id="view-dashboard" class="app-view active">
+      <div class="heading">
         <div>
-          <p class="eyebrow">Popolamento database</p>
-          <h2 id="archive-workspace-title">Farmacie / commesse</h2>
+          <p class="eyebrow">Panoramica</p>
+          <h1>Gestione FastPharma SOS</h1>
         </div>
-        <div class="archive-toolbar">
-          <input id="pharmacy-search" type="search" placeholder="Cerca farmacia, codice o città…" aria-label="Cerca farmacia">
-          <button id="pharmacy-search-button" class="secondary-action" type="button">Cerca</button>
-          <button id="new-pharmacy" class="primary-action" type="button">Nuova farmacia</button>
-        </div>
+        <button id="refresh-all" class="secondary-action" type="button">Aggiorna</button>
       </div>
 
-      <div class="population-flow" aria-label="Flusso di popolamento">
-        <span>1 · Anagrafica</span>
-        <span>2 · Sopralluoghi</span>
-        <span>3 · Documenti</span>
-        <span>4 · Immagini</span>
-        <span>5 · Locali e componenti</span>
-        <span>6 · Impianti / relazioni</span>
-        <span>7 · Revisione</span>
+      <div class="metrics" aria-label="Indicatori archivio">
+        <article class="metric"><span>Farmacie</span><strong id="metric-pharmacies">—</strong></article>
+        <article class="metric"><span>Pratiche aperte</span><strong id="metric-open">—</strong></article>
+        <article class="metric"><span>Località</span><strong id="metric-locations">—</strong></article>
+        <article class="metric"><span>Immagini sessione</span><strong id="metric-images">0</strong></article>
+        <article class="metric metric-wide"><span>Farmacia selezionata</span><strong id="metric-selected">Nessuna</strong></article>
       </div>
 
-      <div class="archive-selector">
-        <label for="pharmacy-select">Farmacia selezionata</label>
-        <select id="pharmacy-select">
-          <option value="">Caricamento farmacie…</option>
-        </select>
-        <span id="pharmacy-workspace-status" class="workspace-status" aria-live="polite"></span>
-      </div>
-
-      <div class="archive-tabs" role="tablist" aria-label="Sezioni farmacia">
-        <button type="button" class="archive-tab is-active" data-archive-tab="anagrafica">Anagrafica</button>
-        <button type="button" class="archive-tab" data-archive-tab="sopralluoghi">Sopralluoghi</button>
-        <button type="button" class="archive-tab" data-archive-tab="documenti">Documenti</button>
-        <button type="button" class="archive-tab" data-archive-tab="immagini">Immagini</button>
-        <button type="button" class="archive-tab" data-archive-tab="locali">Locali e componenti</button>
-        <button type="button" class="archive-tab" data-archive-tab="impianti">Impianti / relazioni</button>
-        <button type="button" class="archive-tab" data-archive-tab="cronologia">Cronologia</button>
-      </div>
-
-      <div class="archive-panels">
-        <section class="archive-panel is-active" data-archive-panel="anagrafica">
-          <div class="data-grid">
-            <label>Codice<input id="pharmacy-code" type="text" readonly></label>
-            <label>Farmacia / cliente<input id="pharmacy-name" type="text" readonly></label>
-            <label>Località<input id="pharmacy-location" type="text" readonly></label>
-            <label>Stato<input id="pharmacy-state" type="text" readonly></label>
-            <label>Responsabile<input id="pharmacy-owner" type="text" readonly></label>
-            <label class="span-2">Descrizione<textarea id="pharmacy-description" rows="4" readonly></textarea></label>
+      <div class="dashboard-grid">
+        <section class="panel">
+          <p class="eyebrow">Flusso operativo</p>
+          <h2>Popolamento farmacia</h2>
+          <div class="population-flow dashboard-flow" aria-label="Flusso di popolamento">
+            <span>1 · Anagrafica</span>
+            <span>2 · Sopralluoghi</span>
+            <span>3 · Documenti</span>
+            <span>4 · Immagini</span>
+            <span>5 · Locali e componenti</span>
+            <span>6 · Impianti / relazioni</span>
+            <span>7 · Revisione</span>
           </div>
-          <div class="draft-actions">
-            <span id="pharmacy-mode-note">Seleziona una farmacia esistente oppure crea una nuova bozza locale.</span>
-            <div class="record-actions">
-              <button id="edit-pharmacy" class="secondary-action" type="button" disabled>Modifica</button>
-              <button id="cancel-pharmacy-edit" class="secondary-action" type="button" hidden>Annulla</button>
-              <button id="save-pharmacy-draft" class="primary-action" type="button" hidden>Applica modifica demo</button>
+          <p>
+            La farmacia è il contenitore principale. Sopralluoghi, documenti, immagini,
+            componenti e cronologia vengono sempre ricondotti alla farmacia selezionata.
+          </p>
+        </section>
+
+        <section class="panel">
+          <p class="eyebrow">Accesso rapido</p>
+          <h2>Strumenti</h2>
+          <div class="quick-actions">
+            <button type="button" class="primary-action" data-open-view="archive">Gestisci farmacie</button>
+            <button type="button" class="secondary-action" data-open-view="images">Gestisci immagini</button>
+            <button type="button" class="secondary-action" data-open-view="chat">Apri SOS AI</button>
+          </div>
+          <p class="demo-note">
+            Versione demo senza login: utilizzare esclusivamente dati sintetici e non riservati.
+          </p>
+        </section>
+      </div>
+
+      <section class="panel">
+        <p class="eyebrow">Stato sistema</p>
+        <h2>Architettura operativa</h2>
+        <div class="architecture-strip">
+          <span>GitHub Pages · Frontend</span>
+          <span>Render · API</span>
+          <span>Neon · Database</span>
+          <span>SH · Motore deterministico</span>
+          <span>Provider API · AI</span>
+        </div>
+      </section>
+    </section>
+
+    <section id="view-archive" class="app-view">
+      <div class="heading">
+        <div>
+          <p class="eyebrow">Archivio</p>
+          <h1>Farmacie / commesse</h1>
+        </div>
+      </div>
+
+      <section class="panel archive-workspace" id="archive-workspace" aria-labelledby="archive-workspace-title">
+        <div class="admin-heading">
+          <div>
+            <h2 id="archive-workspace-title">Selezione e anagrafica</h2>
+            <p class="section-copy">Seleziona una farmacia, consulta i dati o attiva la modifica demo.</p>
+          </div>
+          <div class="archive-toolbar">
+            <input id="pharmacy-search" type="search" placeholder="Cerca farmacia, codice o città…" aria-label="Cerca farmacia">
+            <button id="pharmacy-search-button" class="secondary-action" type="button">Cerca</button>
+            <button id="new-pharmacy" class="primary-action" type="button">Nuova farmacia</button>
+          </div>
+        </div>
+
+        <div class="archive-selector">
+          <label for="pharmacy-select">Farmacia selezionata</label>
+          <select id="pharmacy-select">
+            <option value="">Caricamento farmacie…</option>
+          </select>
+          <span id="pharmacy-workspace-status" class="workspace-status" aria-live="polite"></span>
+        </div>
+
+        <div class="archive-tabs" role="tablist" aria-label="Sezioni farmacia">
+          <button type="button" class="archive-tab is-active" data-archive-tab="anagrafica">Anagrafica</button>
+          <button type="button" class="archive-tab" data-archive-tab="sopralluoghi">Sopralluoghi</button>
+          <button type="button" class="archive-tab" data-archive-tab="documenti">Documenti</button>
+          <button type="button" class="archive-tab" data-archive-tab="immagini">Immagini</button>
+          <button type="button" class="archive-tab" data-archive-tab="locali">Locali e componenti</button>
+          <button type="button" class="archive-tab" data-archive-tab="impianti">Impianti / relazioni</button>
+          <button type="button" class="archive-tab" data-archive-tab="cronologia">Cronologia</button>
+        </div>
+
+        <div class="archive-panels">
+          <section class="archive-panel is-active" data-archive-panel="anagrafica">
+            <div class="data-grid">
+              <label>Codice<input id="pharmacy-code" type="text" readonly></label>
+              <label>Farmacia / cliente<input id="pharmacy-name" type="text" readonly></label>
+              <label>Località<input id="pharmacy-location" type="text" readonly></label>
+              <label>Stato<input id="pharmacy-state" type="text" readonly></label>
+              <label>Responsabile<input id="pharmacy-owner" type="text" readonly></label>
+              <label class="span-2">Descrizione<textarea id="pharmacy-description" rows="4" readonly></textarea></label>
             </div>
-          </div>
-        </section>
 
-        <section class="archive-panel" data-archive-panel="sopralluoghi">
-          <div class="module-placeholder">
-            <strong>Sopralluoghi</strong>
-            <span>Qui verranno registrati data, tecnico, stato e note di ogni visita. La farmacia potrà avere più sopralluoghi senza sovrascrivere lo storico.</span>
-            <button type="button" class="secondary-action" disabled>Nuovo sopralluogo · prossima fase</button>
-          </div>
-        </section>
+            <div class="draft-actions">
+              <span id="pharmacy-mode-note">Seleziona una farmacia esistente oppure crea una nuova bozza locale.</span>
+              <div class="record-actions">
+                <button id="edit-pharmacy" class="secondary-action" type="button" disabled>Modifica</button>
+                <button id="cancel-pharmacy-edit" class="secondary-action" type="button" hidden>Annulla</button>
+                <button id="save-pharmacy-draft" class="primary-action" type="button" hidden>Applica modifica demo</button>
+              </div>
+            </div>
+          </section>
 
-        <section class="archive-panel" data-archive-panel="documenti">
-          <div id="pharmacy-documents" class="archive-list">
-            <div class="module-placeholder">Seleziona una farmacia per leggere i documenti già presenti.</div>
-          </div>
-        </section>
+          <section class="archive-panel" data-archive-panel="sopralluoghi">
+            <div class="module-placeholder">
+              <strong>Sopralluoghi</strong>
+              <span>Qui verranno registrati data, tecnico, stato e note di ogni visita. La farmacia potrà avere più sopralluoghi senza sovrascrivere lo storico.</span>
+              <button type="button" class="secondary-action" disabled>Nuovo sopralluogo · prossima fase</button>
+            </div>
+          </section>
 
-        <section class="archive-panel" data-archive-panel="immagini">
-          <div class="module-placeholder">
-            <strong>Immagini della farmacia</strong>
-            <span>Le fotografie vengono catalogate per sopralluogo, locale e componente.</span>
-            <a class="primary-action inline-link" href="#image-management">Apri Gestione immagini</a>
-          </div>
-        </section>
+          <section class="archive-panel" data-archive-panel="documenti">
+            <div id="pharmacy-documents" class="archive-list">
+              <div class="module-placeholder">Seleziona una farmacia per leggere i documenti già presenti.</div>
+            </div>
+          </section>
 
-        <section class="archive-panel" data-archive-panel="locali">
-          <div class="module-placeholder">
-            <strong>Locali e componenti</strong>
-            <span>Struttura prevista: locale → componente/apparato → posizione fisica. La persistenza verrà collegata dopo la definizione dello schema definitivo.</span>
-          </div>
-        </section>
+          <section class="archive-panel" data-archive-panel="immagini">
+            <div class="module-placeholder">
+              <strong>Immagini della farmacia</strong>
+              <span>Le fotografie vengono catalogate per sopralluogo, locale e componente.</span>
+              <button class="primary-action" type="button" data-open-view="images">Apri Gestione immagini</button>
+            </div>
+          </section>
 
-        <section class="archive-panel" data-archive-panel="impianti">
-          <div class="module-placeholder">
-            <strong>Impianti / relazioni funzionali</strong>
-            <span>Le relazioni funzionali resteranno separate dalla posizione fisica: collegamenti elettrici, idraulici, FV/off-grid e dipendenze fra apparati.</span>
-          </div>
-        </section>
+          <section class="archive-panel" data-archive-panel="locali">
+            <div class="module-placeholder">
+              <strong>Locali e componenti</strong>
+              <span>Struttura prevista: locale → componente/apparato → posizione fisica.</span>
+            </div>
+          </section>
 
-        <section class="archive-panel" data-archive-panel="cronologia">
-          <div id="pharmacy-interactions" class="archive-list">
-            <div class="module-placeholder">Seleziona una farmacia per leggere la cronologia disponibile.</div>
-          </div>
-        </section>
-      </div>
+          <section class="archive-panel" data-archive-panel="impianti">
+            <div class="module-placeholder">
+              <strong>Impianti / relazioni funzionali</strong>
+              <span>Le relazioni funzionali restano separate dalla posizione fisica: collegamenti elettrici, idraulici, FV/off-grid e dipendenze fra apparati.</span>
+            </div>
+          </section>
 
-      <p class="prototype-warning">
-        Versione demo: puoi selezionare una farmacia e usare Modifica per provare l'editing dell'anagrafica.
-        Le modifiche restano nella sessione del browser e non alterano Neon; la persistenza verrà collegata in una fase successiva.
-      </p>
+          <section class="archive-panel" data-archive-panel="cronologia">
+            <div id="pharmacy-interactions" class="archive-list">
+              <div class="module-placeholder">Seleziona una farmacia per leggere la cronologia disponibile.</div>
+            </div>
+          </section>
+        </div>
+
+        <p class="prototype-warning">
+          Versione demo: la modifica anagrafica è locale alla sessione del browser. La protezione amministrativa e la persistenza delle modifiche sono rinviate.
+          Non inserire dati reali o riservati.
+        </p>
+      </section>
     </section>
 
-    <section class="admin-card image-manager" id="image-management" aria-labelledby="image-management-title">
-      <div class="admin-heading">
+    <section id="view-images" class="app-view">
+      <div class="heading">
         <div>
-          <p class="eyebrow">Archivio sopralluoghi</p>
-          <h2 id="image-management-title">Gestione immagini</h2>
-        </div>
-        <div class="image-toolbar">
-          <label class="primary-action" for="image-files">Aggiungi immagini</label>
-          <input id="image-files" type="file" accept="image/*" multiple hidden>
-          <button id="image-clear" class="secondary-action" type="button">Svuota selezione</button>
-          <span id="image-count" class="image-count">0 immagini</span>
+          <p class="eyebrow">Sopralluoghi</p>
+          <h1>Gestione immagini</h1>
         </div>
       </div>
 
-      <p class="prototype-warning">
-        Prototipo locale: le immagini e i metadati restano soltanto in questa sessione del browser.
-        Nessun file viene ancora inviato al server o salvato in archivio.
-      </p>
-
-      <div id="image-manager-status" class="image-manager-status" aria-live="polite"></div>
-
-      <div id="image-gallery" class="image-gallery">
-        <div class="image-empty">
-          Seleziona fotografie di planimetrie, apparati, targhette, quadri, valvole o schemi.
+      <section class="panel image-manager" id="image-management" aria-labelledby="image-management-title">
+        <div class="admin-heading">
+          <div>
+            <h2 id="image-management-title">Fotografie e metadati</h2>
+            <p class="section-copy">Prepara e classifica le immagini della farmacia selezionata.</p>
+          </div>
+          <div class="image-toolbar">
+            <label class="primary-action" for="image-files">Aggiungi immagini</label>
+            <input id="image-files" type="file" accept="image/*" multiple hidden>
+            <button id="image-clear" class="secondary-action" type="button">Svuota selezione</button>
+            <span id="image-count" class="image-count">0 immagini</span>
+          </div>
         </div>
-      </div>
+
+        <p class="prototype-warning">
+          Prototipo locale: immagini e metadati restano soltanto in questa sessione del browser.
+          Nessun file viene ancora inviato al server o salvato in archivio.
+        </p>
+
+        <div id="image-manager-status" class="image-manager-status" aria-live="polite"></div>
+        <div id="image-gallery" class="image-gallery">
+          <div class="image-empty">
+            Seleziona fotografie di planimetrie, apparati, targhette, quadri, valvole o schemi.
+          </div>
+        </div>
+      </section>
     </section>
 
-    <section class="chat-card" aria-labelledby="chat-title">
-      <div class="chat-heading">
+    <section id="view-chat" class="app-view">
+      <div class="heading">
         <div>
-          <p class="eyebrow">SOS AI</p>
-          <h2 id="chat-title">Come posso aiutarti?</h2>
-        </div>
-        <div class="chat-controls">
-          <label class="provider-picker" for="ai-provider">
-            <span>Provider AI</span>
-            <select id="ai-provider" aria-label="Scegli il provider AI">
-              <option value="Gemini">Gemini</option>
-              <option value="NvidiaNim">NVIDIA NIM · DeepSeek</option>
-            </select>
-          </label>
-          <div id="archive-summary" class="archive-summary">Caricamento archivio demo…</div>
+          <p class="eyebrow">Assistente</p>
+          <h1>SOS AI</h1>
         </div>
       </div>
 
-      <div id="chat-messages" class="chat-messages" aria-live="polite">
-        <div class="message assistant">
-          <div class="message-label">SOS</div>
-          <div>Puoi farmi una domanda generale oppure chiedermi informazioni sulle commesse disponibili.</div>
+      <section class="panel chat-card" aria-labelledby="chat-title">
+        <div class="chat-heading">
+          <div>
+            <h2 id="chat-title">Come posso aiutarti?</h2>
+            <p class="section-copy">Consulta l'archivio demo tramite il motore deterministico e i servizi AI configurati.</p>
+          </div>
+          <div class="chat-controls">
+            <label class="provider-picker" for="ai-provider">
+              <span>Provider AI</span>
+              <select id="ai-provider" aria-label="Scegli il provider AI">
+                <option value="Gemini">Gemini</option>
+                <option value="NvidiaNim">NVIDIA NIM · DeepSeek</option>
+              </select>
+            </label>
+            <div id="archive-summary" class="archive-summary">Caricamento archivio demo…</div>
+          </div>
         </div>
-      </div>
 
-      <div class="quick-prompts" aria-label="Domande di esempio">
-        <button type="button" data-prompt="Quali commesse sono disponibili?">Quali commesse ci sono?</button>
-      </div>
-
-      <form id="chat-form" class="chat-form">
-        <label class="sr-only" for="chat-input">Scrivi una domanda</label>
-        <textarea id="chat-input" rows="3" maxlength="2000" placeholder="Scrivi qui la tua domanda…" required></textarea>
-        <div class="composer-footer">
-          <span>Dati sintetici di collaudo · sola lettura</span>
-          <button id="send-button" type="submit">Invia</button>
+        <div class="engine-caption">
+          Motore deterministico SH attivo in background · sui fallimenti propone alternative senza interrogare l'AI.
         </div>
-      </form>
+
+        <div id="chat-messages" class="chat-messages" aria-live="polite">
+          <div class="message assistant">
+            <div class="message-label">SOS</div>
+            <div>Puoi chiedermi informazioni sulle farmacie e sulle commesse disponibili.</div>
+          </div>
+        </div>
+
+        <div class="quick-prompts" aria-label="Domande di esempio">
+          <button type="button" data-prompt="Quali commesse sono disponibili?">Quali farmacie ci sono?</button>
+        </div>
+
+        <form id="chat-form" class="chat-form">
+          <label class="sr-only" for="chat-input">Scrivi una domanda</label>
+          <textarea id="chat-input" rows="3" maxlength="2000" placeholder="Scrivi qui la tua domanda…" required></textarea>
+          <div class="composer-footer">
+            <span>Dati sintetici di collaudo</span>
+            <button id="send-button" type="submit">Invia</button>
+          </div>
+        </form>
+      </section>
     </section>
+
+    <div id="ui-message" class="ui-message" hidden></div>
 
     <footer>
-      FastPharma SOS · Gestione archivi · nessun dato reale deve essere inserito in questa fase
+      FastPharma SOS · gestionale demo · nessun dato reale deve essere inserito in questa fase
     </footer>
   </main>
 

@@ -13,6 +13,18 @@ const input = $("chat-input");
 const sendButton = $("send-button");
 const providerSelect = $("ai-provider");
 const quickButtons = [...document.querySelectorAll("[data-prompt]")];
+const mainTabs = [...document.querySelectorAll("[data-main-view]")];
+const mainViews = [...document.querySelectorAll(".app-view")];
+
+function openMainView(name) {
+  mainTabs.forEach(button => {
+    button.classList.toggle("active", button.dataset.mainView === name);
+  });
+  mainViews.forEach(view => {
+    view.classList.toggle("active", view.id === `view-${name}`);
+  });
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
 
 function setStatus(element, text, ok) {
   element.textContent = text;
@@ -398,6 +410,27 @@ quickButtons.forEach(button => {
 
 providerSelect.addEventListener("change", () => {
   refreshStatus();
+});
+
+mainTabs.forEach(button => {
+  button.addEventListener("click", () => openMainView(button.dataset.mainView));
+});
+
+document.querySelectorAll("[data-open-view]").forEach(button => {
+  button.addEventListener("click", () => openMainView(button.dataset.openView));
+});
+
+document.getElementById("refresh-all")?.addEventListener("click", () => {
+  refreshStatus();
+  window.dispatchEvent(new CustomEvent("fastpharma:refresh-archive"));
+});
+
+window.addEventListener("fastpharma:pharmacy-selected", event => {
+  const metric = document.getElementById("metric-selected");
+  if (!metric) return;
+  metric.textContent = event.detail?.nome
+    ? [event.detail.codice, event.detail.nome].filter(Boolean).join(" · ")
+    : "Nessuna";
 });
 
 initializeArchiveWorkspace();
