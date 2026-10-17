@@ -217,3 +217,9 @@ footer{text-align:center;color:#64748b;font-size:11px;margin-top:18px}
 .catalog-table .secondary-action{padding:7px 12px}
 .pharmacy-back{margin:15px 0}
 @media(max-width:650px){.catalog-filters label{min-width:100%}}
+
+.image-pharmacy-target{display:grid;gap:8px;margin:17px 0;padding:15px;border:1px solid #31517c;background:#10213a;border-radius:12px}
+.image-pharmacy-target label{font-weight:750;color:#f8fafc}
+.image-pharmacy-target select{width:100%;background:#0b1220;color:#fff;border:1px solid #475569;border-radius:9px;padding:11px}
+.image-pharmacy-target span{color:#bfdbfe;font-size:13px}
+.image-toolbar label.is-disabled{opacity:.45;cursor:not-allowed;pointer-events:none}
