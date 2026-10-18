@@ -11,16 +11,17 @@
     <header class="shell-header">
       <a class="shell-brand" href="./service-shell.html" aria-label="FastPharma SOS">
         <span class="brand-symbol" aria-hidden="true">SOS</span>
-        <span class="brand-copy"><strong>FastPharma <span style="color:#61d7cf;font-size:.75rem;white-space:nowrap">V1.0.3</span></strong><small>servizio tecnico</small></span>
+        <span class="brand-copy"><strong>FastPharma <span style="color:#61d7cf;font-size:.75rem;white-space:nowrap">V1.0.4</span></strong><small>servizio tecnico</small></span>
       </a>
-      <div class="shell-context"><span id="sos-version" class="sos-header-version" aria-label="Versione frontend">SOS V1.0.3</span><a class="archive-link" href="./index.html">Gestione archivi</a></div>
+      <div class="shell-context"><span id="sos-version" class="sos-header-version" aria-label="Versione frontend">SOS V1.0.4</span><a class="archive-link" href="./index.html">Gestione archivi</a></div>
     </header>
     <main class="shell-main">
       <section class="sos-launch" aria-labelledby="launch-title">
-        <div class="launch-eyebrow">TEST V1.0.3 · SESSIONE DIMOSTRATIVA</div>
+        <div class="launch-eyebrow">TEST V1.0.4 · SESSIONE DIMOSTRATIVA</div>
         <h1 id="launch-title">Assistenza FastPharma</h1>
-        <p>Un clic apre la sessione di prova sul Gateway MCP Termodel e prepara Claude. Dovrai soltanto confermare l'invio del messaggio in Claude.</p>
-        <button id="start-sos" type="button" class="launch-button">SOS</button>
+        <p>Premi SOS per creare la sessione MCP. Quando il collegamento al server è pronto, premi «Avvio chat SOS AI» per aprire Claude con il messaggio già compilato.</p>
+        <button id="start-sos" type="button" class="launch-button">SOS · Crea sessione</button>
+        <button id="start-chat" type="button" class="launch-button" disabled aria-disabled="true">Avvio chat SOS AI</button>
         <p id="launch-status" class="launch-status" role="status" aria-live="polite">Pronto per iniziare il test.</p>
         <p id="session-indicator" class="launch-hint"></p>
         <p class="launch-hint">La sessione dimostrativa non identifica ancora una farmacia e non abilita l'accesso ai suoi documenti. Mantieni aperta questa pagina durante il test. Il viewer grafico e MessageToSOS richiedono ancora integrazione.</p>
@@ -33,9 +34,12 @@
     "use strict";
     const gateway = "https://termodel-mcp-gateway.onrender.com";
     const button = document.getElementById("start-sos");
+    const chatButton = document.getElementById("start-chat");
     const status = document.getElementById("launch-status");
     const indicator = document.getElementById("session-indicator");
     let controller = null;
+    let readySession = null;
+    function setReady(sessionId) { readySession=sessionId; chatButton.disabled=!sessionId; chatButton.setAttribute("aria-disabled",String(!sessionId)); }
     function bootstrap(sessionId) {
       return [
         "Sei l'assistente FastPharma SOS in sessione dimostrativa, senza dati di farmacia autenticati.",
@@ -55,7 +59,8 @@
           headers:{"Authorization":"Bearer "+token},signal,cache:"no-store"
         });
         if(!response.ok||!response.body)throw Error("Canale browser HTTP "+response.status);
-        status.textContent="Sessione MCP aperta. Claude predisposto: conferma l'invio del messaggio.";
+        setReady(sessionId);
+        status.textContent="Sessione MCP connessa. Ora puoi premere «Avvio chat SOS AI».";
         const reader=response.body.getReader();
         const decoder=new TextDecoder();
         let buffer="";
@@ -83,12 +88,12 @@
       } catch(e) {
         if(!signal.aborted)status.textContent="Canale MCP interrotto: "+e.message;
       } finally {
-        if(!signal.aborted){button.disabled=false;controller=null;indicator.textContent="Sessione terminata.";}
+        if(!signal.aborted){setReady(null);button.disabled=false;controller=null;indicator.textContent="Sessione terminata.";}
       }
     }
     button.addEventListener("click",async()=>{
       if(controller)return;
-      const claude=window.open("about:blank","_blank");
+      setReady(null);
       button.disabled=true;
       status.textContent="Apertura sessione sul Gateway MCP canonico...";
       const pending=new AbortController();controller=pending;
@@ -130,13 +135,16 @@
           throw Error("Risposta sessione non valida");
         indicator.textContent="Sessione dimostrativa avviata (nessuna farmacia autenticata).";
         void consumeEvents(pending.signal,data.sessionId,data.browserToken);
-        if(claude)claude.location.replace("https://claude.ai/new?q="+encodeURIComponent(bootstrap(data.sessionId)));
-        else status.textContent="Sessione aperta. Il browser ha bloccato la scheda Claude: abilita i popup per questo sito.";
+        // Claude si apre soltanto con un clic esplicito sul secondo pulsante.
       }catch(e){
         status.textContent="Avvio non riuscito: "+e.message;
-        if(claude)claude.close();
+
         pending.abort();controller=null;button.disabled=false;
       }
+    });
+    chatButton.addEventListener("click",()=>{
+      if(!readySession)return;
+      window.open("https://claude.ai/new?q="+encodeURIComponent(bootstrap(readySession)),"_blank","noopener,noreferrer");
     });
     window.addEventListener("pagehide",()=>controller?.abort());
   })();
