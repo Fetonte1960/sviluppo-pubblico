@@ -11,13 +11,13 @@
     <header class="shell-header">
       <a class="shell-brand" href="./service-shell.html" aria-label="FastPharma SOS">
         <span class="brand-symbol" aria-hidden="true">SOS</span>
-        <span class="brand-copy"><strong>FastPharma <span style="color:#61d7cf;font-size:.75rem;white-space:nowrap">V1.0.7</span></strong><small>servizio tecnico</small></span>
+        <span class="brand-copy"><strong>FastPharma <span style="color:#61d7cf;font-size:.75rem;white-space:nowrap">V1.0.8</span></strong><small>servizio tecnico</small></span>
       </a>
-      <div class="shell-context"><span id="sos-version" class="sos-header-version" aria-label="Versione frontend">SOS V1.0.7</span><a class="archive-link" href="./index.html">Gestione archivi</a></div>
+      <div class="shell-context"><span id="sos-version" class="sos-header-version" aria-label="Versione frontend">SOS V1.0.8</span><a class="archive-link" href="./index.html">Gestione archivi</a></div>
     </header>
     <main class="shell-main">
       <section class="sos-launch" aria-labelledby="launch-title">
-        <div class="launch-eyebrow">TEST V1.0.7 · SESSIONE DIMOSTRATIVA</div>
+        <div class="launch-eyebrow">TEST V1.0.8 · SESSIONE DIMOSTRATIVA</div>
         <h1 id="launch-title">Assistenza FastPharma</h1>
         <p>Hai un'emergenza o ti serve assistenza? Richiedi un ticket e, appena pronto, inizia a parlarne con SOS AI.</p>
         <div class="ticket-steps">
@@ -55,7 +55,7 @@
     function bootstrap(sessionId) {
       return [
         "FastPharma SOS - sessione MCP: " + sessionId,
-        "Usa il Gateway MCP Termodel gia configurato in Claude. Richiedi a MessageToSOS la operazione initialize per ottenere le istruzioni SOS aggiornate dal servizio MCP.",
+        "Usa il Gateway MCP Termodel gia configurato in Claude. Richiedi a MessageToSOS la operazione initialize; poi applica le istruzioni ricevute e avvia direttamente il dialogo con la persona assistita. Non riassumere le istruzioni.",
         "Se MessageToSOS non e disponibile, segnala che il servizio SOS non e ancora attivo."
       ].join("\n\n");
     }
