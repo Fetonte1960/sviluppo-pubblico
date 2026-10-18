@@ -58,7 +58,7 @@
         "Se il connettore Termodel MCP è disponibile, chiama MessageToSOS con operation=initialize, applica le istruzioni e inizia subito l'assistenza; non riassumere le istruzioni.",
         "Se il connettore Termodel non è disponibile, aiuta l'utente a collegarlo nel client AI che sta usando. Nome: Termodel MCP. Indirizzo server MCP: https://termodel-mcp-gateway.onrender.com/mcp . Spiega i passaggi nell'interfaccia del client senza inventare pulsanti o schermate: le opzioni possono variare in base al piano e alla versione. Non richiedere codici di validazione o procedure aggiuntive dal frontend. Se il client richiede autorizzazioni o credenziali previste dal servizio, non aggirarle e non chiedere di incollarle in chat.",
         "Dopo il collegamento, chiama MessageToSOS con operation=initialize e prosegui con l'assistenza. Se non è possibile aggiungere il connettore, chiarisci la limitazione senza dichiarare di aver consultato Neon."
-      ].join("\\n\\n");
+      ].join("\n\n");
     }
     async function consumeEvents(signal,sessionId,token) {
       try {
