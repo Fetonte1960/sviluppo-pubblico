@@ -75,11 +75,8 @@
       sessionInput.addEventListener("input", refresh);
       document.getElementById("copy-sos").addEventListener("click", copy);
       document.getElementById("start-sos").addEventListener("click", () => {
-        const tab = window.open("https://claude.ai/new", "_blank", "noopener,noreferrer");
         void copy();
-        if (!tab) {
-          status.textContent = "Il browser ha bloccato la nuova scheda. Apri https://claude.ai/new e incolla le istruzioni.";
-        }
+        window.open("https://claude.ai/new", "_blank", "noopener,noreferrer");
       });
       refresh();
     })();
