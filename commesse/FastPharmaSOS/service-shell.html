@@ -1,10 +1,9 @@
 <!doctype html>
 <html lang="it">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Accesso al servizio FastPharma SOS tramite Claude e Gateway MCP Termodel.">
-  <title>FastPharma SOS — Avvio assistenza</title>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="FastPharma SOS, avvio sessione MCP e Claude.">
+  <title>FastPharma SOS — Test V1</title>
   <link rel="stylesheet" href="./css/service-shell.css">
 </head>
 <body>
@@ -12,74 +11,105 @@
     <header class="shell-header">
       <a class="shell-brand" href="./service-shell.html" aria-label="FastPharma SOS">
         <span class="brand-symbol" aria-hidden="true">SOS</span>
-        <span class="brand-copy"><strong>FastPharma</strong><small>Servizio tecnico</small></span>
+        <span class="brand-copy"><strong>FastPharma</strong><small>servizio tecnico</small></span>
       </a>
-      <div class="shell-context">
-        <a class="archive-link" href="./index.html">Gestione archivi</a>
-      </div>
+      <div class="shell-context"><a class="archive-link" href="./index.html">Gestione archivi</a></div>
     </header>
     <main class="shell-main">
       <section class="sos-launch" aria-labelledby="launch-title">
-        <div class="launch-eyebrow">ASSISTENZA TECNICA · TEST V1</div>
-        <h1 id="launch-title">Avvia SOS con Claude</h1>
-        <p>Il pulsante apre Claude in una nuova scheda e prepara le istruzioni iniziali per il Gateway MCP canonico Termodel.</p>
-        <label for="viewer-session">Codice sessione Tiralinee già aperta (facoltativo)</label>
-        <input id="viewer-session" type="text" spellcheck="false" autocomplete="off" placeholder="Inserisci il codice della sessione già attiva" maxlength="128">
-        <p class="launch-hint">Inserisci solo l'ID di collegamento fornito da Tiralinee, mai password o token di accesso. Se non hai una sessione collegata, lascia vuoto.</p>
-        <button id="start-sos" type="button" class="launch-button">Apri SOS in Claude</button>
-        <p id="launch-status" class="launch-status" role="status" aria-live="polite"></p>
-        <details class="launch-details">
-          <summary>Visualizza le istruzioni da inviare a Claude</summary>
-          <textarea id="bootstrap-preview" readonly rows="13" aria-label="Istruzioni per Claude"></textarea>
-          <button id="copy-sos" type="button" class="copy-button">Copia istruzioni</button>
-        </details>
-        <p class="launch-hint">Per il test iniziale, il testo viene copiato negli appunti: incollalo nella conversazione Claude e invialo. Il collegamento MCP deve essere già configurato nel tuo account Claude; il portale non può attivarlo da solo.</p>
+        <div class="launch-eyebrow">TEST V1 · SESSIONE DIMOSTRATIVA</div>
+        <h1 id="launch-title">Assistenza FastPharma</h1>
+        <p>Un clic apre la sessione di prova sul Gateway MCP Termodel e prepara Claude. Dovrai soltanto confermare l'invio del messaggio in Claude.</p>
+        <button id="start-sos" type="button" class="launch-button">SOS</button>
+        <p id="launch-status" class="launch-status" role="status" aria-live="polite">Pronto per iniziare il test.</p>
+        <p id="session-indicator" class="launch-hint"></p>
+        <p class="launch-hint">La sessione dimostrativa non identifica ancora una farmacia e non abilita l'accesso ai suoi documenti. Mantieni aperta questa pagina durante il test. Il viewer grafico e MessageToSOS richiedono ancora integrazione.</p>
       </section>
     </main>
-    <footer class="shell-footer"><span>FastPharma SOS</span><span>Avvio Claude · test V1</span></footer>
+    <footer class="shell-footer"><span>FastPharma SOS</span><span>Gateway MCP Termodel · demo</span></footer>
   </div>
   <script>
-    (() => {
-      "use strict";
-      const sessionInput = document.getElementById("viewer-session");
-      const preview = document.getElementById("bootstrap-preview");
-      const status = document.getElementById("launch-status");
-      function instructions() {
-        const session = sessionInput.value.trim();
-        return [
-          "Sei l'assistente tecnico FastPharma SOS. Opera solo su dati autorizzati della farmacia corrente.",
-          "Usa esclusivamente il server MCP canonico Termodel già configurato nel tuo client Claude; non creare nuovi server e non accedere al backend gestionale FastPharmaSOS.",
-          "Verifica la disponibilità MCP con il tool CommandToTermodel e il comando Ping.",
-          "Quando sarà disponibile il tool MessageToSOS, richiedi initialize e recupera dal Gateway MCP le istruzioni SOS aggiornate e il contesto della sessione autorizzata. Le istruzioni SOS provengono da Neon tramite Gateway MCP, non da una pagina Web.",
-          "Non confondere GetInstructions di CommandToTermodel (istruzioni Termodel) con le future istruzioni SOS.",
-          "Se MessageToSOS non è presente, dichiaralo chiaramente: il collegamento SOS a Neon non è ancora operativo. Non inventare documenti, farmacie o risultati.",
-          session ? "Sessione browser Tiralinee dichiarata dall'utente: " + session + ". Verifica l'abbinamento sul Gateway prima di inoltrare comandi; il codice non prova identità o autorizzazione." : "Nessuna sessione browser Tiralinee indicata: chiedi di stabilire il collegamento prima di inviare comandi visuali.",
-          "Non eseguire interventi fisici sugli impianti. Per la prima prova spiega quali funzioni MCP risultano realmente disponibili e attendi la richiesta dell'utente."
-        ].join("\n\n");
-      }
-      function refresh() { preview.value = instructions(); }
-      async function copy() {
-        const value = instructions();
-        try {
-          await navigator.clipboard.writeText(value);
-          status.textContent = "Istruzioni copiate. Incollale in Claude e invia il messaggio.";
-          return true;
-        } catch (_) {
-          preview.value = value;
-          preview.focus();
-          preview.select();
-          status.textContent = "Copia automatica non consentita: copia il testo selezionato e incollalo in Claude.";
-          return false;
+  (() => {
+    "use strict";
+    const gateway = "https://termodel-mcp-gateway.onrender.com";
+    const button = document.getElementById("start-sos");
+    const status = document.getElementById("launch-status");
+    const indicator = document.getElementById("session-indicator");
+    let controller = null;
+    function bootstrap(sessionId) {
+      return [
+        "Sei l'assistente FastPharma SOS in sessione dimostrativa, senza dati di farmacia autenticati.",
+        "Il Gateway MCP canonico Termodel deve essere gia' configurato nel client Claude.",
+        "Verifica con CommandToTermodel usando command='Ping'.",
+        "ID della sessione browser gia' aperta sul Gateway: " + sessionId + ".",
+        "Per i comandi Termodel compatibili usa il prefisso di trasporto @"+sessionId+" seguito da newline e dal comando. Non considerare l'ID prova d'identita' o autorizzazione farmacia.",
+        "Quando sara' esposto MessageToSOS, richiedi initialize per leggere istruzioni e contesto autorizzato dal Gateway, che accede direttamente a Neon. Non utilizzare il backend gestionale SOS.",
+        "Se MessageToSOS non esiste, dichiaralo espressamente; non inventare documenti o dati.",
+        "Non azionare fisicamente impianti. Prima di procedere riporta il risultato del Ping e lo stato del tool SOS."
+      ].join("\n\n");
+    }
+    async function consumeEvents(signal,sessionId,token) {
+      try {
+        const response=await fetch(gateway+"/browser/events/"+encodeURIComponent(sessionId),{
+          headers:{"Authorization":"Bearer "+token},signal,cache:"no-store"
+        });
+        if(!response.ok||!response.body)throw Error("Canale browser HTTP "+response.status);
+        status.textContent="Sessione MCP aperta. Claude predisposto: conferma l'invio del messaggio.";
+        const reader=response.body.getReader();
+        const decoder=new TextDecoder();
+        let buffer="";
+        while(!signal.aborted) {
+          const {done,value}=await reader.read();
+          if(done)break;
+          buffer+=decoder.decode(value,{stream:true}).replace(/\r\n/g,"\n");
+          let idx;
+          while((idx=buffer.indexOf("\n\n"))!==-1){
+            const frame=buffer.slice(0,idx);buffer=buffer.slice(idx+2);
+            const line=frame.split("\n").find(v=>v.startsWith("data: "));
+            if(!line)continue;
+            try {
+              const packet=JSON.parse(line.slice(6));
+              // No viewer rendering implemented here: report explicitly, never acknowledge a fake visualization.
+              if(!packet.requestId)continue;
+              await fetch(gateway+"/browser/reply/"+encodeURIComponent(sessionId)+"/"+encodeURIComponent(packet.requestId),{
+                method:"POST",headers:{"Authorization":"Bearer "+token,"Content-Type":"text/plain"},
+                body:"SOS demo shell: viewer grafico non ancora collegato.",signal
+              });
+              status.textContent="Ricevuto comando MCP: visualizzatore non ancora collegato.";
+            } catch (_) { status.textContent="Comando MCP non gestito nel viewer dimostrativo."; }
+          }
         }
+      } catch(e) {
+        if(!signal.aborted)status.textContent="Canale MCP interrotto: "+e.message;
+      } finally {
+        if(!signal.aborted){button.disabled=false;controller=null;indicator.textContent="Sessione terminata.";}
       }
-      sessionInput.addEventListener("input", refresh);
-      document.getElementById("copy-sos").addEventListener("click", copy);
-      document.getElementById("start-sos").addEventListener("click", () => {
-        void copy();
-        window.open("https://claude.ai/new", "_blank", "noopener,noreferrer");
-      });
-      refresh();
-    })();
+    }
+    button.addEventListener("click",async()=>{
+      if(controller)return;
+      const claude=window.open("about:blank","_blank");
+      button.disabled=true;
+      status.textContent="Apertura sessione sul Gateway MCP canonico...";
+      const pending=new AbortController();controller=pending;
+      try {
+        const res=await fetch(gateway+"/browser/register",{
+          method:"POST",headers:{"Content-Type":"application/json"},body:"{}",cache:"no-store",signal:pending.signal
+        });
+        if(!res.ok)throw Error("Gateway HTTP "+res.status);
+        const data=await res.json();
+        if(!/^[a-f0-9]{40}$/.test(data.sessionId||"")||!data.browserToken)
+          throw Error("Risposta sessione non valida");
+        indicator.textContent="Sessione dimostrativa avviata (nessuna farmacia autenticata).";
+        void consumeEvents(pending.signal,data.sessionId,data.browserToken);
+        if(claude)claude.location.replace("https://claude.ai/new?q="+encodeURIComponent(bootstrap(data.sessionId)));
+        else status.textContent="Sessione aperta. Il browser ha bloccato la scheda Claude: abilita i popup per questo sito.";
+      }catch(e){
+        status.textContent="Avvio non riuscito: "+e.message;
+        if(claude)claude.close();
+        pending.abort();controller=null;button.disabled=false;
+      }
+    });
+    window.addEventListener("pagehide",()=>controller?.abort());
+  })();
   </script>
-</body>
-</html>
+</body></html>
