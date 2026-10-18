@@ -270,3 +270,11 @@ button {
 @media (max-width: 420px) { .sos-header-version { font-size: .7rem; } .shell-context { gap: 6px; } }
 
 .launch-button:disabled { opacity: .38; cursor: not-allowed; filter: grayscale(.6); }
+
+/* Tre fasi della richiesta ticket SOS */
+.ticket-steps { display:grid; gap: 12px; margin: 20px 0; }
+.ticket-step { display:flex; align-items:center; gap: 12px; min-width:0; }
+.ticket-step-number { display:grid; place-items:center; flex:none; width:34px; height:34px; border:1px solid var(--accent); color:var(--accent); border-radius:50%; font-weight:800; }
+.ticket-step .launch-button { flex:1; min-width:0; width:auto; margin:0; text-align:center; }
+.ticket-step .ticket-cancel:not(:disabled) { border-color:#ecb2a5; color:#f5c6ba; }
+@media(max-width:560px) { .ticket-step-number { width:28px; height:28px; } .ticket-step { gap:8px; } .ticket-step .launch-button { font-size:.85rem; } }
