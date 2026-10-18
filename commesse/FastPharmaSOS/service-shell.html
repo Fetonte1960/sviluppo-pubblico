@@ -11,13 +11,13 @@
     <header class="shell-header">
       <a class="shell-brand" href="./service-shell.html" aria-label="FastPharma SOS">
         <span class="brand-symbol" aria-hidden="true">SOS</span>
-        <span class="brand-copy"><strong>FastPharma <span style="color:#61d7cf;font-size:.75rem;white-space:nowrap">V1.0.4</span></strong><small>servizio tecnico</small></span>
+        <span class="brand-copy"><strong>FastPharma <span style="color:#61d7cf;font-size:.75rem;white-space:nowrap">V1.0.5</span></strong><small>servizio tecnico</small></span>
       </a>
-      <div class="shell-context"><span id="sos-version" class="sos-header-version" aria-label="Versione frontend">SOS V1.0.4</span><a class="archive-link" href="./index.html">Gestione archivi</a></div>
+      <div class="shell-context"><span id="sos-version" class="sos-header-version" aria-label="Versione frontend">SOS V1.0.5</span><a class="archive-link" href="./index.html">Gestione archivi</a></div>
     </header>
     <main class="shell-main">
       <section class="sos-launch" aria-labelledby="launch-title">
-        <div class="launch-eyebrow">TEST V1.0.4 · SESSIONE DIMOSTRATIVA</div>
+        <div class="launch-eyebrow">TEST V1.0.5 · SESSIONE DIMOSTRATIVA</div>
         <h1 id="launch-title">Assistenza FastPharma</h1>
         <p>Premi SOS per creare la sessione MCP. Quando il collegamento al server è pronto, premi «Avvio chat SOS AI» per aprire Claude con il messaggio già compilato.</p>
         <button id="start-sos" type="button" class="launch-button">SOS · Crea sessione</button>
@@ -42,15 +42,9 @@
     function setReady(sessionId) { readySession=sessionId; chatButton.disabled=!sessionId; chatButton.setAttribute("aria-disabled",String(!sessionId)); }
     function bootstrap(sessionId) {
       return [
-        "Sei l'assistente FastPharma SOS in sessione dimostrativa, senza dati di farmacia autenticati.",
-        "Il Gateway MCP canonico Termodel deve essere gia' configurato nel client Claude.",
-        "Verifica con CommandToTermodel usando command='Ping'.",
-        "ID della sessione browser gia' aperta sul Gateway: " + sessionId + ".",
-        "Per i comandi Termodel compatibili usa il prefisso di trasporto @"+sessionId+" seguito da newline e dal comando. Non considerare l'ID prova d'identita' o autorizzazione farmacia.",
-        "Quando sara' esposto MessageToSOS, richiedi initialize per leggere istruzioni e contesto autorizzato dal Gateway, che accede direttamente a Neon. Non utilizzare il backend gestionale SOS.",
-        "Se MessageToSOS non esiste, dichiaralo espressamente; non inventare documenti o dati.",
-        "ISTRUZIONE VISIVA PRIORITARIA: non generare immagini, fotografie, schemi o modelli se non strettamente necessario. Cerca prima le risorse documentali esistenti tramite documents.summary e, quando serve, documents.require; visualizzale nel browser Tiralinee esclusivamente tramite viewer.dispatch di MessageToSOS. Non ricostruire immagini a partire dall'OCR. Se una risorsa o il dispatch non sono disponibili, spiegalo chiaramente senza simulare la visualizzazione.",
-        "Non azionare fisicamente impianti. Prima di procedere riporta il risultato del Ping e lo stato del tool SOS."
+        "FastPharma SOS - sessione MCP: " + sessionId,
+        "Usa il Gateway MCP Termodel gia configurato in Claude. Richiedi a MessageToSOS la operazione initialize per ottenere le istruzioni SOS aggiornate dal servizio MCP.",
+        "Se MessageToSOS non e disponibile, segnala che il servizio SOS non e ancora attivo."
       ].join("\n\n");
     }
     async function consumeEvents(signal,sessionId,token) {
