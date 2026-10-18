@@ -268,3 +268,5 @@ button {
 
 .sos-header-version { color: var(--accent); font-size: .82rem; font-weight: 800; white-space: nowrap; letter-spacing: .025em; }
 @media (max-width: 420px) { .sos-header-version { font-size: .7rem; } .shell-context { gap: 6px; } }
+
+.launch-button:disabled { opacity: .38; cursor: not-allowed; filter: grayscale(.6); }
