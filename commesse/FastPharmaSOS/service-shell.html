@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="FastPharma SOS, avvio sessione MCP e Claude.">
+  <meta name="description" content="FastPharma SOS, avvio sessione MCP per ChatGPT e Claude.">
   <title>FastPharma SOS — Test V1</title>
   <link rel="stylesheet" href="./css/service-shell.css">
 </head>
@@ -11,23 +11,23 @@
     <header class="shell-header">
       <a class="shell-brand" href="./service-shell.html" aria-label="FastPharma SOS">
         <span class="brand-symbol" aria-hidden="true">SOS</span>
-        <span class="brand-copy"><strong>FastPharma <span style="color:#61d7cf;font-size:.75rem;white-space:nowrap">V1.0.8</span></strong><small>servizio tecnico</small></span>
+        <span class="brand-copy"><strong>FastPharma <span style="color:#61d7cf;font-size:.75rem;white-space:nowrap">V1.0.9</span></strong><small>servizio tecnico</small></span>
       </a>
-      <div class="shell-context"><span id="sos-version" class="sos-header-version" aria-label="Versione frontend">SOS V1.0.8</span><a class="archive-link" href="./index.html">Gestione archivi</a></div>
+      <div class="shell-context"><span id="sos-version" class="sos-header-version" aria-label="Versione frontend">SOS V1.0.9</span><a class="archive-link" href="./index.html">Gestione archivi</a></div>
     </header>
     <main class="shell-main">
       <section class="sos-launch" aria-labelledby="launch-title">
-        <div class="launch-eyebrow">TEST V1.0.8 · SESSIONE DIMOSTRATIVA</div>
+        <div class="launch-eyebrow">TEST V1.0.9 · SESSIONE DIMOSTRATIVA</div>
         <h1 id="launch-title">Assistenza FastPharma</h1>
         <p>Hai un'emergenza o ti serve assistenza? Richiedi un ticket e, appena pronto, inizia a parlarne con SOS AI.</p>
         <div class="ticket-steps">
           <div class="ticket-step"><span class="ticket-step-number">1</span><button id="start-sos" type="button" class="launch-button">Richiedi un ticket per assistenza o emergenza</button></div>
           <div class="ticket-step"><span class="ticket-step-number">2</span><button id="cancel-sos" type="button" class="launch-button ticket-cancel" disabled>Interrompi richiesta ticket</button></div>
-          <div class="ticket-step"><span class="ticket-step-number">3</span><button id="start-chat" type="button" class="launch-button" disabled aria-disabled="true">Ticket ottenuto · Inizia discussione</button></div>
+          <div class="ticket-step"><span class="ticket-step-number">3</span><div class="chat-choice"><button id="start-gpt" type="button" class="launch-button" disabled aria-disabled="true">Avvia chat ChatGPT</button><button id="start-claude" type="button" class="launch-button" disabled aria-disabled="true">Avvia chat Claude</button></div></div>
         </div>
         <p id="launch-status" class="launch-status" role="status" aria-live="polite">Pronto per iniziare il test.</p>
         <p id="session-indicator" class="launch-hint"></p>
-        <p class="launch-hint">La sessione dimostrativa non identifica ancora una farmacia e non abilita l'accesso ai suoi documenti. Mantieni aperta questa pagina durante il test. Il viewer grafico e MessageToSOS richiedono ancora integrazione.</p>
+        <p class="launch-hint">Mantieni questa pagina aperta durante la chat. Il collegamento MCP Termodel potrebbe richiedere una configurazione iniziale nel client AI; il collegamento ai documenti di prova avviene tramite MessageToSOS. Nessuna verifica automatica del connettore viene effettuata dal frontend.</p>
       </section>
     </main>
     <footer class="shell-footer"><span>FastPharma SOS</span><span>Test V1 · 18/10/2026</span></footer>
@@ -37,7 +37,7 @@
     "use strict";
     const gateway = "https://termodel-mcp-gateway.onrender.com";
     const button = document.getElementById("start-sos");
-    const chatButton = document.getElementById("start-chat");
+    const chatButtons = [document.getElementById("start-gpt"),document.getElementById("start-claude")];
     const cancelButton = document.getElementById("cancel-sos");
     let requestingTicket = false;
     let sessionActive = false;
@@ -51,13 +51,14 @@
     const indicator = document.getElementById("session-indicator");
     let controller = null;
     let readySession = null;
-    function setReady(sessionId) { readySession=sessionId; chatButton.disabled=!sessionId; chatButton.setAttribute("aria-disabled",String(!sessionId)); }
+    function setReady(sessionId) { readySession=sessionId; for(const chatButton of chatButtons){chatButton.disabled=!sessionId; chatButton.setAttribute("aria-disabled",String(!sessionId));} }
     function bootstrap(sessionId) {
       return [
-        "FastPharma SOS - sessione MCP: " + sessionId,
-        "Usa il Gateway MCP Termodel gia configurato in Claude. Richiedi a MessageToSOS la operazione initialize; poi applica le istruzioni ricevute e avvia direttamente il dialogo con la persona assistita. Non riassumere le istruzioni.",
-        "Se MessageToSOS non e disponibile, segnala che il servizio SOS non e ancora attivo."
-      ].join("\n\n");
+        "FastPharma SOS - sessione MCP browser: " + sessionId,
+        "Se il connettore Termodel MCP è disponibile, chiama MessageToSOS con operation=initialize, applica le istruzioni e inizia subito l'assistenza; non riassumere le istruzioni.",
+        "Se il connettore Termodel non è disponibile, aiuta l'utente a collegarlo nel client AI che sta usando. Nome: Termodel MCP. Indirizzo server MCP: https://termodel-mcp-gateway.onrender.com/mcp . Spiega i passaggi nell'interfaccia del client senza inventare pulsanti o schermate: le opzioni possono variare in base al piano e alla versione. Non richiedere codici di validazione o procedure aggiuntive dal frontend. Se il client richiede autorizzazioni o credenziali previste dal servizio, non aggirarle e non chiedere di incollarle in chat.",
+        "Dopo il collegamento, chiama MessageToSOS con operation=initialize e prosegui con l'assistenza. Se non è possibile aggiungere il connettore, chiarisci la limitazione senza dichiarare di aver consultato Neon."
+      ].join("\\n\\n");
     }
     async function consumeEvents(signal,sessionId,token) {
       try {
@@ -144,7 +145,7 @@
         setSessionActive(true);
         setRequesting(false);
         void consumeEvents(pending.signal,data.sessionId,data.browserToken);
-        // Claude si apre soltanto con un clic esplicito sul secondo pulsante.
+        // I client AI si aprono solo su clic esplicito di uno dei due pulsanti.
       }catch(e){
         if(!pending.signal.aborted)status.textContent="Non è stato possibile ottenere il ticket: "+e.message;
         pending.abort();controller=null;setReady(null);setSessionActive(false);setRequesting(false);
@@ -156,10 +157,14 @@
       indicator.textContent="";
       status.textContent="Richiesta ticket interrotta. Puoi riprovare quando vuoi.";
     });
-    chatButton.addEventListener("click",()=>{
+    function openChat(provider){
       if(!readySession)return;
-      window.open("https://claude.ai/new?q="+encodeURIComponent(bootstrap(readySession)),"_blank","noopener,noreferrer");
-    });
+      const prompt=encodeURIComponent(bootstrap(readySession));
+      const url=provider==="claude"?"https://claude.ai/new?q="+prompt:"https://chatgpt.com/?q="+prompt;
+      window.open(url,"_blank","noopener,noreferrer");
+    }
+    chatButtons[0].addEventListener("click",()=>openChat("gpt"));
+    chatButtons[1].addEventListener("click",()=>openChat("claude"));
     window.addEventListener("pagehide",()=>controller?.abort());
   })();
   </script>
