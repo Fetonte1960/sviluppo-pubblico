@@ -11,13 +11,13 @@
     <header class="shell-header">
       <a class="shell-brand" href="./service-shell.html" aria-label="FastPharma SOS">
         <span class="brand-symbol" aria-hidden="true">SOS</span>
-        <span class="brand-copy"><strong>FastPharma <span style="color:#61d7cf;font-size:.75rem;white-space:nowrap">V1.0.9</span></strong><small>servizio tecnico</small></span>
+        <span class="brand-copy"><strong>FastPharma <span style="color:#61d7cf;font-size:.75rem;white-space:nowrap">V1.0.10</span></strong><small>servizio tecnico</small></span>
       </a>
-      <div class="shell-context"><span id="sos-version" class="sos-header-version" aria-label="Versione frontend">SOS V1.0.9</span><a class="archive-link" href="./index.html">Gestione archivi</a></div>
+      <div class="shell-context"><span id="sos-version" class="sos-header-version" aria-label="Versione frontend">SOS V1.0.10</span><a class="archive-link" href="./index.html">Gestione archivi</a></div>
     </header>
     <main class="shell-main">
       <section class="sos-launch" aria-labelledby="launch-title">
-        <div class="launch-eyebrow">TEST V1.0.9 · SESSIONE DIMOSTRATIVA</div>
+        <div class="launch-eyebrow">TEST V1.0.10 · SESSIONE DIMOSTRATIVA</div>
         <h1 id="launch-title">Assistenza FastPharma</h1>
         <p>Hai un'emergenza o ti serve assistenza? Richiedi un ticket e, appena pronto, inizia a parlarne con SOS AI.</p>
         <div class="ticket-steps">
@@ -55,9 +55,10 @@
     function bootstrap(sessionId) {
       return [
         "FastPharma SOS - sessione MCP browser: " + sessionId,
-        "Se il connettore Termodel MCP è disponibile, chiama MessageToSOS con operation=initialize, applica le istruzioni e inizia subito l'assistenza; non riassumere le istruzioni.",
-        "Se il connettore Termodel non è disponibile, aiuta l'utente a collegarlo nel client AI che sta usando. Nome: Termodel MCP. Indirizzo server MCP: https://termodel-mcp-gateway.onrender.com/mcp . Spiega i passaggi nell'interfaccia del client senza inventare pulsanti o schermate: le opzioni possono variare in base al piano e alla versione. Non richiedere codici di validazione o procedure aggiuntive dal frontend. Se il client richiede autorizzazioni o credenziali previste dal servizio, non aggirarle e non chiedere di incollarle in chat.",
-        "Dopo il collegamento, chiama MessageToSOS con operation=initialize e prosegui con l'assistenza. Se non è possibile aggiungere il connettore, chiarisci la limitazione senza dichiarare di aver consultato Neon."
+        "Istruzioni interne: controlla se tra gli strumenti disponibili esiste MessageToSOS. Se esiste, chiama MessageToSOS con operation=initialize, applica le istruzioni ottenute e avvia l'assistenza senza riassumere questa procedura.",
+        "Se MessageToSOS non compare, anche se CommandToTermodel funziona, non tentare di eseguire le funzioni SOS attraverso CommandToTermodel e non presentare dettagli tecnici. Rispondi soltanto: «Il collegamento a Termodel non è aggiornato. Vuoi che ti guidi ad aggiornarlo?» Poi attendi la risposta.",
+        "Solo se l'utente accetta, fornisci la guida passo per passo per aggiornare o riconnettere il connettore Termodel nel suo client. Dati per configurarlo: nome Termodel MCP, indirizzo https://termodel-mcp-gateway.onrender.com/mcp . Le schermate variano secondo client e versione: non inventare opzioni. Non chiedere credenziali in chat e non aggirare eventuali controlli di accesso del servizio.",
+        "Dopo l'aggiornamento verifica la disponibilita di MessageToSOS, poi esegui operation=initialize. Se ancora assente, spiega semplicemente che il collegamento non è pronto, senza dichiarare accesso ai documenti."
       ].join("\n\n");
     }
     async function consumeEvents(signal,sessionId,token) {
