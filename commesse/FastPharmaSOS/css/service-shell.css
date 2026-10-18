@@ -249,3 +249,19 @@ button {
     padding: 0 12px;
   }
 }
+
+/* Avvio SOS V1: pagina minima, senza iframe verso provider AI */
+.sos-launch { max-width: 760px; margin: min(9vh,90px) auto 0; padding: clamp(22px,4vw,44px); border: 1px solid var(--line); border-radius: 20px; background: var(--panel); box-shadow: 0 20px 55px #0004; }
+.launch-eyebrow { color: var(--accent); font-size: .73rem; letter-spacing: .12em; font-weight: 700; }
+.sos-launch h1 { font-size: clamp(1.65rem,3vw,2.5rem); margin: 14px 0; }
+.sos-launch p { line-height: 1.55; color: #c4dcdd; }
+.sos-launch label { display: block; margin: 22px 0 8px; font-weight: 600; }
+.sos-launch input, .sos-launch textarea { display: block; width: 100%; border: 1px solid #46717a; border-radius: 9px; background: #06151a; color: #fff; padding: 12px; font: inherit; }
+.sos-launch textarea { font-size: .86rem; line-height: 1.45; margin: 14px 0; }
+.sos-launch .launch-hint { font-size: .86rem; color: #adc6ca; }
+.launch-button { display: block; width: 100%; padding: 16px; margin: 22px 0 10px; border: 0; border-radius: 12px; background: var(--accent); color: #062126; font: inherit; font-weight: 800; cursor: pointer; }
+.launch-button:hover, .launch-button:focus-visible { background: #a3f1e9; }
+.launch-status { min-height: 1.4em; }
+.launch-details { margin-top: 22px; padding-top: 15px; border-top: 1px solid var(--line); }
+.launch-details summary { cursor: pointer; }
+.copy-button { padding: 9px 16px; border: 1px solid #579a9e; border-radius: 9px; color: var(--text); background: var(--panel-2); cursor: pointer; }
