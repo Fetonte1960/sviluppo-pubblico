@@ -3,53 +3,86 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Bozza Service Shell FastPharmaSOS.">
-  <title>FastPharma SOS</title>
+  <meta name="description" content="Accesso al servizio FastPharma SOS tramite Claude e Gateway MCP Termodel.">
+  <title>FastPharma SOS — Avvio assistenza</title>
   <link rel="stylesheet" href="./css/service-shell.css">
 </head>
 <body>
   <div class="service-shell">
     <header class="shell-header">
-      <a class="shell-brand" href="#" aria-label="FastPharma SOS">
+      <a class="shell-brand" href="./service-shell.html" aria-label="FastPharma SOS">
         <span class="brand-symbol" aria-hidden="true">SOS</span>
-        <span class="brand-copy">
-          <strong>FastPharma</strong>
-          <small>servizio tecnico</small>
-        </span>
+        <span class="brand-copy"><strong>FastPharma</strong><small>Servizio tecnico</small></span>
       </a>
-
-      <div class="shell-context" aria-label="Contesto utente">
-        <span class="tenant">FastPharma</span>
+      <div class="shell-context">
         <a class="archive-link" href="./index.html">Gestione archivi</a>
-        <button class="account-button" type="button" disabled aria-disabled="true">
-          Accesso
-        </button>
       </div>
     </header>
-
     <main class="shell-main">
-      <section
-        id="termodel-mcp-dock"
-        class="module-dock"
-        aria-label="Spazio riservato al modulo Termodel MCP"
-      >
-        <div class="dock-label">Modulo Termodel MCP</div>
-
-        <div class="dock-placeholder" aria-hidden="true">
-          <span>FastPharma</span>
-          <strong>SOS</strong>
-        </div>
-
-        <div class="dock-state">
-          spazio di docking · modulo non ancora caricato
-        </div>
+      <section class="sos-launch" aria-labelledby="launch-title">
+        <div class="launch-eyebrow">ASSISTENZA TECNICA · TEST V1</div>
+        <h1 id="launch-title">Avvia SOS con Claude</h1>
+        <p>Il pulsante apre Claude in una nuova scheda e prepara le istruzioni iniziali per il Gateway MCP canonico Termodel.</p>
+        <label for="viewer-session">Codice sessione Tiralinee già aperta (facoltativo)</label>
+        <input id="viewer-session" type="text" spellcheck="false" autocomplete="off" placeholder="Inserisci il codice della sessione già attiva" maxlength="128">
+        <p class="launch-hint">Inserisci solo l'ID di collegamento fornito da Tiralinee, mai password o token di accesso. Se non hai una sessione collegata, lascia vuoto.</p>
+        <button id="start-sos" type="button" class="launch-button">Apri SOS in Claude</button>
+        <p id="launch-status" class="launch-status" role="status" aria-live="polite"></p>
+        <details class="launch-details">
+          <summary>Visualizza le istruzioni da inviare a Claude</summary>
+          <textarea id="bootstrap-preview" readonly rows="13" aria-label="Istruzioni per Claude"></textarea>
+          <button id="copy-sos" type="button" class="copy-button">Copia istruzioni</button>
+        </details>
+        <p class="launch-hint">Per il test iniziale, il testo viene copiato negli appunti: incollalo nella conversazione Claude e invialo. Il collegamento MCP deve essere già configurato nel tuo account Claude; il portale non può attivarlo da solo.</p>
       </section>
     </main>
-
-    <footer class="shell-footer">
-      <span>FastPharma SOS</span>
-      <span class="prototype-note">bozza Service Shell</span>
-    </footer>
+    <footer class="shell-footer"><span>FastPharma SOS</span><span>Avvio Claude · test V1</span></footer>
   </div>
+  <script>
+    (() => {
+      "use strict";
+      const sessionInput = document.getElementById("viewer-session");
+      const preview = document.getElementById("bootstrap-preview");
+      const status = document.getElementById("launch-status");
+      function instructions() {
+        const session = sessionInput.value.trim();
+        return [
+          "Sei l'assistente tecnico FastPharma SOS. Opera solo su dati autorizzati della farmacia corrente.",
+          "Usa esclusivamente il server MCP canonico Termodel già configurato nel tuo client Claude; non creare nuovi server e non accedere al backend gestionale FastPharmaSOS.",
+          "Verifica la disponibilità MCP con il tool CommandToTermodel e il comando Ping.",
+          "Quando sarà disponibile il tool MessageToSOS, richiedi initialize e recupera dal Gateway MCP le istruzioni SOS aggiornate e il contesto della sessione autorizzata. Le istruzioni SOS provengono da Neon tramite Gateway MCP, non da una pagina Web.",
+          "Non confondere GetInstructions di CommandToTermodel (istruzioni Termodel) con le future istruzioni SOS.",
+          "Se MessageToSOS non è presente, dichiaralo chiaramente: il collegamento SOS a Neon non è ancora operativo. Non inventare documenti, farmacie o risultati.",
+          session ? "Sessione browser Tiralinee dichiarata dall'utente: " + session + ". Verifica l'abbinamento sul Gateway prima di inoltrare comandi; il codice non prova identità o autorizzazione." : "Nessuna sessione browser Tiralinee indicata: chiedi di stabilire il collegamento prima di inviare comandi visuali.",
+          "Non eseguire interventi fisici sugli impianti. Per la prima prova spiega quali funzioni MCP risultano realmente disponibili e attendi la richiesta dell'utente."
+        ].join("\n\n");
+      }
+      function refresh() { preview.value = instructions(); }
+      async function copy() {
+        const value = instructions();
+        try {
+          await navigator.clipboard.writeText(value);
+          status.textContent = "Istruzioni copiate. Incollale in Claude e invia il messaggio.";
+          return true;
+        } catch (_) {
+          preview.value = value;
+          preview.focus();
+          preview.select();
+          status.textContent = "Copia automatica non consentita: copia il testo selezionato e incollalo in Claude.";
+          return false;
+        }
+      }
+      sessionInput.addEventListener("input", refresh);
+      document.getElementById("copy-sos").addEventListener("click", copy);
+      document.getElementById("start-sos").addEventListener("click", () => {
+        const tab = window.open("https://claude.ai/new", "_blank", "noopener,noreferrer");
+        void copy();
+        if (!tab) {
+          status.textContent = "Il browser ha bloccato la nuova scheda. Apri https://claude.ai/new e incolla le istruzioni.";
+        }
+      });
+      refresh();
+    })();
+  </script>
 </body>
 </html>
