@@ -11,13 +11,13 @@
     <header class="shell-header">
       <a class="shell-brand" href="./service-shell.html" aria-label="FastPharma SOS">
         <span class="brand-symbol" aria-hidden="true">SOS</span>
-        <span class="brand-copy"><strong>FastPharma <span style="color:#61d7cf;font-size:.75rem;white-space:nowrap">V1.0.6</span></strong><small>servizio tecnico</small></span>
+        <span class="brand-copy"><strong>FastPharma <span style="color:#61d7cf;font-size:.75rem;white-space:nowrap">V1.0.7</span></strong><small>servizio tecnico</small></span>
       </a>
-      <div class="shell-context"><span id="sos-version" class="sos-header-version" aria-label="Versione frontend">SOS V1.0.6</span><a class="archive-link" href="./index.html">Gestione archivi</a></div>
+      <div class="shell-context"><span id="sos-version" class="sos-header-version" aria-label="Versione frontend">SOS V1.0.7</span><a class="archive-link" href="./index.html">Gestione archivi</a></div>
     </header>
     <main class="shell-main">
       <section class="sos-launch" aria-labelledby="launch-title">
-        <div class="launch-eyebrow">TEST V1.0.6 · SESSIONE DIMOSTRATIVA</div>
+        <div class="launch-eyebrow">TEST V1.0.7 · SESSIONE DIMOSTRATIVA</div>
         <h1 id="launch-title">Assistenza FastPharma</h1>
         <p>Hai un'emergenza o ti serve assistenza? Richiedi un ticket e, appena pronto, inizia a parlarne con SOS AI.</p>
         <div class="ticket-steps">
@@ -40,7 +40,13 @@
     const chatButton = document.getElementById("start-chat");
     const cancelButton = document.getElementById("cancel-sos");
     let requestingTicket = false;
-    function setRequesting(value) { requestingTicket=value; cancelButton.disabled=!value; button.disabled=value; }
+    let sessionActive = false;
+    function syncActions() {
+      cancelButton.disabled=!requestingTicket;
+      button.disabled=requestingTicket||sessionActive;
+    }
+    function setRequesting(value) { requestingTicket=value; syncActions(); }
+    function setSessionActive(value) { sessionActive=value; syncActions(); }
     const status = document.getElementById("launch-status");
     const indicator = document.getElementById("session-indicator");
     let controller = null;
@@ -88,11 +94,11 @@
       } catch(e) {
         if(!signal.aborted)status.textContent="Canale MCP interrotto: "+e.message;
       } finally {
-        if(!signal.aborted){setReady(null);setRequesting(false);controller=null;indicator.textContent="Ticket non più attivo: richiedine uno nuovo.";}
+        if(!signal.aborted){setReady(null);setSessionActive(false);setRequesting(false);controller=null;indicator.textContent="Ticket non più attivo: richiedine uno nuovo.";}
       }
     }
     button.addEventListener("click",async()=>{
-      if(controller)return;
+      if(controller||requestingTicket||sessionActive)return;
       setReady(null);
       setRequesting(true);
       status.textContent="Richiesta ticket in corso: collegamento al servizio di assistenza...";
@@ -134,18 +140,19 @@
         const data=await res.json();
         if(!/^[a-f0-9]{40}$/.test(data.sessionId||"")||!data.browserToken)
           throw Error("Risposta sessione non valida");
-        indicator.textContent="Ticket di prova ottenuto. Il servizio è pronto per la discussione.";
+        indicator.textContent="Ticket di prova ottenuto. Apertura del canale MCP/SSE in corso.";
+        setSessionActive(true);
         setRequesting(false);
         void consumeEvents(pending.signal,data.sessionId,data.browserToken);
         // Claude si apre soltanto con un clic esplicito sul secondo pulsante.
       }catch(e){
         if(!pending.signal.aborted)status.textContent="Non è stato possibile ottenere il ticket: "+e.message;
-        pending.abort();controller=null;setReady(null);setRequesting(false);
+        pending.abort();controller=null;setReady(null);setSessionActive(false);setRequesting(false);
       }
     });
     cancelButton.addEventListener("click",()=>{
       if(!requestingTicket||!controller)return;
-      controller.abort();controller=null;setRequesting(false);setReady(null);
+      controller.abort();controller=null;setSessionActive(false);setRequesting(false);setReady(null);
       indicator.textContent="";
       status.textContent="Richiesta ticket interrotta. Puoi riprovare quando vuoi.";
     });
