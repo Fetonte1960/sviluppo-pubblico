@@ -265,3 +265,6 @@ button {
 .launch-details { margin-top: 22px; padding-top: 15px; border-top: 1px solid var(--line); }
 .launch-details summary { cursor: pointer; }
 .copy-button { padding: 9px 16px; border: 1px solid #579a9e; border-radius: 9px; color: var(--text); background: var(--panel-2); cursor: pointer; }
+
+.sos-header-version { color: var(--accent); font-size: .82rem; font-weight: 800; white-space: nowrap; letter-spacing: .025em; }
+@media (max-width: 420px) { .sos-header-version { font-size: .7rem; } .shell-context { gap: 6px; } }
