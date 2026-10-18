@@ -92,9 +92,37 @@
       status.textContent="Apertura sessione sul Gateway MCP canonico...";
       const pending=new AbortController();controller=pending;
       try {
-        const res=await fetch(gateway+"/browser/register",{
-          method:"POST",headers:{"Content-Type":"application/json"},body:"{}",cache:"no-store",signal:pending.signal
-        });
+        // Render Free può richiedere oltre un minuto per il risveglio.
+        // Ogni tentativo ha timeout; il ciclo resta limitato a 150 secondi.
+        const deadline=Date.now()+150000;
+        let res, lastFailure, attempt=0;
+        while(Date.now()<deadline && !pending.signal.aborted) {
+          attempt++;
+          status.textContent="Collegamento Gateway MCP: tentativo "+attempt+" — attesa eventuale risveglio Render…";
+          const timeout=new AbortController();
+          const timer=setTimeout(()=>timeout.abort(),25000);
+          const cancel=()=>timeout.abort();
+          pending.signal.addEventListener("abort",cancel,{once:true});
+          try {
+            res=await fetch(gateway+"/browser/register",{
+              method:"POST",headers:{"Content-Type":"application/json"},
+              body:"{}",cache:"no-store",signal:timeout.signal
+            });
+            if(res.ok)break;
+            lastFailure="HTTP "+res.status;
+            if(res.status>=400 && res.status<500 && res.status!==408 && res.status!==429)
+              throw Error("Gateway "+lastFailure+" (non recuperabile con l'attesa)");
+          } catch(e) {
+            lastFailure=e.message || String(e);
+            if(e.message?.includes("non recuperabile"))throw e;
+          } finally {
+            clearTimeout(timer);
+            pending.signal.removeEventListener("abort",cancel);
+          }
+          const remaining=deadline-Date.now();
+          if(remaining>0)await new Promise(resolve=>setTimeout(resolve,Math.min(5000,remaining)));
+        }
+        if(!res?.ok)throw Error("Gateway non raggiungibile entro 150 s ("+(lastFailure||"timeout")+"). Se persiste, verificare deploy Render e CORS dell'origine GitHub Pages.");
         if(!res.ok)throw Error("Gateway HTTP "+res.status);
         const data=await res.json();
         if(!/^[a-f0-9]{40}$/.test(data.sessionId||"")||!data.browserToken)
