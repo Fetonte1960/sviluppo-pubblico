@@ -11,13 +11,13 @@
     <header class="shell-header">
       <a class="shell-brand" href="./service-shell.html" aria-label="FastPharma SOS">
         <span class="brand-symbol" aria-hidden="true">SOS</span>
-        <span class="brand-copy"><strong>FastPharma <span style="color:#61d7cf;font-size:.75rem;white-space:nowrap">V1.0.11</span></strong><small>servizio tecnico</small></span>
+        <span class="brand-copy"><strong>FastPharma <span style="color:#61d7cf;font-size:.75rem;white-space:nowrap">V1.0.12</span></strong><small>servizio tecnico</small></span>
       </a>
-      <div class="shell-context"><span id="sos-version" class="sos-header-version" aria-label="Versione frontend">SOS V1.0.11</span><a class="archive-link" href="./index.html">Gestione archivi</a></div>
+      <div class="shell-context"><span id="sos-version" class="sos-header-version" aria-label="Versione frontend">SOS V1.0.12</span><a class="archive-link" href="./index.html">Gestione archivi</a></div>
     </header>
     <main class="shell-main">
       <section class="sos-launch" aria-labelledby="launch-title">
-        <div class="launch-eyebrow">TEST V1.0.11 · SESSIONE DIMOSTRATIVA</div>
+        <div class="launch-eyebrow">TEST V1.0.12 · SESSIONE DIMOSTRATIVA</div>
         <h1 id="launch-title">Assistenza FastPharma</h1>
         <p>Hai un'emergenza o ti serve assistenza? Richiedi un ticket e, appena pronto, inizia a parlarne con SOS AI.</p>
         <div class="ticket-steps">
@@ -25,7 +25,15 @@
           <div class="ticket-step"><span class="ticket-step-number">2</span><button id="cancel-sos" type="button" class="launch-button ticket-cancel" disabled>Interrompi richiesta ticket</button></div>
           <div class="ticket-step"><span class="ticket-step-number">3</span><div class="chat-choice"><button id="start-gpt" type="button" class="launch-button" disabled aria-disabled="true">Avvia chat ChatGPT</button><button id="start-claude" type="button" class="launch-button" disabled aria-disabled="true">Avvia chat Claude</button></div></div>
         </div>
-        <div class="help-copy-tools"><button type="button" id="copy-help-user" class="copy-button">Copia help utente</button><span id="help-copy-status" role="status" aria-live="polite"></span></div>
+        <div class="help-copy-tools"><button type="button" id="open-help-ai" class="copy-button">Help AI · Come funziona?</button></div>
+        <dialog id="help-ai-dialog" class="help-ai-dialog" aria-labelledby="help-ai-title">
+          <h2 id="help-ai-title">Come ricevere assistenza</h2>
+          <p>Per conoscere FastPharmaSOS o chiedere aiuto, utilizza la chat con l’intelligenza artificiale.</p>
+          <p>Prima richiedi un ticket e attendi la conferma. Poi premi <strong>«Avvia chat ChatGPT»</strong> oppure <strong>«Avvia chat Claude»</strong> e scrivi la tua domanda, ad esempio «A cosa serve FastPharmaSOS?».</p>
+          <p>Mantieni aperta questa pagina mentre usi la chat.</p>
+          <div class="help-ai-dialog-actions"><button type="button" id="copy-help-user" class="copy-button">Copia testo help</button><button type="button" id="close-help-ai" class="launch-button">OK, ho capito</button></div>
+          <p id="help-copy-status" role="status" aria-live="polite"></p>
+        </dialog>
         <p id="launch-status" class="launch-status" role="status" aria-live="polite">Pronto per iniziare il test.</p>
         <p id="session-indicator" class="launch-hint"></p>
         <p class="launch-hint">Mantieni questa pagina aperta durante la chat. Il collegamento MCP Termodel potrebbe richiedere una configurazione iniziale nel client AI; il collegamento ai documenti di prova avviene tramite MessageToSOS. Nessuna verifica automatica del connettore viene effettuata dal frontend.</p>
@@ -37,6 +45,9 @@
   (() => {
     "use strict";
     const helpUser = "# Help utente FastPharmaSOS\n\n## Che cos'è FastPharmaSOS?\n\n**FastPharmaSOS** è un servizio di assistenza intelligente dedicato alle farmacie.\n\nÈ un'applicazione di un sistema generale sviluppato da **Termodel Foundation**, che consente di modellare gli edifici, i loro ambienti e gli impianti per renderne le informazioni utilizzabili dagli agenti di intelligenza artificiale.\n\nIl sistema è concesso in licenza a **FastPharma S.r.l.**, che lo utilizza per offrire servizi di assistenza dedicati alle farmacie.\n\n## Come funziona\n\nPuoi descrivere un problema con parole semplici e ricevere assistenza dall'intelligenza artificiale, che può consultare la documentazione tecnica della tua farmacia per aiutarti a individuare componenti, impianti e possibili soluzioni, quando le informazioni sono disponibili e l'accesso è autorizzato.\n\nPer avviare una prova nel frontend attuale, richiedi un ticket, attendi la conferma e scegli ChatGPT oppure Claude. Mantieni aperta la pagina del ticket. Se il collegamento Termodel non è aggiornato, l'assistente può guidarti nell'aggiornamento; potrebbe essere necessario aprire una nuova chat.\n\n## Come vengono realizzati i modelli degli edifici\n\nI modelli degli edifici e dei relativi impianti vengono realizzati utilizzando il **modellatore Termodel**, strumento utilizzato anche da progettisti e installatori per la progettazione degli impianti tecnologici, la rappresentazione degli ambienti e dei componenti impiantistici e la redazione degli **APE (Attestati di Prestazione Energetica)**.\n\nLo stesso modello può essere utile sia durante la progettazione sia per la gestione e la manutenzione dell'edificio, anche attraverso l'intelligenza artificiale.\n\n- Sito e accesso Termodel: https://www.termodel.it/\n- Informazioni sull'integrazione AI: https://www.termodel.it/ai/\n\n## Accesso da parte di tecnici e servizi di emergenza\n\nIl sistema è concepito per poter essere utilizzato anche da soggetti esterni, come impiantisti, manutentori, Vigili del Fuoco e Forze dell'Ordine.\n\nIl titolare della farmacia può scegliere se mantenere le informazioni riservate, condividerle con gruppi selezionati oppure renderle pubblicamente accessibili, secondo le funzionalità di autorizzazione effettivamente disponibili.\n\nI soggetti autorizzati potranno consultare le informazioni sull'edificio e sugli impianti per orientarsi e organizzare gli interventi. Le possibilità di pubblicazione e condivisione descritte rappresentano il modello funzionale previsto, non una dichiarazione che tutti i controlli di accesso siano già operativi.\n\n## Avvertenze\n\nFastPharmaSOS non sostituisce tecnici qualificati, Vigili del Fuoco o servizi di emergenza. In caso di pericolo immediato dare priorità alla sicurezza delle persone. Non effettuare manovre su impianti o apparecchi non identificati.\n\n**Stato della dimostrazione:** la farmacia e gli impianti del test sono simulati, non verificati sul posto. Non utilizzare informazioni dimostrative come indicazioni relative a una farmacia reale.\n";
+    const helpDialog=document.getElementById("help-ai-dialog");
+    document.getElementById("open-help-ai").addEventListener("click",()=>helpDialog.showModal());
+    document.getElementById("close-help-ai").addEventListener("click",()=>helpDialog.close());
     document.getElementById("copy-help-user").addEventListener("click",async()=>{
       const feedback=document.getElementById("help-copy-status");
       try {await navigator.clipboard.writeText(helpUser);feedback.textContent="Help copiato: incollalo nella chat AI.";}catch(_){feedback.textContent="Copia non riuscita. Verifica i permessi del browser.";}
