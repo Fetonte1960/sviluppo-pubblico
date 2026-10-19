@@ -11,13 +11,13 @@
     <header class="shell-header">
       <a class="shell-brand" href="./service-shell.html" aria-label="FastPharma SOS">
         <span class="brand-symbol" aria-hidden="true">SOS</span>
-        <span class="brand-copy"><strong>FastPharma <span style="color:#61d7cf;font-size:.75rem;white-space:nowrap">V1.0.10</span></strong><small>servizio tecnico</small></span>
+        <span class="brand-copy"><strong>FastPharma <span style="color:#61d7cf;font-size:.75rem;white-space:nowrap">V1.0.11</span></strong><small>servizio tecnico</small></span>
       </a>
-      <div class="shell-context"><span id="sos-version" class="sos-header-version" aria-label="Versione frontend">SOS V1.0.10</span><a class="archive-link" href="./index.html">Gestione archivi</a></div>
+      <div class="shell-context"><span id="sos-version" class="sos-header-version" aria-label="Versione frontend">SOS V1.0.11</span><a class="archive-link" href="./index.html">Gestione archivi</a></div>
     </header>
     <main class="shell-main">
       <section class="sos-launch" aria-labelledby="launch-title">
-        <div class="launch-eyebrow">TEST V1.0.10 · SESSIONE DIMOSTRATIVA</div>
+        <div class="launch-eyebrow">TEST V1.0.11 · SESSIONE DIMOSTRATIVA</div>
         <h1 id="launch-title">Assistenza FastPharma</h1>
         <p>Hai un'emergenza o ti serve assistenza? Richiedi un ticket e, appena pronto, inizia a parlarne con SOS AI.</p>
         <div class="ticket-steps">
@@ -25,6 +25,7 @@
           <div class="ticket-step"><span class="ticket-step-number">2</span><button id="cancel-sos" type="button" class="launch-button ticket-cancel" disabled>Interrompi richiesta ticket</button></div>
           <div class="ticket-step"><span class="ticket-step-number">3</span><div class="chat-choice"><button id="start-gpt" type="button" class="launch-button" disabled aria-disabled="true">Avvia chat ChatGPT</button><button id="start-claude" type="button" class="launch-button" disabled aria-disabled="true">Avvia chat Claude</button></div></div>
         </div>
+        <div class="help-copy-tools"><button type="button" id="copy-help-user" class="copy-button">Copia help utente</button><span id="help-copy-status" role="status" aria-live="polite"></span></div>
         <p id="launch-status" class="launch-status" role="status" aria-live="polite">Pronto per iniziare il test.</p>
         <p id="session-indicator" class="launch-hint"></p>
         <p class="launch-hint">Mantieni questa pagina aperta durante la chat. Il collegamento MCP Termodel potrebbe richiedere una configurazione iniziale nel client AI; il collegamento ai documenti di prova avviene tramite MessageToSOS. Nessuna verifica automatica del connettore viene effettuata dal frontend.</p>
@@ -35,6 +36,11 @@
   <script>
   (() => {
     "use strict";
+    const helpUser = "HELP FASTPHARMASOS — UTENTE FARMACIA (DEMO)\n\nSono una guida all'uso di FastPharmaSOS: spiega in modo semplice come usare il servizio, rispondi alle domande sulla base di questo testo senza inventare funzioni.\n\nFastPharmaSOS è un servizio di assistenza per le farmacie. Consente di descrivere un problema con parole comuni e dialogare con un assistente AI che, quando correttamente collegato, può consultare le informazioni tecniche della farmacia disponibili nel servizio: locali, impianti, componenti, documenti e relative ubicazioni. Non sostituisce il personale qualificato e non effettua interventi fisici.\n\nPer iniziare: aprire la pagina Servizio, premere «Richiedi un ticket per assistenza o emergenza», attendere «Ticket ottenuto» e scegliere «Avvia chat ChatGPT» oppure «Avvia chat Claude». Tenere aperta la pagina del ticket durante la conversazione.\n\nSe il collegamento Termodel non è aggiornato, l'assistente propone di guidare l'utente nel suo aggiornamento. Seguire la guida nel client AI; può essere necessario aprire una nuova chat dopo l'aggiornamento. Non condividere password o codici riservati in chat.\n\nDescrivere il problema, l'ambiente e i segnali osservati; l'assistente può fare domande e fornire orientamenti basati sui documenti disponibili. Le posizioni sono indicate rispetto alla porta d'ingresso di ciascun locale, guardando verso l'interno. Se la documentazione non descrive un dettaglio, l'assistente deve dichiararlo.\n\nIn caso di pericolo immediato per persone, acqua vicino a elettricità, fumo o incendio, mettere prima in sicurezza le persone e richiedere gli interventi professionali appropriati; non eseguire manovre su dispositivi non riconosciuti. L'help non è una procedura di emergenza.\n\nStato attuale: prova dimostrativa con farmacia e impianti inventati, non verificati in una farmacia reale. Nessuna identificazione effettiva della farmacia o autorizzazione a consultare documenti reali è garantita da questa pagina. Il visualizzatore grafico non è ancora operativo nel Service Shell.\n\nQuando ti chiedono «Che cos'è SOS?» o «Come funziona?», rispondi usando questo help, in maniera sintetica e comprensibile.";
+    document.getElementById("copy-help-user").addEventListener("click",async()=>{
+      const feedback=document.getElementById("help-copy-status");
+      try {await navigator.clipboard.writeText(helpUser);feedback.textContent="Help copiato: incollalo nella chat AI.";}catch(_){feedback.textContent="Copia non riuscita. Verifica i permessi del browser.";}
+    });
     const gateway = "https://termodel-mcp-gateway.onrender.com";
     const button = document.getElementById("start-sos");
     const chatButtons = [document.getElementById("start-gpt"),document.getElementById("start-claude")];
@@ -55,6 +61,7 @@
     function bootstrap(sessionId) {
       return [
         "FastPharma SOS - sessione MCP browser: " + sessionId,
+        "Informazioni generali sul servizio, utili per rispondere alle domande introduttive: "+helpUser,
         "Istruzioni interne: controlla se tra gli strumenti disponibili esiste MessageToSOS. Se esiste, chiama MessageToSOS con operation=initialize, applica le istruzioni ottenute e avvia l'assistenza senza riassumere questa procedura.",
         "Se MessageToSOS non compare, anche se CommandToTermodel funziona, non tentare di eseguire le funzioni SOS attraverso CommandToTermodel e non presentare dettagli tecnici. Rispondi soltanto: «Il collegamento a Termodel non è aggiornato. Vuoi che ti guidi ad aggiornarlo?» Poi attendi la risposta.",
         "Solo se l'utente accetta, fornisci la guida passo per passo per aggiornare o riconnettere il connettore Termodel nel suo client. Dati per configurarlo: nome Termodel MCP, indirizzo https://termodel-mcp-gateway.onrender.com/mcp . Le schermate variano secondo client e versione: non inventare opzioni. Non chiedere credenziali in chat e non aggirare eventuali controlli di accesso del servizio.",
