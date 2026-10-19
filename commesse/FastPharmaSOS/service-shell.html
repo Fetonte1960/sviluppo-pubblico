@@ -61,7 +61,6 @@
     function bootstrap(sessionId) {
       return [
         "FastPharma SOS - sessione MCP browser: " + sessionId,
-        "Informazioni generali sul servizio, utili per rispondere alle domande introduttive: "+helpUser,
         "Istruzioni interne: controlla se tra gli strumenti disponibili esiste MessageToSOS. Se esiste, chiama MessageToSOS con operation=initialize, applica le istruzioni ottenute e avvia l'assistenza senza riassumere questa procedura.",
         "Se MessageToSOS non compare, anche se CommandToTermodel funziona, non tentare di eseguire le funzioni SOS attraverso CommandToTermodel e non presentare dettagli tecnici. Rispondi soltanto: «Il collegamento a Termodel non è aggiornato. Vuoi che ti guidi ad aggiornarlo?» Poi attendi la risposta.",
         "Solo se l'utente accetta, fornisci la guida passo per passo per aggiornare o riconnettere il connettore Termodel nel suo client. Dati per configurarlo: nome Termodel MCP, indirizzo https://termodel-mcp-gateway.onrender.com/mcp . Le schermate variano secondo client e versione: non inventare opzioni. Non chiedere credenziali in chat e non aggirare eventuali controlli di accesso del servizio.",
