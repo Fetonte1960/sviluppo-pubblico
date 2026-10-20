@@ -9,7 +9,7 @@ function clientError(kind, message, cause = null) {
   return error;
 }
 
-async function request(path, options = {}, timeoutMs = 20000) {
+async function requestOnce(path, options = {}, timeoutMs = 20000) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -50,6 +50,23 @@ async function request(path, options = {}, timeoutMs = 20000) {
     return body;
   } finally {
     clearTimeout(timeout);
+  }
+}
+
+// Render Free: i servizi in pausa possono richiedere tempo al primo accesso.
+// Ritenta solo letture, in modo limitato: nessun polling permanente e nessuna scrittura ripetuta.
+async function request(path, options = {}, timeoutMs = 20000) {
+  if (options.method && options.method.toUpperCase() !== "GET") return requestOnce(path, options, timeoutMs);
+  const delays = [5000, 10000, 15000];
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await requestOnce(path, options, Math.max(timeoutMs, 20000));
+    } catch (error) {
+      const transient = ["client_timeout", "network_error"].includes(error.kind) ||
+        [502, 503, 504].includes(error.status);
+      if (!transient || attempt >= delays.length) throw error;
+      await new Promise(resolve => setTimeout(resolve, delays[attempt]));
+    }
   }
 }
 
