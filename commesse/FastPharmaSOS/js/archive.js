@@ -273,7 +273,7 @@ export function initializeArchiveWorkspace() {
 
   const loadItems = async query => {
     const sequence = ++fetchSequence;
-    status.textContent = "Caricamento…";
+    status.textContent = "Collegamento all’archivio… Se il server è in pausa, il risveglio può richiedere circa un minuto.";
     try {
       const result = await getCommesse(query);
       if (sequence !== fetchSequence) return;
@@ -290,7 +290,7 @@ export function initializeArchiveWorkspace() {
       catalogItems = [];
       renderCatalog();
       fillSelect([]);
-      status.textContent = "Archivio non raggiungibile";
+      status.textContent = "Archivio momentaneamente non raggiungibile. Riprova con Cerca o Aggiorna.";
       console.error(error);
     }
   };
