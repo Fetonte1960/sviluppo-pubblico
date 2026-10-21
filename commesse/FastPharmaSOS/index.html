@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="it" data-app-version="1.1.2" data-api-base="https://fastpharmasos.onrender.com">
+<html lang="it" data-app-version="1.1.3" data-api-base="https://fastpharmasos.onrender.com">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Dashboard demo FastPharmaSOS per gestione archivi, immagini e assistente SOS.">
   <title>FastPharma SOS · Gestionale demo</title>
   <script>if (new URLSearchParams(location.search).has("password")) history.replaceState(null, "", location.pathname + location.hash);</script>
-  <link rel="stylesheet" href="./css/app.css?v=1.1.2">
+  <link rel="stylesheet" href="./css/app.css?v=1.1.3">
 </head>
 <body>
   <header class="topbar">
@@ -18,7 +18,7 @@
       </div>
     </div>
 
-    <div class="topbar-right"><span id="app-version" style="font-size:12px;white-space:nowrap" title="Versione gestionale">Gestionale v1.1.2 · 21/10/2026</span><button type="button" id="check-version" class="secondary-action" style="font-size:12px">Verifica aggiornamento</button><span id="version-status" role="status" style="font-size:12px"></span><button type="button" id="copy-help-inspector" class="secondary-action">Copia help ispettore</button><span id="help-inspector-status" role="status" aria-live="polite" class="sr-only"></span>
+    <div class="topbar-right"><span id="app-version" style="font-size:12px;white-space:nowrap" title="Versione gestionale">Gestionale v1.1.3 · 21/10/2026</span><button type="button" id="check-version" class="secondary-action" style="font-size:12px">Verifica aggiornamento</button><span id="version-status" role="status" style="font-size:12px"></span><button type="button" id="copy-help-inspector" class="secondary-action">Copia help ispettore</button><span id="help-inspector-status" role="status" aria-live="polite" class="sr-only"></span>
       <div class="system-status" aria-label="Stato servizi">
         <span id="api-status" class="status-pill">API…</span>
         <span id="db-status" class="status-pill">Database…</span>
@@ -202,6 +202,7 @@
                 <button type="button" id="document-new" class="primary-action">Nuovo documento</button>
                 <button type="button" id="document-edit" class="secondary-action" disabled>Modifica selezionato</button>
                 <button type="button" id="document-delete" class="secondary-action" disabled>Elimina selezionato</button>
+                <button type="button" id="document-clear" class="secondary-action" disabled>Svuota contenuto</button>
               </div>
               <label for="document-select">Documento da gestire</label>
               <select id="document-select" style="width:100%;margin:6px 0 10px"><option value="">Seleziona un documento...</option></select>
@@ -214,7 +215,7 @@
                 <p id="document-editor-status" role="status" aria-live="polite"></p>
                 <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="submit" class="primary-action">Salva su Neon</button><button type="button" id="document-cancel" class="secondary-action">Annulla</button></div>
               </form>
-              <p style="font-size:.82rem">Per salvare è necessaria l'autorizzazione amministrativa del servizio. Nessuna modifica automatica durante l'incolla.</p>
+              <p style="font-size:.82rem">Le modifiche vengono salvate su Neon solo con «Salva su Neon» o con «Svuota contenuto» dopo conferma. La sessione amministrativa è quella dell'accesso al gestionale.</p>
             </div>
             <div id="pharmacy-documents" class="archive-list">
               <div class="module-placeholder">Seleziona una farmacia per leggere i documenti già presenti.</div>
@@ -368,6 +369,6 @@
     });
   })();
   </script>
-  <script type="module" src="./js/app.js?v=1.1.2"></script>
+  <script type="module" src="./js/app.js?v=1.1.3"></script>
 </body>
 </html>
