@@ -451,23 +451,38 @@ function initializeAuthenticatedApplication() {
 
 loginForm.addEventListener("submit", async event => {
   event.preventDefault();
-  const password = $("admin-password").value;
+  const passwordField = $("admin-password");
+  const password = passwordField.value;
   if (!password) return;
   loginButton.disabled = true;
-  loginStatus.textContent = "Verifica accesso in corso…";
+  loginStatus.textContent = "Verifica credenziali in corso…";
   try {
     const result = await loginAdmin(password);
     if (!result?.token) throw new Error("Token di accesso assente");
     setAdminToken(result.token);
-    $("admin-password").value = "";
+    // Separiamo la riuscita del login dall'avvio dei moduli, così eventuali errori
+    // di inizializzazione non vengono scambiati per una password errata.
     loginView.hidden = true;
     application.hidden = false;
-    initializeAuthenticatedApplication();
+    passwordField.value = "";
+    try {
+      initializeAuthenticatedApplication();
+    } catch (initializationError) {
+      console.error("Errore inizializzazione gestionale:", initializationError);
+      const message = document.createElement("p");
+      message.setAttribute("role", "alert");
+      message.textContent = "Accesso riuscito, ma non è stato possibile avviare una sezione del gestionale. Ricarica la pagina e riprova.";
+      application.prepend(message);
+    }
   } catch (error) {
     setAdminToken("");
+    // Non cancellare la password se l'accesso fallisce.
     loginStatus.textContent = error.status === 401
-      ? "Password non valida."
-      : "Accesso non disponibile: " + error.message;
+      ? "Password non valida (HTTP 401)."
+      : error.status === 503
+        ? "Autenticazione non configurata sul backend (HTTP 503)."
+        : "Accesso non disponibile: " + error.message;
+    console.error("Accesso amministrativo:", error);
   } finally {
     loginButton.disabled = false;
   }
