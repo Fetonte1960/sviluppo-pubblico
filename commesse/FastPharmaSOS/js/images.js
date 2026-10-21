@@ -1,4 +1,4 @@
-import { getCommesse } from "./api.js?v=1.1.1";
+import { getCommesse } from "./api.js?v=1.1.2";
 const MAX_IMAGES = 24;
 const MAX_FILE_BYTES = 25 * 1024 * 1024;
 
