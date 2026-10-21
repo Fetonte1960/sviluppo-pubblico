@@ -1,6 +1,6 @@
-import { initializeArchiveWorkspace, initializeDocumentEditor } from "./archive.js?v=1.1.2";
-import { initializeImageManager } from "./images.js?v=1.1.2";
-import { askAssistant, confirmEngineCandidate, getAiHealth, getCommesse, getDbHealth, getHealth, loginAdmin, setAdminToken } from "./api.js?v=1.1.2";
+import { initializeArchiveWorkspace, initializeDocumentEditor } from "./archive.js?v=1.1.3";
+import { initializeImageManager } from "./images.js?v=1.1.3";
+import { askAssistant, confirmEngineCandidate, getAiHealth, getCommesse, getDbHealth, getHealth, loginAdmin, setAdminToken } from "./api.js?v=1.1.3";
 
 const $ = id => document.getElementById(id);
 const apiStatus = $("api-status");
