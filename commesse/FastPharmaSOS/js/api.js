@@ -77,7 +77,10 @@ async function request(path, options = {}, timeoutMs = 20000) {
 }
 
 export const getHealth = () => request("/health", {}, 10000);
-export const loginAdmin = password => request(
+export const loginAdmin = async password => {
+  // Wake Render Free via idempotent GET before sending credentials. Never retry the POST.
+  await getHealth();
+  return request(
   "/api/fastpharmasos/v1/auth/login",
   {
     method: "POST",
@@ -85,7 +88,8 @@ export const loginAdmin = password => request(
     body: JSON.stringify({ password })
   },
   30000
-);
+  );
+};
 export const getDbHealth = () => request("/health/db", {}, 10000);
 export const getAiHealth = provider => request(
   `/health/ai${provider ? `?provider=${encodeURIComponent(provider)}` : ""}`,
