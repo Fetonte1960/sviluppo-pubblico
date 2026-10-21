@@ -104,3 +104,14 @@ export const confirmEngineCandidate = (message, candidateId, failureId) => reque
   },
   120000
 );
+
+export const savePharmacyDocument = (farmaciaId, documentId, body, key) => request(
+  `/api/fastpharmasos/v1/commesse/${encodeURIComponent(farmaciaId)}/documenti${documentId ? "/"+encodeURIComponent(documentId) : ""}`,
+  { method: documentId ? "PUT" : "POST",
+    headers: { "Content-Type":"application/json", "X-SOS-Admin-Key": key },
+    body: JSON.stringify(body) }, 60000
+);
+export const deletePharmacyDocument = (farmaciaId, documentId, key) => request(
+  `/api/fastpharmasos/v1/commesse/${encodeURIComponent(farmaciaId)}/documenti/${encodeURIComponent(documentId)}`,
+  { method:"DELETE", headers:{"X-SOS-Admin-Key":key} }, 30000
+);
