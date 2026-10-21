@@ -497,24 +497,49 @@ export function initializeDocumentEditor() {
   const status = $id("document-editor-status");
   // La chiave rimane soltanto nella memoria di questa scheda: niente localStorage o cookie.
   let adminKey = "";
+  // Come Pratiche Fotovoltaiche: Chrome può ricordare la password tramite autocomplete.
+  // Non viene memorizzata esplicitamente in localStorage/sessionStorage.
+  const loginForm = document.createElement("form");
+  loginForm.id = "sos-admin-auth";
+  loginForm.autocomplete = "on";
+  loginForm.style.cssText = "display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 0 14px";
+  const userField = document.createElement("input");
+  userField.type = "text";
+  userField.name = "username";
+  userField.autocomplete = "username";
+  userField.value = "amministratore";
+  userField.readOnly = true;
+  userField.style.display = "none";
+  const passwordField = document.createElement("input");
+  passwordField.type = "password";
+  passwordField.name = "password";
+  passwordField.autocomplete = "current-password";
+  passwordField.placeholder = "Segreto amministrativo";
+  passwordField.required = true;
+  passwordField.setAttribute("aria-label", "Segreto amministrativo");
   const loginButton = document.createElement("button");
-  loginButton.type = "button";
+  loginButton.type = "submit";
   loginButton.className = "secondary-action";
-  loginButton.textContent = "Accesso amministratore";
+  loginButton.textContent = "Accedi";
   const loginStatus = document.createElement("span");
-  loginStatus.style.marginLeft = "8px";
   loginStatus.textContent = "Sola lettura";
-  $id("document-manager").prepend(loginButton, loginStatus);
+  loginForm.append(userField,passwordField,loginButton,loginStatus);
+  $id("document-manager").prepend(loginForm);
   const requestAdminKey = () => {
-    const entered = window.prompt("Segreto amministrativo FastPharmaSOS (rimane solo nella scheda):");
-    if (entered === null) return false;
-    adminKey = entered.trim();
-    loginStatus.textContent = adminKey ? "Chiave inserita (verificata al salvataggio)" : "Sola lettura";
-    return Boolean(adminKey);
+    if (!adminKey) {
+      loginStatus.textContent = "Inserisci il segreto in alto e premi Accedi.";
+      passwordField.focus();
+      return false;
+    }
+    return true;
   };
-  loginButton.addEventListener("click", requestAdminKey);
-  // Richiedi la chiave una sola volta all'apertura; Annulla mantiene la consultazione.
-  requestAdminKey();
+  loginForm.addEventListener("submit", event => {
+    event.preventDefault();
+    adminKey = passwordField.value;
+    if (!adminKey) return;
+    loginStatus.textContent = "Segreto inserito (verifica al primo salvataggio)";
+    loginButton.textContent = "Cambia accesso";
+  });
   let pharmacyId = null, documentId = null, docs = [], existingImage = null;
   const editButton = $id("document-edit"), deleteButton = $id("document-delete");
   const reset = () => {
