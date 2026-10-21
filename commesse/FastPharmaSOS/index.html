@@ -27,7 +27,23 @@
     </div>
   </header>
 
-  <main class="shell">
+  <main id="admin-login-view" class="shell">
+    <section class="panel" style="max-width:520px;margin:48px auto">
+      <p class="eyebrow">Area riservata</p>
+      <h1>Accesso gestionale</h1>
+      <p>Autenticati per consultare farmacie, documenti e dati amministrativi.</p>
+      <form id="admin-login-form" autocomplete="on" style="display:grid;gap:12px">
+        <input type="text" name="username" autocomplete="username" value="amministratore" readonly hidden>
+        <label>Password
+          <input id="admin-password" name="password" type="password" autocomplete="current-password" required autofocus style="width:100%">
+        </label>
+        <button id="admin-login-button" type="submit" class="primary-action">Accedi</button>
+        <p id="admin-login-status" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+  </main>
+
+  <main id="admin-application" class="shell" hidden>
     <nav class="main-tabs" aria-label="Sezioni principali">
       <button type="button" class="main-tab active" data-main-view="dashboard">Dashboard</button>
       <button type="button" class="main-tab" data-main-view="archive">Farmacie</button>
@@ -80,7 +96,7 @@
             <button type="button" class="secondary-action" data-open-view="chat">Apri SOS AI</button>
           </div>
           <p class="demo-note">
-            Versione demo senza login: utilizzare esclusivamente dati sintetici e non riservati.
+            Area riservata: utilizzare esclusivamente dati autorizzati per il collaudo.
           </p>
         </section>
       </div>

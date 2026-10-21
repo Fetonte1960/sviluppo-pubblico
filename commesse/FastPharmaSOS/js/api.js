@@ -1,4 +1,9 @@
 const API_BASE = document.documentElement.dataset.apiBase?.replace(/\/$/, "") ?? "";
+let adminToken = "";
+
+export function setAdminToken(token) {
+  adminToken = typeof token === "string" ? token : "";
+}
 
 function clientError(kind, message, cause = null) {
   const error = new Error(message);
@@ -20,6 +25,7 @@ async function requestOnce(path, options = {}, timeoutMs = 20000) {
         ...options,
         headers: {
           Accept: "application/json",
+          ...(adminToken ? { Authorization: `Bearer ${adminToken}` } : {}),
           ...(options.headers ?? {})
         },
         signal: controller.signal
@@ -71,6 +77,15 @@ async function request(path, options = {}, timeoutMs = 20000) {
 }
 
 export const getHealth = () => request("/health", {}, 10000);
+export const loginAdmin = password => request(
+  "/api/fastpharmasos/v1/auth/login",
+  {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ password })
+  },
+  30000
+);
 export const getDbHealth = () => request("/health/db", {}, 10000);
 export const getAiHealth = provider => request(
   `/health/ai${provider ? `?provider=${encodeURIComponent(provider)}` : ""}`,
@@ -105,13 +120,13 @@ export const confirmEngineCandidate = (message, candidateId, failureId) => reque
   120000
 );
 
-export const savePharmacyDocument = (farmaciaId, documentId, body, key) => request(
+export const savePharmacyDocument = (farmaciaId, documentId, body) => request(
   `/api/fastpharmasos/v1/commesse/${encodeURIComponent(farmaciaId)}/documenti${documentId ? "/"+encodeURIComponent(documentId) : ""}`,
   { method: documentId ? "PUT" : "POST",
-    headers: { "Content-Type":"application/json", "X-SOS-Admin-Key": key },
+    headers: { "Content-Type":"application/json" },
     body: JSON.stringify(body) }, 60000
 );
-export const deletePharmacyDocument = (farmaciaId, documentId, key) => request(
+export const deletePharmacyDocument = (farmaciaId, documentId) => request(
   `/api/fastpharmasos/v1/commesse/${encodeURIComponent(farmaciaId)}/documenti/${encodeURIComponent(documentId)}`,
-  { method:"DELETE", headers:{"X-SOS-Admin-Key":key} }, 30000
+  { method:"DELETE" }, 30000
 );

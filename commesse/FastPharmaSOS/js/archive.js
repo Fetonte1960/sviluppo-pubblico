@@ -495,51 +495,6 @@ export function initializeDocumentEditor() {
   const content = $id("document-content"), file = $id("document-file");
   const location = $id("document-location");
   const status = $id("document-editor-status");
-  // La chiave rimane soltanto nella memoria di questa scheda: niente localStorage o cookie.
-  let adminKey = "";
-  // Come Pratiche Fotovoltaiche: Chrome può ricordare la password tramite autocomplete.
-  // Non viene memorizzata esplicitamente in localStorage/sessionStorage.
-  const loginForm = document.createElement("form");
-  loginForm.id = "sos-admin-auth";
-  loginForm.autocomplete = "on";
-  loginForm.style.cssText = "display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 0 14px";
-  const userField = document.createElement("input");
-  userField.type = "text";
-  userField.name = "username";
-  userField.autocomplete = "username";
-  userField.value = "amministratore";
-  userField.readOnly = true;
-  userField.style.display = "none";
-  const passwordField = document.createElement("input");
-  passwordField.type = "password";
-  passwordField.name = "password";
-  passwordField.autocomplete = "current-password";
-  passwordField.placeholder = "Segreto amministrativo";
-  passwordField.required = true;
-  passwordField.setAttribute("aria-label", "Segreto amministrativo");
-  const loginButton = document.createElement("button");
-  loginButton.type = "submit";
-  loginButton.className = "secondary-action";
-  loginButton.textContent = "Accedi";
-  const loginStatus = document.createElement("span");
-  loginStatus.textContent = "Sola lettura";
-  loginForm.append(userField,passwordField,loginButton,loginStatus);
-  $id("document-manager").prepend(loginForm);
-  const requestAdminKey = () => {
-    if (!adminKey) {
-      loginStatus.textContent = "Inserisci il segreto in alto e premi Accedi.";
-      passwordField.focus();
-      return false;
-    }
-    return true;
-  };
-  loginForm.addEventListener("submit", event => {
-    event.preventDefault();
-    adminKey = passwordField.value;
-    if (!adminKey) return;
-    loginStatus.textContent = "Segreto inserito (verifica al primo salvataggio)";
-    loginButton.textContent = "Cambia accesso";
-  });
   let pharmacyId = null, documentId = null, docs = [], existingImage = null;
   const editButton = $id("document-edit"), deleteButton = $id("document-delete");
   const reset = () => {
@@ -603,22 +558,18 @@ export function initializeDocumentEditor() {
       else { status.textContent = "Seleziona un'immagine.";return; }
     }
     if (!value || value.length > 5000000) { status.textContent = "Contenuto assente o superiore a 5 milioni di caratteri.";return; }
-    if (!adminKey && !requestAdminKey()) return;
-    const key = adminKey;
     status.textContent = "Salvataggio in corso...";
     try {
-      await savePharmacyDocument(pharmacyId,documentId,{kind:kind.value,title:title.value,content:value,location:location.value,fileName},key);
+      await savePharmacyDocument(pharmacyId,documentId,{kind:kind.value,title:title.value,content:value,location:location.value,fileName});
       status.textContent = "Documento salvato su Neon.";
       await refresh();
-    } catch (error) { status.textContent = error.status === 401 ? (adminKey = "", loginStatus.textContent = "Chiave non valida: ripeti accesso", "Accesso non autorizzato o chiave del servizio non configurata.") : "Salvataggio non riuscito: "+error.message; }
+    } catch (error) { status.textContent = error.status === 401 ? "Sessione scaduta: ricarica la pagina ed effettua nuovamente l'accesso." : "Salvataggio non riuscito: "+error.message; }
   });
   deleteButton.addEventListener("click", async () => {
     const d = docs.find(x=>String(x.id)===selection.value);
     if (!d || !pharmacyId || !confirm("Eliminare definitivamente il documento «"+d.titolo+"»?")) return;
-    if (!adminKey && !requestAdminKey()) return;
-    const key = adminKey;
-    try { await deletePharmacyDocument(pharmacyId,d.id,key);status.textContent="Documento eliminato.";await refresh(); }
-    catch(error) {status.textContent=error.status===401?(adminKey="",loginStatus.textContent="Chiave non valida: ripeti accesso","Accesso non autorizzato."):"Eliminazione non riuscita."; }
+    try { await deletePharmacyDocument(pharmacyId,d.id);status.textContent="Documento eliminato.";await refresh(); }
+    catch(error) {status.textContent=error.status===401?"Sessione scaduta: ricarica la pagina ed effettua nuovamente l'accesso.":"Eliminazione non riuscita."; }
   });
   window.addEventListener("fastpharma:pharmacy-selected", ev => {
     pharmacyId=ev.detail?.id && /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(ev.detail.id) ? ev.detail.id : null;

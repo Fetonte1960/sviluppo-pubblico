@@ -1,6 +1,6 @@
 import { initializeArchiveWorkspace, initializeDocumentEditor } from "./archive.js";
 import { initializeImageManager } from "./images.js";
-import { askAssistant, confirmEngineCandidate, getAiHealth, getCommesse, getDbHealth, getHealth } from "./api.js";
+import { askAssistant, confirmEngineCandidate, getAiHealth, getCommesse, getDbHealth, getHealth, loginAdmin, setAdminToken } from "./api.js";
 
 const $ = id => document.getElementById(id);
 const apiStatus = $("api-status");
@@ -433,7 +433,42 @@ window.addEventListener("fastpharma:pharmacy-selected", event => {
     : "Nessuna";
 });
 
-initializeDocumentEditor();
-initializeArchiveWorkspace();
-initializeImageManager();
-refreshStatus();
+const loginView = $("admin-login-view");
+const application = $("admin-application");
+const loginForm = $("admin-login-form");
+const loginButton = $("admin-login-button");
+const loginStatus = $("admin-login-status");
+let initialized = false;
+
+function initializeAuthenticatedApplication() {
+  if (initialized) return;
+  initialized = true;
+  initializeDocumentEditor();
+  initializeArchiveWorkspace();
+  initializeImageManager();
+  refreshStatus();
+}
+
+loginForm.addEventListener("submit", async event => {
+  event.preventDefault();
+  const password = $("admin-password").value;
+  if (!password) return;
+  loginButton.disabled = true;
+  loginStatus.textContent = "Verifica accesso in corso…";
+  try {
+    const result = await loginAdmin(password);
+    if (!result?.token) throw new Error("Token di accesso assente");
+    setAdminToken(result.token);
+    $("admin-password").value = "";
+    loginView.hidden = true;
+    application.hidden = false;
+    initializeAuthenticatedApplication();
+  } catch (error) {
+    setAdminToken("");
+    loginStatus.textContent = error.status === 401
+      ? "Password non valida."
+      : "Accesso non disponibile: " + error.message;
+  } finally {
+    loginButton.disabled = false;
+  }
+});
