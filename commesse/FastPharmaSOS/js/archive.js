@@ -2,7 +2,9 @@ import {
   getCommessa,
   getCommessaDocumenti,
   getCommessaInterazioni,
-  getCommesse
+  getCommesse,
+  savePharmacyDocument,
+  deletePharmacyDocument
 } from "./api.js";
 
 const $ = id => document.getElementById(id);
@@ -59,12 +61,15 @@ function renderDocuments(container, items) {
     ].filter(Boolean).join(" · ");
 
     const description = document.createElement("p");
-    description.textContent = item.summaryAi || item.descrizione || "Nessuna descrizione.";
+    description.textContent = item.tipoDocumento === "immagine" ? "Immagine allegata" : (item.summaryAi || item.descrizione || "Nessuna descrizione.");
 
     const location = document.createElement("code");
     location.textContent = item.riferimentoLocalizzazione || "localizzazione non disponibile";
 
     card.append(title, meta, description, location);
+    if (item.tipoDocumento === "immagine" && /^data:image\\/(png|jpeg|webp);base64,/.test(item.descrizione || "")) {
+      const img = document.createElement("img"); img.src = item.descrizione; img.alt = item.titolo || "Immagine documento"; img.loading = "lazy"; img.style.cssText = "max-width:100%;max-height:240px;object-fit:contain"; card.append(img);
+    }
     container.append(card);
   });
 }
@@ -479,4 +484,99 @@ export function initializeArchiveWorkspace() {
 
   showDetail(false);
   loadItems("");
+}
+
+export function initializeDocumentEditor() {
+  const $id = id => document.getElementById(id);
+  const form = $id("document-form");
+  const selection = $id("document-select");
+  if (!form || !selection) return;
+  const kind = $id("document-kind"), title = $id("document-title");
+  const content = $id("document-content"), file = $id("document-file");
+  const location = $id("document-location");
+  const status = $id("document-editor-status");
+  let pharmacyId = null, documentId = null, docs = [], existingImage = null;
+  const editButton = $id("document-edit"), deleteButton = $id("document-delete");
+  const reset = () => {
+    documentId = null; existingImage = null; form.reset(); form.hidden = true;
+    editButton.disabled = true; deleteButton.disabled = true;
+  };
+  const refresh = async () => {
+    if (!pharmacyId) { docs = []; selection.replaceChildren(new Option("Seleziona una farmacia...",""));reset();return; }
+    try {
+      docs = await getCommessaDocumenti(pharmacyId);
+      selection.replaceChildren(new Option("Seleziona un documento...",""));
+      docs.forEach(d => selection.add(new Option(d.titolo || "Documento", d.id)));
+      reset();
+      renderDocuments($id("pharmacy-documents"), docs);
+    } catch (_) { status.textContent = "Impossibile aggiornare i documenti della farmacia."; }
+  };
+  const edit = () => {
+    const d = docs.find(d => String(d.id) === selection.value);
+    if (!d) return;
+    documentId = d.id;
+    kind.value = d.tipoDocumento === "immagine" ? "image" : "text";
+    title.value = d.titolo || "";
+    location.value = d.riferimentoLocalizzazione || "";
+    content.value = kind.value === "text" ? (d.descrizione || "") : "";
+    existingImage = kind.value === "image" ? d.descrizione : null;
+    kind.dispatchEvent(new Event("change"));
+    form.hidden = false;
+    status.textContent = "Modifica documento; salva per confermare.";
+  };
+  selection.addEventListener("change", () => {
+    editButton.disabled = !selection.value;
+    deleteButton.disabled = !selection.value;
+  });
+  kind.addEventListener("change", () => {
+    $id("document-text-field").hidden = kind.value === "image";
+    $id("document-file-field").hidden = kind.value !== "image";
+  });
+  $id("document-new").addEventListener("click", () => {
+    if (!pharmacyId) { status.textContent = "Seleziona prima una farmacia salvata su Neon."; return; }
+    form.reset(); documentId = null; existingImage = null; form.hidden = false;
+    kind.dispatchEvent(new Event("change")); status.textContent = "Nuovo documento.";
+  });
+  editButton.addEventListener("click", edit);
+  $id("document-cancel").addEventListener("click", reset);
+  form.addEventListener("submit", async ev => {
+    ev.preventDefault();
+    if (!pharmacyId) return;
+    let value = content.value, fileName = null;
+    if (kind.value === "image") {
+      const selected = file.files?.[0];
+      if (selected) {
+        if (!["image/png","image/jpeg","image/webp"].includes(selected.type) || selected.size > 3000000) {
+          status.textContent = "Usa PNG, JPEG o WebP fino a 3 MB."; return;
+        }
+        value = await new Promise((resolve,reject) => {
+          const reader = new FileReader(); reader.onload=()=>resolve(reader.result);
+          reader.onerror=()=>reject(new Error("Lettura immagine fallita")); reader.readAsDataURL(selected);
+        });
+        fileName = selected.name;
+      } else if (existingImage) value = existingImage;
+      else { status.textContent = "Seleziona un'immagine.";return; }
+    }
+    if (!value || value.length > 5000000) { status.textContent = "Contenuto assente o superiore a 5 milioni di caratteri.";return; }
+    const key = window.prompt("Chiave amministrativa documenti (non viene salvata nel browser):");
+    if (!key) return;
+    status.textContent = "Salvataggio in corso...";
+    try {
+      await savePharmacyDocument(pharmacyId,documentId,{kind:kind.value,title:title.value,content:value,location:location.value,fileName},key);
+      status.textContent = "Documento salvato su Neon.";
+      await refresh();
+    } catch (error) { status.textContent = error.status === 401 ? "Accesso non autorizzato o chiave del servizio non configurata." : "Salvataggio non riuscito: "+error.message; }
+  });
+  deleteButton.addEventListener("click", async () => {
+    const d = docs.find(x=>String(x.id)===selection.value);
+    if (!d || !pharmacyId || !confirm("Eliminare definitivamente il documento «"+d.titolo+"»?")) return;
+    const key=window.prompt("Chiave amministrativa documenti:");
+    if (!key) return;
+    try { await deletePharmacyDocument(pharmacyId,d.id,key);status.textContent="Documento eliminato.";await refresh(); }
+    catch(error) {status.textContent=error.status===401?"Accesso non autorizzato.":"Eliminazione non riuscita."; }
+  });
+  window.addEventListener("fastpharma:pharmacy-selected", ev => {
+    pharmacyId=ev.detail?.id && /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(ev.detail.id) ? ev.detail.id : null;
+    refresh();
+  });
 }
