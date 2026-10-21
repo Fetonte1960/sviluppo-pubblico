@@ -5,7 +5,7 @@ import {
   getCommesse,
   savePharmacyDocument,
   deletePharmacyDocument
-} from "./api.js?v=1.1.1";
+} from "./api.js?v=1.1.2";
 
 const $ = id => document.getElementById(id);
 
@@ -67,7 +67,7 @@ function renderDocuments(container, items) {
     location.textContent = item.riferimentoLocalizzazione || "localizzazione non disponibile";
 
     card.append(title, meta, description, location);
-    if (item.tipoDocumento === "immagine" && /^data:image\\/(png|jpeg|webp);base64,/.test(item.descrizione || "")) {
+    if (item.tipoDocumento === "immagine" && /^data:image\/(png|jpeg|webp);base64,/.test(item.descrizione || "")) {
       const img = document.createElement("img"); img.src = item.descrizione; img.alt = item.titolo || "Immagine documento"; img.loading = "lazy"; img.style.cssText = "max-width:100%;max-height:240px;object-fit:contain"; card.append(img);
     }
     container.append(card);
