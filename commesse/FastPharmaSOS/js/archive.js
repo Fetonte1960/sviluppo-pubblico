@@ -495,6 +495,26 @@ export function initializeDocumentEditor() {
   const content = $id("document-content"), file = $id("document-file");
   const location = $id("document-location");
   const status = $id("document-editor-status");
+  // La chiave rimane soltanto nella memoria di questa scheda: niente localStorage o cookie.
+  let adminKey = "";
+  const loginButton = document.createElement("button");
+  loginButton.type = "button";
+  loginButton.className = "secondary-action";
+  loginButton.textContent = "Accesso amministratore";
+  const loginStatus = document.createElement("span");
+  loginStatus.style.marginLeft = "8px";
+  loginStatus.textContent = "Sola lettura";
+  $id("document-manager").prepend(loginButton, loginStatus);
+  const requestAdminKey = () => {
+    const entered = window.prompt("Segreto amministrativo FastPharmaSOS (rimane solo nella scheda):");
+    if (entered === null) return false;
+    adminKey = entered.trim();
+    loginStatus.textContent = adminKey ? "Chiave inserita (verificata al salvataggio)" : "Sola lettura";
+    return Boolean(adminKey);
+  };
+  loginButton.addEventListener("click", requestAdminKey);
+  // Richiedi la chiave una sola volta all'apertura; Annulla mantiene la consultazione.
+  requestAdminKey();
   let pharmacyId = null, documentId = null, docs = [], existingImage = null;
   const editButton = $id("document-edit"), deleteButton = $id("document-delete");
   const reset = () => {
@@ -558,22 +578,22 @@ export function initializeDocumentEditor() {
       else { status.textContent = "Seleziona un'immagine.";return; }
     }
     if (!value || value.length > 5000000) { status.textContent = "Contenuto assente o superiore a 5 milioni di caratteri.";return; }
-    const key = window.prompt("Chiave amministrativa documenti (non viene salvata nel browser):");
-    if (!key) return;
+    if (!adminKey && !requestAdminKey()) return;
+    const key = adminKey;
     status.textContent = "Salvataggio in corso...";
     try {
       await savePharmacyDocument(pharmacyId,documentId,{kind:kind.value,title:title.value,content:value,location:location.value,fileName},key);
       status.textContent = "Documento salvato su Neon.";
       await refresh();
-    } catch (error) { status.textContent = error.status === 401 ? "Accesso non autorizzato o chiave del servizio non configurata." : "Salvataggio non riuscito: "+error.message; }
+    } catch (error) { status.textContent = error.status === 401 ? (adminKey = "", loginStatus.textContent = "Chiave non valida: ripeti accesso", "Accesso non autorizzato o chiave del servizio non configurata.") : "Salvataggio non riuscito: "+error.message; }
   });
   deleteButton.addEventListener("click", async () => {
     const d = docs.find(x=>String(x.id)===selection.value);
     if (!d || !pharmacyId || !confirm("Eliminare definitivamente il documento «"+d.titolo+"»?")) return;
-    const key=window.prompt("Chiave amministrativa documenti:");
-    if (!key) return;
+    if (!adminKey && !requestAdminKey()) return;
+    const key = adminKey;
     try { await deletePharmacyDocument(pharmacyId,d.id,key);status.textContent="Documento eliminato.";await refresh(); }
-    catch(error) {status.textContent=error.status===401?"Accesso non autorizzato.":"Eliminazione non riuscita."; }
+    catch(error) {status.textContent=error.status===401?(adminKey="",loginStatus.textContent="Chiave non valida: ripeti accesso","Accesso non autorizzato."):"Eliminazione non riuscita."; }
   });
   window.addEventListener("fastpharma:pharmacy-selected", ev => {
     pharmacyId=ev.detail?.id && /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(ev.detail.id) ? ev.detail.id : null;
