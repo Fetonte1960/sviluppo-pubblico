@@ -180,6 +180,25 @@
           </section>
 
           <section class="archive-panel" data-archive-panel="documenti">
+            <div id="document-manager" style="margin-bottom:18px">
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+                <button type="button" id="document-new" class="primary-action">Nuovo documento</button>
+                <button type="button" id="document-edit" class="secondary-action" disabled>Modifica selezionato</button>
+                <button type="button" id="document-delete" class="secondary-action" disabled>Elimina selezionato</button>
+              </div>
+              <label for="document-select">Documento da gestire</label>
+              <select id="document-select" style="width:100%;margin:6px 0 10px"><option value="">Seleziona un documento...</option></select>
+              <form id="document-form" hidden style="gap:10px;margin:10px 0">
+                <label>Tipo <select id="document-kind"><option value="text">Testo / modello Termodel</option><option value="image">Immagine</option></select></label>
+                <label>Titolo <input id="document-title" maxlength="400" required placeholder="Titolo del documento" style="width:100%"></label>
+                <label>Locale o componente <input id="document-location" maxlength="2000" placeholder="Facoltativo" style="width:100%"></label>
+                <label id="document-text-field">Contenuto testuale <textarea id="document-content" rows="10" style="width:100%" placeholder="Incolla qui anche un intero modello TERMODEL-PROJECT-TEXT-V1"></textarea></label>
+                <label id="document-file-field" hidden>Immagine (PNG, JPEG o WebP; massimo 3 MB) <input id="document-file" type="file" accept="image/png,image/jpeg,image/webp"></label>
+                <p id="document-editor-status" role="status" aria-live="polite"></p>
+                <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="submit" class="primary-action">Salva su Neon</button><button type="button" id="document-cancel" class="secondary-action">Annulla</button></div>
+              </form>
+              <p style="font-size:.82rem">Per salvare è necessaria l'autorizzazione amministrativa del servizio. Nessuna modifica automatica durante l'incolla.</p>
+            </div>
             <div id="pharmacy-documents" class="archive-list">
               <div class="module-placeholder">Seleziona una farmacia per leggere i documenti già presenti.</div>
             </div>
