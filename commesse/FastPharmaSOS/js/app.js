@@ -1,6 +1,6 @@
-import { initializeArchiveWorkspace, initializeDocumentEditor } from "./archive.js?v=1.1.0";
-import { initializeImageManager } from "./images.js?v=1.1.0";
-import { askAssistant, confirmEngineCandidate, getAiHealth, getCommesse, getDbHealth, getHealth, loginAdmin, setAdminToken } from "./api.js?v=1.1.0";
+import { initializeArchiveWorkspace, initializeDocumentEditor } from "./archive.js?v=1.1.1";
+import { initializeImageManager } from "./images.js?v=1.1.1";
+import { askAssistant, confirmEngineCandidate, getAiHealth, getCommesse, getDbHealth, getHealth, loginAdmin, setAdminToken } from "./api.js?v=1.1.1";
 
 const $ = id => document.getElementById(id);
 const apiStatus = $("api-status");
@@ -455,7 +455,7 @@ loginForm.addEventListener("submit", async event => {
   const password = passwordField.value;
   if (!password) return;
   loginButton.disabled = true;
-  loginStatus.textContent = "Verifica credenziali in corso…";
+  loginStatus.textContent = "Connessione al server Render Free (potrebbe essere in risveglio)…";
   try {
     const result = await loginAdmin(password);
     if (!result?.token) throw new Error("Token di accesso assente");
