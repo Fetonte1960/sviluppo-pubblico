@@ -1,6 +1,6 @@
-import { initializeArchiveWorkspace, initializeDocumentEditor } from "./archive.js";
-import { initializeImageManager } from "./images.js";
-import { askAssistant, confirmEngineCandidate, getAiHealth, getCommesse, getDbHealth, getHealth, loginAdmin, setAdminToken } from "./api.js";
+import { initializeArchiveWorkspace, initializeDocumentEditor } from "./archive.js?v=1.1.0";
+import { initializeImageManager } from "./images.js?v=1.1.0";
+import { askAssistant, confirmEngineCandidate, getAiHealth, getCommesse, getDbHealth, getHealth, loginAdmin, setAdminToken } from "./api.js?v=1.1.0";
 
 const $ = id => document.getElementById(id);
 const apiStatus = $("api-status");
@@ -486,4 +486,18 @@ loginForm.addEventListener("submit", async event => {
   } finally {
     loginButton.disabled = false;
   }
+});
+
+// Controllo versione remoto senza cache (non ricarica né perde dati non salvati).
+document.getElementById("check-version")?.addEventListener("click", async () => {
+  const status = document.getElementById("version-status");
+  status.textContent = "Controllo…";
+  try {
+    const response = await fetch(new URL("./index.html?version_check=" + Date.now(), window.location.href), {cache:"no-store"});
+    if (!response.ok) throw new Error("HTTP " + response.status);
+    const html = await response.text();
+    const latest = new DOMParser().parseFromString(html, "text/html").documentElement.dataset.appVersion;
+    const current = document.documentElement.dataset.appVersion;
+    status.textContent = latest === current ? "Versione aggiornata" : "Nuova versione " + latest + ": ricarica la pagina";
+  } catch (error) { status.textContent = "Impossibile controllare gli aggiornamenti"; }
 });
