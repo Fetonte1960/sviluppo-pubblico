@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="it" data-api-base="https://fastpharmasos.onrender.com">
+<html lang="it" data-app-version="1.1.0" data-api-base="https://fastpharmasos.onrender.com">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Dashboard demo FastPharmaSOS per gestione archivi, immagini e assistente SOS.">
   <title>FastPharma SOS · Gestionale demo</title>
-  <link rel="stylesheet" href="./css/app.css">
+  <link rel="stylesheet" href="./css/app.css?v=1.1.0">
 </head>
 <body>
   <header class="topbar">
@@ -17,7 +17,7 @@
       </div>
     </div>
 
-    <div class="topbar-right"><button type="button" id="copy-help-inspector" class="secondary-action">Copia help ispettore</button><span id="help-inspector-status" role="status" aria-live="polite" class="sr-only"></span>
+    <div class="topbar-right"><span id="app-version" style="font-size:12px;white-space:nowrap" title="Versione gestionale">Gestionale v1.1.0 · 21/10/2026</span><button type="button" id="check-version" class="secondary-action" style="font-size:12px">Verifica aggiornamento</button><span id="version-status" role="status" style="font-size:12px"></span><button type="button" id="copy-help-inspector" class="secondary-action">Copia help ispettore</button><span id="help-inspector-status" role="status" aria-live="polite" class="sr-only"></span>
       <div class="system-status" aria-label="Stato servizi">
         <span id="api-status" class="status-pill">API…</span>
         <span id="db-status" class="status-pill">Database…</span>
@@ -367,6 +367,6 @@
     });
   })();
   </script>
-  <script type="module" src="./js/app.js"></script>
+  <script type="module" src="./js/app.js?v=1.1.0"></script>
 </body>
 </html>
