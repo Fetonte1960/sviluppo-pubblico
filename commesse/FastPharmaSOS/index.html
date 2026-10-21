@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="it" data-app-version="1.1.1" data-api-base="https://fastpharmasos.onrender.com">
+<html lang="it" data-app-version="1.1.2" data-api-base="https://fastpharmasos.onrender.com">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Dashboard demo FastPharmaSOS per gestione archivi, immagini e assistente SOS.">
   <title>FastPharma SOS · Gestionale demo</title>
-  <link rel="stylesheet" href="./css/app.css?v=1.1.1">
+  <link rel="stylesheet" href="./css/app.css?v=1.1.2">
 </head>
 <body>
   <header class="topbar">
@@ -17,7 +17,7 @@
       </div>
     </div>
 
-    <div class="topbar-right"><span id="app-version" style="font-size:12px;white-space:nowrap" title="Versione gestionale">Gestionale v1.1.1 · 21/10/2026</span><button type="button" id="check-version" class="secondary-action" style="font-size:12px">Verifica aggiornamento</button><span id="version-status" role="status" style="font-size:12px"></span><button type="button" id="copy-help-inspector" class="secondary-action">Copia help ispettore</button><span id="help-inspector-status" role="status" aria-live="polite" class="sr-only"></span>
+    <div class="topbar-right"><span id="app-version" style="font-size:12px;white-space:nowrap" title="Versione gestionale">Gestionale v1.1.2 · 21/10/2026</span><button type="button" id="check-version" class="secondary-action" style="font-size:12px">Verifica aggiornamento</button><span id="version-status" role="status" style="font-size:12px"></span><button type="button" id="copy-help-inspector" class="secondary-action">Copia help ispettore</button><span id="help-inspector-status" role="status" aria-live="polite" class="sr-only"></span>
       <div class="system-status" aria-label="Stato servizi">
         <span id="api-status" class="status-pill">API…</span>
         <span id="db-status" class="status-pill">Database…</span>
@@ -32,7 +32,7 @@
       <p class="eyebrow">Area riservata</p>
       <h1>Accesso gestionale</h1>
       <p>Autenticati per consultare farmacie, documenti e dati amministrativi.</p>
-      <form id="admin-login-form" autocomplete="on" style="display:grid;gap:12px">
+      <form id="admin-login-form" method="post" action="javascript:void(0)" onsubmit="return false" autocomplete="on" style="display:grid;gap:12px">
         <input type="text" name="username" autocomplete="username" value="amministratore" readonly hidden>
         <label>Password
           <input id="admin-password" name="password" type="password" autocomplete="current-password" required autofocus style="width:100%">
@@ -367,6 +367,6 @@
     });
   })();
   </script>
-  <script type="module" src="./js/app.js?v=1.1.1"></script>
+  <script type="module" src="./js/app.js?v=1.1.2"></script>
 </body>
 </html>
