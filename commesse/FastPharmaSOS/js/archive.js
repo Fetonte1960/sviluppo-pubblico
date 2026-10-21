@@ -5,7 +5,7 @@ import {
   getCommesse,
   savePharmacyDocument,
   deletePharmacyDocument
-} from "./api.js?v=1.1.2";
+} from "./api.js?v=1.1.3";
 
 const $ = id => document.getElementById(id);
 
@@ -496,10 +496,10 @@ export function initializeDocumentEditor() {
   const location = $id("document-location");
   const status = $id("document-editor-status");
   let pharmacyId = null, documentId = null, docs = [], existingImage = null;
-  const editButton = $id("document-edit"), deleteButton = $id("document-delete");
+  const editButton = $id("document-edit"), deleteButton = $id("document-delete"), clearButton = $id("document-clear");
   const reset = () => {
     documentId = null; existingImage = null; form.reset(); form.hidden = true;
-    editButton.disabled = true; deleteButton.disabled = true;
+    editButton.disabled = true; deleteButton.disabled = true; if (clearButton) clearButton.disabled = true;
   };
   const refresh = async () => {
     if (!pharmacyId) { docs = []; selection.replaceChildren(new Option("Seleziona una farmacia...",""));reset();return; }
@@ -527,6 +527,7 @@ export function initializeDocumentEditor() {
   selection.addEventListener("change", () => {
     editButton.disabled = !selection.value;
     deleteButton.disabled = !selection.value;
+    if (clearButton) clearButton.disabled = !selection.value;
   });
   kind.addEventListener("change", () => {
     $id("document-text-field").hidden = kind.value === "image";
@@ -557,13 +558,42 @@ export function initializeDocumentEditor() {
       } else if (existingImage) value = existingImage;
       else { status.textContent = "Seleziona un'immagine.";return; }
     }
-    if (!value || value.length > 5000000) { status.textContent = "Contenuto assente o superiore a 5 milioni di caratteri.";return; }
+    if (value.length > 5000000 || (kind.value === "image" && !value)) { status.textContent = "Contenuto non valido o superiore a 5 milioni di caratteri.";return; }
     status.textContent = "Salvataggio in corso...";
     try {
       await savePharmacyDocument(pharmacyId,documentId,{kind:kind.value,title:title.value,content:value,location:location.value,fileName});
       status.textContent = "Documento salvato su Neon.";
       await refresh();
     } catch (error) { status.textContent = error.status === 401 ? "Sessione scaduta: ricarica la pagina ed effettua nuovamente l'accesso." : "Salvataggio non riuscito: "+error.message; }
+  });
+  if (clearButton) clearButton.addEventListener("click", async () => {
+    const d = docs.find(x => String(x.id) === selection.value);
+    if (!d || !pharmacyId) return;
+    if (d.tipoDocumento === "immagine") {
+      status.textContent = "Svuota è disponibile per i documenti testuali, non per le immagini.";
+      return;
+    }
+    if (!confirm("Svuotare il contenuto di «" + d.titolo + "» su Neon? Il titolo e la voce resteranno disponibili, ma il contenuto attuale verrà cancellato. Questa azione non è annullabile.")) return;
+    clearButton.disabled = true;
+    status.textContent = "Svuotamento e salvataggio su Neon in corso...";
+    try {
+      await savePharmacyDocument(pharmacyId, d.id, {
+        kind: "text", title: d.titolo, content: "", location: d.riferimentoLocalizzazione || "", fileName: null
+      });
+      await refresh();
+      selection.value = String(d.id);
+      editButton.disabled = false;
+      deleteButton.disabled = false;
+      clearButton.disabled = false;
+      edit();
+      content.value = "";
+      status.textContent = "Documento svuotato su Neon. La voce è conservata e pronta per essere compilata.";
+    } catch (error) {
+      clearButton.disabled = false;
+      status.textContent = error.status === 401
+        ? "Sessione scaduta: effettua nuovamente l'accesso."
+        : "Svuotamento non riuscito: " + error.message;
+    }
   });
   deleteButton.addEventListener("click", async () => {
     const d = docs.find(x=>String(x.id)===selection.value);
