@@ -1,4 +1,4 @@
-import { initializeArchiveWorkspace } from "./archive.js";
+import { initializeArchiveWorkspace, initializeDocumentEditor } from "./archive.js";
 import { initializeImageManager } from "./images.js";
 import { askAssistant, confirmEngineCandidate, getAiHealth, getCommesse, getDbHealth, getHealth } from "./api.js";
 
@@ -433,6 +433,7 @@ window.addEventListener("fastpharma:pharmacy-selected", event => {
     : "Nessuna";
 });
 
+initializeDocumentEditor();
 initializeArchiveWorkspace();
 initializeImageManager();
 refreshStatus();
