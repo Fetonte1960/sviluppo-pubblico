@@ -515,10 +515,10 @@ export function initializeDocumentEditor() {
     const d = docs.find(d => String(d.id) === selection.value);
     if (!d) return;
     documentId = d.id;
-    kind.value = d.tipoDocumento === "immagine" ? "image" : "text";
+    kind.value = d.tipoDocumento === "immagine" ? "image" : d.tipoDocumento === "modello topologico per AI" ? "topology" : "text";
     title.value = d.titolo || "";
     location.value = d.riferimentoLocalizzazione || "";
-    content.value = kind.value === "text" ? (d.descrizione || "") : "";
+    content.value = kind.value !== "image" ? (d.descrizione || "") : "";
     existingImage = kind.value === "image" ? d.descrizione : null;
     kind.dispatchEvent(new Event("change"));
     form.hidden = false;
@@ -578,7 +578,7 @@ export function initializeDocumentEditor() {
     status.textContent = "Svuotamento e salvataggio su Neon in corso...";
     try {
       await savePharmacyDocument(pharmacyId, d.id, {
-        kind: "text", title: d.titolo, content: "", location: d.riferimentoLocalizzazione || "", fileName: null
+        kind: d.tipoDocumento === "modello topologico per AI" ? "topology" : "text", title: d.titolo, content: "", location: d.riferimentoLocalizzazione || "", fileName: null
       });
       await refresh();
       selection.value = String(d.id);
