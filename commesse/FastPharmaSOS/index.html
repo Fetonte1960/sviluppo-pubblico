@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="it" data-app-version="1.1.5" data-app-release-date="23/10/2026" data-api-base="https://fastpharmasos.onrender.com">
+<html lang="it" data-app-version="1.1.6" data-app-release-date="23/10/2026" data-api-base="https://fastpharmasos.onrender.com">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Dashboard demo FastPharmaSOS per gestione archivi, immagini e assistente SOS.">
   <title>FastPharma SOS · Gestionale demo</title>
   <script>if (new URLSearchParams(location.search).has("password")) history.replaceState(null, "", location.pathname + location.hash);</script>
-  <link rel="stylesheet" href="./css/app.css?v=1.1.5">
+  <link rel="stylesheet" href="./css/app.css?v=1.1.6">
 </head>
 <body>
   <header class="topbar">
@@ -48,6 +48,7 @@
     <nav class="main-tabs" aria-label="Sezioni principali">
       <button type="button" class="main-tab active" data-main-view="dashboard">Dashboard</button>
       <button type="button" class="main-tab" data-main-view="archive">Farmacie</button>
+      <button type="button" class="main-tab" data-main-view="companies">Aziende e tecnici</button>
       <button type="button" class="main-tab" data-main-view="images">Immagini</button>
       <button type="button" class="main-tab" data-main-view="chat">SOS AI</button>
     </nav>
@@ -93,6 +94,7 @@
           <h2>Strumenti</h2>
           <div class="quick-actions">
             <button type="button" class="primary-action" data-open-view="archive">Gestisci farmacie</button>
+            <button type="button" class="secondary-action" data-open-view="companies">Gestisci aziende e tecnici</button>
             <button type="button" class="secondary-action" data-open-view="images">Gestisci immagini</button>
             <button type="button" class="secondary-action" data-open-view="chat">Apri SOS AI</button>
           </div>
@@ -259,6 +261,107 @@
       </section>
     </section>
 
+    <section id="view-companies" class="app-view" aria-labelledby="companies-title">
+      <div class="heading">
+        <div>
+          <p class="eyebrow">Rete convenzionata</p>
+          <h1 id="companies-title">Aziende e tecnici</h1>
+          <p class="section-copy">Anagrafica unica per tutte le farmacie. Competenze, copertura territoriale e stato di convenzione.</p>
+        </div>
+        <button id="company-refresh" class="secondary-action" type="button">Aggiorna elenco</button>
+      </div>
+      <section class="panel">
+        <div class="admin-heading">
+          <div><h2>Elenco aziende</h2><p id="company-count" class="section-copy">Caricamento…</p></div>
+          <button id="company-new" class="primary-action" type="button">Nuova azienda</button>
+        </div>
+        <form id="company-filters" class="company-filters">
+          <label>Nome / referente
+            <input type="search" name="q" placeholder="Cerca azienda o tecnico">
+          </label>
+          <label>Competenza
+            <select name="competenza" id="company-filter-skill">
+              <option value="">Tutte le competenze</option>
+            </select>
+          </label>
+          <label>Provincia
+            <input type="text" name="provincia" maxlength="2" placeholder="Es. MI" aria-label="Sigla provincia">
+          </label>
+          <button type="submit" class="primary-action">Cerca</button>
+          <button type="button" id="company-clear-filters" class="secondary-action">Azzera</button>
+        </form>
+        <p id="company-status" role="status" aria-live="polite" class="company-status"></p>
+        <div class="catalog-table-wrap">
+          <table class="catalog-table company-table">
+            <thead><tr><th>Azienda / tecnico</th><th>Referente / recapiti</th><th>Sede</th><th>Specializzazioni</th><th>Convenzione</th><th>Azione</th></tr></thead>
+            <tbody id="company-rows"><tr><td colspan="6">Apri la sezione per consultare l'anagrafica.</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <form id="company-form" class="panel company-form" hidden>
+        <div class="admin-heading">
+          <div>
+            <h2 id="company-form-title">Nuova azienda / tecnico</h2>
+            <p id="company-form-note" class="section-copy">Registra le competenze, i recapiti e la convenzione.</p>
+          </div>
+          <button type="button" id="company-cancel" class="secondary-action">Annulla</button>
+        </div>
+        <div class="data-grid">
+          <label>Ragione sociale / nominativo *
+            <input type="text" name="ragioneSociale" maxlength="250" required minlength="2" placeholder="Nome impresa o professionista">
+          </label>
+          <label>Referente
+            <input type="text" name="referente" maxlength="150" placeholder="Persona di contatto">
+          </label>
+          <label>Partita IVA
+            <input type="text" name="partitaIva" maxlength="30">
+          </label>
+          <label>Telefono
+            <input type="tel" name="telefono" maxlength="50">
+          </label>
+          <label>Email
+            <input type="email" name="email" maxlength="254">
+          </label>
+          <label>Indirizzo
+            <input type="text" name="indirizzo" maxlength="350">
+          </label>
+          <label>Comune
+            <input type="text" name="comune" maxlength="150">
+          </label>
+          <label>Provincia sede
+            <input type="text" name="provincia" maxlength="2" placeholder="Es. MI">
+          </label>
+          <label class="span-2">Province servite (sigle separate da virgola)
+            <input type="text" name="provinceServite" placeholder="MI, LO, MB">
+          </label>
+          <fieldset class="company-specialties span-2">
+            <legend>Specializzazioni tecniche *</legend>
+            <div id="company-skills" class="company-skill-grid"></div>
+            <p class="section-copy">Seleziona tutti i mestieri effettivamente svolti dall'azienda.</p>
+          </fieldset>
+          <label>Stato convenzione
+            <select name="convenzioneStato">
+              <option value="da_verificare">Da verificare</option>
+              <option value="attiva">Attiva / convenzionata</option>
+              <option value="sospesa">Sospesa</option>
+            </select>
+          </label>
+          <div class="company-flags">
+            <label><input type="checkbox" name="reperibilita24h"> Reperibilità 24 ore</label>
+            <label><input type="checkbox" name="attivo" checked> Anagrafica attiva</label>
+          </div>
+          <label class="span-2">Note tecniche e convenzione
+            <textarea name="note" rows="3" maxlength="4000" placeholder="Tipologia di lavori, limiti, condizioni e altre informazioni utili"></textarea>
+          </label>
+        </div>
+        <div class="company-form-actions">
+          <button id="company-save" type="submit" class="primary-action">Registra su Neon</button>
+          <span class="section-copy">Solo archivio amministrativo: nessuna comunicazione viene inviata ai tecnici.</span>
+        </div>
+      </form>
+    </section>
+
     <section id="view-images" class="app-view">
       <div class="heading">
         <div>
@@ -364,13 +467,13 @@
   (()=>{
     const { appVersion, appReleaseDate } = document.documentElement.dataset;
     document.getElementById("app-version").textContent = `Gestionale v${appVersion} · ${appReleaseDate}`;
-    const helpInspector="HELP FASTPHARMASOS — ISPETTORI / BACK-OFFICE (DEMO)\n\nAgisci come guida al gestionale FastPharmaSOS. Rispondi alle domande sull'uso della pagina senza inventare comandi o risultati.\n\nAprire «Gestione archivi». La dashboard mostra lo stato dei servizi e gli indicatori disponibili. La sezione «Farmacie» permette di consultare, selezionare e organizzare le informazioni presenti nell'archivio dimostrativo. La sezione «Immagini» serve a gestire le immagini disponibili nella sessione e le relative associazioni secondo i controlli effettivamente visibili. La sezione «SOS AI» permette di provare domande sull'archivio di test con il provider mostrato nell'interfaccia. Il pulsante «Aggiorna» ricarica lo stato dell'archivio quando disponibile.\n\nDurante un sopralluogo l'ispettore raccoglie informazioni verificabili su locali, percorsi, componenti e identificazione degli impianti; precisa per ciascun oggetto l'ubicazione rispetto alla porta d'ingresso della stanza, guardando verso l'interno. Usa nomi comprensibili («collettore acqua calda del bagno»), preservando i codici identificativi per la gestione tecnica interna. Per foto e documenti descrive provenienza e grado di verifica, evitando di spacciare una simulazione per un sopralluogo reale.\n\nVerificare quale farmacia sia selezionata prima di inserire o interpretare dati. Non attribuire una fotografia a una farmacia differente. Segnalare campi assenti, procedimenti non disponibili o funzioni non ancora implementate; non dichiarare che modifiche siano state salvate se non confermate. Evitare di inserire dati reali o sensibili nell'ambiente dimostrativo.\n\nLa pagina «Servizio» è dedicata all'utente farmacia e ha un help generale separato: utilizzare quello quando si vuole spiegare al farmacista che cosa fa SOS e come avviare l'assistenza. Il back-office e il Service Shell hanno obiettivi diversi.\n\nStato: demo in evoluzione; questo testo non autorizza operazioni amministrative, manutenzioni o accessi a banche dati.";
+    const helpInspector="HELP FASTPHARMASOS — ISPETTORI / BACK-OFFICE (DEMO)\n\nAgisci come guida al gestionale FastPharmaSOS. Rispondi alle domande sull'uso della pagina senza inventare comandi o risultati.\n\nAprire «Gestione archivi». La dashboard mostra lo stato dei servizi e gli indicatori disponibili. La sezione «Farmacie» permette di consultare, selezionare e organizzare le informazioni presenti nell'archivio dimostrativo. La sezione «Aziende e tecnici» gestisce l\u0027anagrafica unica dei convenzionati e le specializzazioni su Neon. La sezione «Immagini» serve a gestire le immagini disponibili nella sessione e le relative associazioni secondo i controlli effettivamente visibili. La sezione «SOS AI» permette di provare domande sull'archivio di test con il provider mostrato nell'interfaccia. Il pulsante «Aggiorna» ricarica lo stato dell'archivio quando disponibile.\n\nDurante un sopralluogo l'ispettore raccoglie informazioni verificabili su locali, percorsi, componenti e identificazione degli impianti; precisa per ciascun oggetto l'ubicazione rispetto alla porta d'ingresso della stanza, guardando verso l'interno. Usa nomi comprensibili («collettore acqua calda del bagno»), preservando i codici identificativi per la gestione tecnica interna. Per foto e documenti descrive provenienza e grado di verifica, evitando di spacciare una simulazione per un sopralluogo reale.\n\nVerificare quale farmacia sia selezionata prima di inserire o interpretare dati. Non attribuire una fotografia a una farmacia differente. Segnalare campi assenti, procedimenti non disponibili o funzioni non ancora implementate; non dichiarare che modifiche siano state salvate se non confermate. Evitare di inserire dati reali o sensibili nell'ambiente dimostrativo.\n\nLa pagina «Servizio» è dedicata all'utente farmacia e ha un help generale separato: utilizzare quello quando si vuole spiegare al farmacista che cosa fa SOS e come avviare l'assistenza. Il back-office e il Service Shell hanno obiettivi diversi.\n\nStato: demo in evoluzione; questo testo non autorizza operazioni amministrative, manutenzioni o accessi a banche dati.";
     document.getElementById("copy-help-inspector").addEventListener("click",async()=>{
       const output=document.getElementById("help-inspector-status");
       try {await navigator.clipboard.writeText(helpInspector);output.classList.remove("sr-only");output.textContent="Help ispettore copiato: incollalo nella chat AI.";}catch(_){output.classList.remove("sr-only");output.textContent="Copia non riuscita: controlla i permessi del browser.";}
     });
   })();
   </script>
-  <script type="module" src="./js/app.js?v=1.1.5"></script>
+  <script type="module" src="./js/app.js?v=1.1.6"></script>
 </body>
 </html>
