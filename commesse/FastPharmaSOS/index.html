@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="it" data-app-version="1.1.3" data-api-base="https://fastpharmasos.onrender.com">
+<html lang="it" data-app-version="1.1.4" data-app-release-date="23/10/2026" data-api-base="https://fastpharmasos.onrender.com">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -18,7 +18,7 @@
       </div>
     </div>
 
-    <div class="topbar-right"><span id="app-version" style="font-size:12px;white-space:nowrap" title="Versione gestionale">Gestionale v1.1.3 · 21/10/2026</span><button type="button" id="check-version" class="secondary-action" style="font-size:12px">Verifica aggiornamento</button><span id="version-status" role="status" style="font-size:12px"></span><button type="button" id="copy-help-inspector" class="secondary-action">Copia help ispettore</button><span id="help-inspector-status" role="status" aria-live="polite" class="sr-only"></span>
+    <div class="topbar-right"><span id="app-version" style="font-size:12px;white-space:nowrap" title="Versione gestionale">Gestionale · versione in caricamento</span><button type="button" id="check-version" class="secondary-action" style="font-size:12px">Verifica aggiornamento</button><span id="version-status" role="status" style="font-size:12px"></span><button type="button" id="copy-help-inspector" class="secondary-action">Copia help ispettore</button><span id="help-inspector-status" role="status" aria-live="polite" class="sr-only"></span>
       <div class="system-status" aria-label="Stato servizi">
         <span id="api-status" class="status-pill">API…</span>
         <span id="db-status" class="status-pill">Database…</span>
@@ -362,6 +362,8 @@
 
   <script>
   (()=>{
+    const { appVersion, appReleaseDate } = document.documentElement.dataset;
+    document.getElementById("app-version").textContent = `Gestionale v${appVersion} · ${appReleaseDate}`;
     const helpInspector="HELP FASTPHARMASOS — ISPETTORI / BACK-OFFICE (DEMO)\n\nAgisci come guida al gestionale FastPharmaSOS. Rispondi alle domande sull'uso della pagina senza inventare comandi o risultati.\n\nAprire «Gestione archivi». La dashboard mostra lo stato dei servizi e gli indicatori disponibili. La sezione «Farmacie» permette di consultare, selezionare e organizzare le informazioni presenti nell'archivio dimostrativo. La sezione «Immagini» serve a gestire le immagini disponibili nella sessione e le relative associazioni secondo i controlli effettivamente visibili. La sezione «SOS AI» permette di provare domande sull'archivio di test con il provider mostrato nell'interfaccia. Il pulsante «Aggiorna» ricarica lo stato dell'archivio quando disponibile.\n\nDurante un sopralluogo l'ispettore raccoglie informazioni verificabili su locali, percorsi, componenti e identificazione degli impianti; precisa per ciascun oggetto l'ubicazione rispetto alla porta d'ingresso della stanza, guardando verso l'interno. Usa nomi comprensibili («collettore acqua calda del bagno»), preservando i codici identificativi per la gestione tecnica interna. Per foto e documenti descrive provenienza e grado di verifica, evitando di spacciare una simulazione per un sopralluogo reale.\n\nVerificare quale farmacia sia selezionata prima di inserire o interpretare dati. Non attribuire una fotografia a una farmacia differente. Segnalare campi assenti, procedimenti non disponibili o funzioni non ancora implementate; non dichiarare che modifiche siano state salvate se non confermate. Evitare di inserire dati reali o sensibili nell'ambiente dimostrativo.\n\nLa pagina «Servizio» è dedicata all'utente farmacia e ha un help generale separato: utilizzare quello quando si vuole spiegare al farmacista che cosa fa SOS e come avviare l'assistenza. Il back-office e il Service Shell hanno obiettivi diversi.\n\nStato: demo in evoluzione; questo testo non autorizza operazioni amministrative, manutenzioni o accessi a banche dati.";
     document.getElementById("copy-help-inspector").addEventListener("click",async()=>{
       const output=document.getElementById("help-inspector-status");
