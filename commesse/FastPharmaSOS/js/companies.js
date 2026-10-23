@@ -1,4 +1,4 @@
-import { getTechnicians, getSpecializations, saveTechnician } from "./api.js?v=1.1.6";
+import { getTechnicians, getSpecializations, saveTechnician, updateTechnicianConvention } from "./api.js?v=1.1.7";
 
 const byId = name => document.getElementById(name);
 let initialized = false;
@@ -60,7 +60,7 @@ function setForm(data = null) {
   byId("company-cancel").hidden = false;
   byId("company-save").textContent = data ? "Salva modifiche su Neon" : "Registra su Neon";
   byId("company-form-note").textContent = data
-    ? "La modifica dell'elenco delle competenze aggiorna le specializzazioni associate a questa azienda."
+    ? "Modifica contatti, competenze e convenzione. Puoi anche cambiare il solo stato direttamente nella tabella aziende."
     : "Le nuove aziende iniziano con convenzione da verificare. Nessuna richiesta viene inviata automaticamente.";
   form.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -94,9 +94,59 @@ function render() {
     cell(row, [item.comune,item.provincia].filter(Boolean).join(" · "));
     cell(row, (item.specializzazioni || []).map(id =>
       skills.find(x => x.codice === id)?.descrizione || id).join(", "));
-    cell(row, !item.attivo ? "Disattiva" :
-      item.convenzioneStato === "attiva" ? "Convenzionata" :
-      item.convenzioneStato === "sospesa" ? "Sospesa" : "Da verificare");
+    const statusCell = document.createElement("td");
+    const statusControl = document.createElement("div");
+    statusControl.className = "company-convention-control";
+    const statusSelect = document.createElement("select");
+    statusSelect.setAttribute("aria-label", "Stato convenzione di " + item.ragioneSociale);
+    for (const [code, caption] of [
+      ["da_verificare","Da verificare"],
+      ["attiva","Attiva / convenzionata"],
+      ["sospesa","Sospesa"]
+    ]) option(statusSelect, code, caption);
+    statusSelect.value = item.convenzioneStato || "da_verificare";
+    const saveStatus = document.createElement("button");
+    saveStatus.type = "button";
+    saveStatus.className = "secondary-action";
+    saveStatus.textContent = "Salva stato";
+    saveStatus.disabled = true;
+    statusSelect.addEventListener("change", () => {
+      saveStatus.disabled = statusSelect.value === item.convenzioneStato;
+    });
+    saveStatus.addEventListener("click", async () => {
+      const desired = statusSelect.value;
+      if (desired === item.convenzioneStato) return;
+      if (desired === "attiva" && !window.confirm(
+        "Confermi che la convenzione di «" + item.ragioneSociale +
+        "» deve diventare ATTIVA? Per le anagrafiche di collaudo non attesta un accordo commerciale reale."
+      )) return;
+      saveStatus.disabled = true;
+      statusSelect.disabled = true;
+      message("Aggiornamento stato convenzione su Neon…");
+      try {
+        const result = await updateTechnicianConvention(item.id, desired);
+        if (result?.convenzioneStato !== desired)
+          throw new Error("Il server non ha confermato lo stato richiesto.");
+        item.convenzioneStato = desired;
+        message("Convenzione di " + item.ragioneSociale + ": " +
+          statusSelect.options[statusSelect.selectedIndex].text + " — salvata su Neon.");
+        render();
+      } catch (err) {
+        statusSelect.value = item.convenzioneStato;
+        message("Impossibile modificare la convenzione: " + (err.body?.error || err.message), true);
+        statusSelect.disabled = false;
+        saveStatus.disabled = true;
+      }
+    });
+    statusControl.append(statusSelect, saveStatus);
+    statusCell.append(statusControl);
+    if (!item.attivo) {
+      const note = document.createElement("small");
+      note.className = "company-inactive-note";
+      note.textContent = "Anagrafica disattiva: per abilitarla usa Modifica.";
+      statusCell.append(note);
+    }
+    row.append(statusCell);
     const last = document.createElement("td");
     const edit = document.createElement("button");
     edit.type = "button";
