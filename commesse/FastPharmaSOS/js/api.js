@@ -150,3 +150,10 @@ export const saveTechnician = (id, payload) => request(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload) }, 30000
 );
+
+export const updateTechnicianConvention = (id, stato) => request(
+  `${TECNICI_API}/tecnici/${encodeURIComponent(id)}/convenzione`,
+  { method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ stato }) }, 30000
+);
