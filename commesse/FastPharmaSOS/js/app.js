@@ -1,6 +1,7 @@
-import { initializeArchiveWorkspace, initializeDocumentEditor } from "./archive.js?v=1.1.5";
-import { initializeImageManager } from "./images.js?v=1.1.5";
-import { askAssistant, confirmEngineCandidate, getAiHealth, getCommesse, getDbHealth, getHealth, loginAdmin, setAdminToken } from "./api.js?v=1.1.5";
+import { initializeArchiveWorkspace, initializeDocumentEditor } from "./archive.js?v=1.1.6";
+import { initializeImageManager } from "./images.js?v=1.1.6";
+import { initializeCompanyManager } from "./companies.js?v=1.1.6";
+import { askAssistant, confirmEngineCandidate, getAiHealth, getCommesse, getDbHealth, getHealth, loginAdmin, setAdminToken } from "./api.js?v=1.1.6";
 
 const $ = id => document.getElementById(id);
 const apiStatus = $("api-status");
@@ -23,6 +24,7 @@ function openMainView(name) {
   mainViews.forEach(view => {
     view.classList.toggle("active", view.id === `view-${name}`);
   });
+  if (name === "companies") window.dispatchEvent(new Event("fastpharma:companies-open"));
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -446,6 +448,7 @@ function initializeAuthenticatedApplication() {
   initializeDocumentEditor();
   initializeArchiveWorkspace();
   initializeImageManager();
+  initializeCompanyManager();
   refreshStatus();
 }
 
