@@ -223,3 +223,32 @@ footer{text-align:center;color:#64748b;font-size:11px;margin-top:18px}
 .image-pharmacy-target select{width:100%;background:#0b1220;color:#fff;border:1px solid #475569;border-radius:9px;padding:11px}
 .image-pharmacy-target span{color:#bfdbfe;font-size:13px}
 .image-toolbar label.is-disabled{opacity:.45;cursor:not-allowed;pointer-events:none}
+
+
+/* Aziende e tecnici: archivio centralizzato, Gestionale v1.1.6 */
+.company-filters{display:grid;grid-template-columns: minmax(200px,2fr) minmax(180px,1.4fr) 100px auto auto;align-items:end;gap:10px;margin:18px 0 12px}
+.company-filters label{display:grid;gap:6px;font-size:13px;color:#cbd5e1}
+.company-filters input,.company-filters select,.company-form input:not([type="checkbox"]),.company-form select,.company-form textarea{
+  width:100%;min-width:0;background:var(--panel-2);color:#f8fafc;border:1px solid var(--line-soft);
+  border-radius:9px;padding:10px 11px;outline:none
+}
+.company-filters input:focus,.company-filters select:focus,.company-form input:focus,.company-form textarea:focus,.company-form select:focus{border-color:var(--primary)}
+.company-table{width:100%}
+.company-table td{vertical-align:top;overflow-wrap:anywhere}
+.company-table td:nth-child(4){max-width:260px}
+.company-table td:nth-child(6){white-space:nowrap}
+.company-status{min-height:21px;color:var(--ok);font-size:13px;margin:12px 0}
+.company-status.error-text{color:#fca5a5}
+.company-form[hidden]{display:none!important}
+.company-form{display:block}
+.company-form .admin-heading{margin-bottom:18px}
+.company-specialties{border:1px solid var(--line-soft);border-radius:10px;padding:12px 14px}
+.company-specialties legend{padding:0 8px;color:#cbd5e1;font-size:13px}
+.company-skill-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:9px}
+.company-skill-grid label,.company-flags label{display:flex;align-items:center;gap:9px;color:#cbd5e1;font-size:13px}
+.company-flags{display:grid;align-content:center;gap:12px;padding:8px}
+.company-specialties input,.company-flags input{accent-color:var(--primary);width:17px;height:17px}
+.company-form-actions{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:18px}
+.company-empty{color:var(--muted);text-align:center;padding:24px!important}
+@media(max-width:980px){.company-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.company-filters{grid-template-columns:1fr}.company-table{min-width:780px}}
