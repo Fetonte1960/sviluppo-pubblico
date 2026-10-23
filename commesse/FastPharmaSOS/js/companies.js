@@ -53,6 +53,7 @@ function setForm(data = null) {
   field("reperibilita24h").checked = !!data?.reperibilita24h;
   field("attivo").checked = data ? !!data.attivo : true;
   field("convenzioneStato").value = data?.convenzioneStato || "da_verificare";
+  field("convenzioneStato").disabled = !data; // Alla creazione la convenzione parte da verificare; si attiva con modifica successiva.
   const assigned = new Set(data?.specializzazioni ?? []);
   form.querySelectorAll('input[name="specializzazioni"]').forEach(x => x.checked = assigned.has(x.value));
   form.hidden = false;
