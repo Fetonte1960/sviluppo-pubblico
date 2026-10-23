@@ -5,7 +5,7 @@ import {
   getCommesse,
   savePharmacyDocument,
   deletePharmacyDocument
-} from "./api.js?v=1.1.6";
+} from "./api.js?v=1.1.7";
 
 const $ = id => document.getElementById(id);
 
