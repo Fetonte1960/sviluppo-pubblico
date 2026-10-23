@@ -254,3 +254,9 @@ footer{text-align:center;color:#64748b;font-size:11px;margin-top:18px}
 @media(max-width:600px){.company-filters{grid-template-columns:1fr}.company-table{min-width:780px}}
 
 .company-skill-grid input[type="checkbox"],.company-flags input[type="checkbox"]{padding:0;background:transparent;border:0;border-radius:2px;flex:0 0 17px}
+
+/* Gestione stato convenzione v1.1.7 */
+.company-convention-control{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.company-convention-control select{min-width:170px;background:#1e293b;color:#f8fafc;border:1px solid #334155;border-radius:8px;padding:8px}
+.company-inactive-note{display:block;color:#fca5a5;font-size:11px;margin-top:5px}
+.company-table td:nth-child(5){min-width:280px}
