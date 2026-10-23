@@ -134,3 +134,19 @@ export const deletePharmacyDocument = (farmaciaId, documentId) => request(
   `/api/fastpharmasos/v1/commesse/${encodeURIComponent(farmaciaId)}/documenti/${encodeURIComponent(documentId)}`,
   { method:"DELETE" }, 30000
 );
+
+const TECNICI_API = "/api/fastpharmasos/v1";
+export const getSpecializations = () => request(`${TECNICI_API}/specializzazioni`,{},15000);
+export const getTechnicians = ({q = "",competenza = "",provincia = ""} = {}) => {
+  const query = new URLSearchParams();
+  if(q)query.set("q",q);
+  if(competenza)query.set("competenza",competenza);
+  if(provincia)query.set("provincia",provincia);
+  return request(`${TECNICI_API}/tecnici${query.size?"?"+query.toString():""}`,{},15000);
+};
+export const saveTechnician = (id, payload) => request(
+  `${TECNICI_API}/tecnici${id?"/"+encodeURIComponent(id):""}`,
+  { method: id ? "PUT" : "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload) }, 30000
+);
