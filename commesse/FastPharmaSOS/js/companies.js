@@ -128,6 +128,9 @@ function render() {
         if (result?.convenzioneStato !== desired)
           throw new Error("Il server non ha confermato lo stato richiesto.");
         item.convenzioneStato = desired;
+        if (selectedId === item.id) {
+          byId("company-form").elements.namedItem("convenzioneStato").value = desired;
+        }
         message("Convenzione di " + item.ragioneSociale + ": " +
           statusSelect.options[statusSelect.selectedIndex].text + " — salvata su Neon.");
         render();
