@@ -1,7 +1,8 @@
-import { initializeArchiveWorkspace, initializeDocumentEditor } from "./archive.js?v=1.1.9";
-import { initializeImageManager } from "./images.js?v=1.1.9";
-import { initializeCompanyManager } from "./companies.js?v=1.1.9";
-import { askAssistant, confirmEngineCandidate, getAiHealth, getCommesse, getDbHealth, getHealth, loginAdmin, setAdminToken } from "./api.js?v=1.1.9";
+import { initializeSosActivityForms } from "./sos-activities.js?v=1.1.10";
+import { initializeArchiveWorkspace, initializeDocumentEditor } from "./archive.js?v=1.1.10";
+import { initializeImageManager } from "./images.js?v=1.1.10";
+import { initializeCompanyManager } from "./companies.js?v=1.1.10";
+import { askAssistant, confirmEngineCandidate, getAiHealth, getCommesse, getDbHealth, getHealth, loginAdmin, setAdminToken } from "./api.js?v=1.1.10";
 
 const $ = id => document.getElementById(id);
 const apiStatus = $("api-status");
@@ -25,6 +26,7 @@ function openMainView(name) {
     view.classList.toggle("active", view.id === `view-${name}`);
   });
   if (name === "companies") window.dispatchEvent(new Event("fastpharma:companies-open"));
+  if (name === "monitoraggio" || name === "suggerimenti") window.dispatchEvent(new CustomEvent("fastpharma:activities-open", { detail: { view: name } }));
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -449,6 +451,7 @@ function initializeAuthenticatedApplication() {
   initializeArchiveWorkspace();
   initializeImageManager();
   initializeCompanyManager();
+  initializeSosActivityForms();
   refreshStatus();
 }
 
