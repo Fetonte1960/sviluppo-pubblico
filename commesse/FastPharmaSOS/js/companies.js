@@ -1,4 +1,4 @@
-import { getTechnicians, getSpecializations, saveTechnician, updateTechnicianConvention } from "./api.js?v=1.1.7";
+import { getTechnicians, getSpecializations, saveTechnician, updateTechnicianConvention } from "./api.js?v=1.1.8";
 
 const byId = name => document.getElementById(name);
 let initialized = false;
