@@ -4,22 +4,40 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="FastPharma SOS, avvio sessione MCP per ChatGPT e Claude.">
   <title>FastPharma SOS — Test V1</title>
-  <link rel="stylesheet" href="./css/service-shell.css">
+  <link rel="stylesheet" href="./css/service-shell.css?v=1.0.15">
 </head>
 <body>
   <div class="service-shell">
     <header class="shell-header">
       <a class="shell-brand" href="./service-shell.html" aria-label="FastPharma SOS">
         <span class="brand-symbol" aria-hidden="true">SOS</span>
-        <span class="brand-copy"><strong>FastPharma <span style="color:#61d7cf;font-size:.75rem;white-space:nowrap">V1.0.14</span></strong><small>servizio tecnico</small></span>
+        <span class="brand-copy"><strong>FastPharma <span style="color:#61d7cf;font-size:.75rem;white-space:nowrap">V1.0.15</span></strong><small>servizio tecnico</small></span>
       </a>
-      <div class="shell-context"><span id="sos-version" class="sos-header-version" aria-label="Versione frontend">SOS V1.0.14</span><a class="archive-link" href="./index.html">Gestione archivi</a></div>
+      <div class="shell-context"><span id="sos-version" class="sos-header-version" aria-label="Versione frontend">SOS V1.0.15</span><a class="archive-link" href="./index.html">Gestione archivi</a></div>
     </header>
     <main class="shell-main">
       <section class="sos-launch" aria-labelledby="launch-title">
-        <div class="launch-eyebrow">TEST V1.0.14 · SESSIONE DIMOSTRATIVA</div>
+        <div class="launch-eyebrow">TEST V1.0.15 · SESSIONE DIMOSTRATIVA</div>
         <h1 id="launch-title">Assistenza FastPharma</h1>
         <p>Hai un'emergenza o ti serve assistenza? Richiedi un ticket e, appena pronto, inizia a parlarne con SOS AI.</p>
+        <section id="sos-preflight" class="sos-preflight" aria-labelledby="preflight-title" hidden>
+          <div class="preflight-heading">
+            <div><h2 id="preflight-title">Richieste precedenti dell'utente</h2>
+              <p id="preflight-description">Consultazione delle richieste in sospeso prima di aprire la chat.</p></div>
+            <button id="preflight-refresh" type="button" class="preflight-secondary">Aggiorna</button>
+          </div>
+          <p id="preflight-status" role="status"></p>
+          <div id="preflight-rows" class="preflight-list" role="group" aria-label="Richieste in sospeso"></div>
+          <label class="preflight-new">
+            <input type="radio" name="sos-choice" id="preflight-new" value="new" checked>
+            <span><strong>Apri una nuova richiesta</strong><small>La chat partirà senza duplicare automaticamente una pratica esistente.</small></span>
+          </label>
+          <div class="preflight-actions">
+            <button id="preflight-cancel" type="button" class="preflight-secondary" disabled>Annulla richieste selezionate</button>
+            <button id="preflight-continue" type="button" class="launch-button">Conferma scelta e abilita la chat</button>
+          </div>
+          <p class="preflight-help">L'annullamento è consentito solo su bozze non approvate, non inoltrate e senza tecnico incaricato. Manteniamo lo storico; nessun intervento viene cancellato fisicamente.</p>
+        </section>
         <div class="ticket-steps">
           <div class="ticket-step"><span class="ticket-step-number">1</span><button id="start-sos" type="button" class="launch-button">Richiedi un ticket per assistenza o emergenza</button></div>
           <div class="ticket-step"><span class="ticket-step-number">2</span><button id="cancel-sos" type="button" class="launch-button ticket-cancel" disabled>Interrompi richiesta ticket</button></div>
@@ -73,10 +91,114 @@
     const indicator = document.getElementById("session-indicator");
     let controller = null;
     let readySession = null;
-    function setReady(sessionId) { readySession=sessionId; for(const chatButton of chatButtons){chatButton.disabled=!sessionId; chatButton.setAttribute("aria-disabled",String(!sessionId));} }
+    let preflightApproved=false,selectedMode="new",selectedRequestId=null,pendingCount=null;
+    let pendingRows=[],preflightBusy=false,activeBrowserToken=null;
+    const preflight=document.getElementById("sos-preflight");
+    const preflightRows=document.getElementById("preflight-rows");
+    const preflightStatus=document.getElementById("preflight-status");
+    const preflightCancel=document.getElementById("preflight-cancel");
+    const preflightContinue=document.getElementById("preflight-continue");
+    function syncChat() {
+      for(const b of chatButtons){
+        b.disabled=!readySession||!preflightApproved;
+        b.setAttribute("aria-disabled",String(b.disabled));
+      }
+    }
+    function setReady(sessionId) {
+      readySession=sessionId;preflightApproved=false;
+      if(!sessionId){activeBrowserToken=null;preflight.hidden=true;}
+      syncChat();
+    }
+    function showPendingRows(){
+      preflightRows.replaceChildren();
+      pendingCount=pendingRows.length;
+      document.getElementById("preflight-description").textContent=
+        pendingCount ? "Hai "+pendingCount+" richieste ancora aperte. Scegli se riprenderne una, aprire una nuova assistenza o annullare delle bozze." :
+        "Non risultano richieste in sospeso per l'utente demo. Puoi avviare una nuova assistenza.";
+      pendingRows.forEach(item=>{
+        const row=document.createElement("div");row.className="preflight-row";
+        const choice=document.createElement("label");choice.className="preflight-choice";
+        const radio=document.createElement("input");
+        radio.type="radio";radio.name="sos-choice";radio.value="existing:"+item.id;
+        const body=document.createElement("span");
+        const title=document.createElement("strong");title.textContent=item.oggetto||"Richiesta senza oggetto";
+        const date=document.createElement("small");
+        date.textContent=new Date(item.data).toLocaleString("it-IT")+" · "+item.statoOperativo+" / "+item.statoMonitoraggio;
+        body.append(title,date);choice.append(radio,body);row.append(choice);
+        if(item.annullabile){
+          const cancel=document.createElement("label");cancel.className="preflight-cancel-choice";
+          const checkbox=document.createElement("input");checkbox.type="checkbox";
+          checkbox.className="preflight-delete";checkbox.value=item.id;
+          checkbox.addEventListener("change",()=>{preflightCancel.disabled=preflightBusy||!preflightRows.querySelector(".preflight-delete:checked");});
+          cancel.append(checkbox,document.createTextNode("Annulla"));row.append(cancel);
+        }else{
+          const note=document.createElement("span");note.className="preflight-protected";note.textContent="Non annullabile qui";row.append(note);
+        }
+        preflightRows.append(row);
+      });
+      document.getElementById("preflight-new").checked=true;
+      preflightCancel.disabled=true;
+    }
+    async function fetchPending(){
+      if(!readySession||!activeBrowserToken)return;
+      preflight.hidden=false;preflightApproved=false;syncChat();
+      preflightStatus.textContent="Verifica delle richieste esistenti...";
+      preflightContinue.disabled=true;
+      try{
+        const res=await fetch(gateway+"/browser/sos/requests/"+encodeURIComponent(readySession),{
+          headers:{"Authorization":"Bearer "+activeBrowserToken},cache:"no-store"
+        });
+        if(!res.ok)throw Error("HTTP "+res.status);
+        const msg=await res.json();
+        if(msg.status!=="available"||!Array.isArray(msg.data?.richieste))
+          throw Error(msg.reason||"Risposta non disponibile");
+        pendingRows=msg.data.richieste;showPendingRows();
+        preflightStatus.textContent=pendingRows.length?
+          "Seleziona una richiesta da riprendere oppure Nuova assistenza. Puoi anche selezionare più bozze da annullare." :
+          "Nessuna richiesta in sospeso.";
+        preflightContinue.disabled=false;
+      }catch(e){
+        pendingRows=[];pendingCount=null;preflightRows.replaceChildren();
+        preflightStatus.textContent="Impossibile controllare le richieste: "+e.message+
+          ". Puoi procedere con una nuova assistenza, ma verifica prima di non duplicarne una.";
+        preflightContinue.disabled=false;
+      }
+    }
+    document.getElementById("preflight-refresh").addEventListener("click",fetchPending);
+    preflightContinue.addEventListener("click",()=>{
+      if(!readySession||preflightContinue.disabled)return;
+      const option=document.querySelector('input[name="sos-choice"]:checked');
+      const value=option?.value||"new";
+      selectedMode=value.startsWith("existing:")?"existing":"new";
+      selectedRequestId=selectedMode==="existing"?value.slice("existing:".length):null;
+      preflightApproved=true;syncChat();
+      preflightStatus.textContent=selectedMode==="existing"?
+        "Scelta confermata: proseguirai sulla richiesta selezionata. Premi ChatGPT oppure Claude.":
+        "Nuova assistenza selezionata. Premi ChatGPT oppure Claude.";
+    });
+    preflightCancel.addEventListener("click",async()=>{
+      const ids=[...preflightRows.querySelectorAll(".preflight-delete:checked")].map(n=>n.value);
+      if(!readySession||!activeBrowserToken||ids.length===0||ids.length>10)return;
+      const titles=ids.map(id=>pendingRows.find(x=>x.id===id)?.oggetto||id);
+      if(!window.confirm("Annullare "+ids.length+" richieste?\n\n"+titles.join("\n")+
+        "\n\nLe richieste resteranno nell'archivio con stato annullato. Non verranno riparati né contattati tecnici."))return;
+      preflightBusy=true;preflightCancel.disabled=true;preflightContinue.disabled=true;
+      try{
+        const res=await fetch(gateway+"/browser/sos/cancel/"+encodeURIComponent(readySession),{
+          method:"POST",headers:{"Authorization":"Bearer "+activeBrowserToken,"Content-Type":"application/json"},
+          body:JSON.stringify({ids,conferma:true}),cache:"no-store"
+        });
+        const answer=await res.json();
+        if(!res.ok||answer.status!=="cancelled")throw Error(answer.reason||"HTTP "+res.status);
+        preflightStatus.textContent="Annullate "+answer.count+" richieste. Archivio e cronologia conservati.";
+        await fetchPending();
+      }catch(e){preflightStatus.textContent="Annullamento non riuscito: "+e.message;}
+      finally{preflightBusy=false;preflightContinue.disabled=false;}
+    });
     function bootstrap(sessionId) {
       return [
         "FastPharma SOS - sessione MCP browser: " + sessionId,
+        "Pre-apertura: utente demo stabile già consultato nel Service Shell; richieste pendenti prima della chat: " + (pendingCount??"non verificato") + ". Scelta effettuata: " + (selectedMode==="existing"?"Riprendere la pratica "+selectedRequestId:"Nuova assistenza") + ". Non registrare automaticamente alcuna nuova richiesta se ripresa una pratica. Se si parla di cancellazione, chiedi conferma esplicita, poi usa il comando interno Annulla_le_mie_richieste_sos solo con sessionId attivo, elenco UUID di proprietà e confermaEsplicita=true. Gli annullamenti di bozze sono logici e conservano l'audit.",
         "Istruzioni interne: controlla se tra gli strumenti disponibili esiste MessageToSOS. Se esiste, chiama MessageToSOS con operation=initialize, applica le istruzioni ottenute e avvia l'assistenza senza riassumere questa procedura.",
         "Se MessageToSOS non compare, anche se CommandToTermodel funziona, non tentare di eseguire le funzioni SOS attraverso CommandToTermodel e non presentare dettagli tecnici. Rispondi soltanto: «Il collegamento a Termodel non è aggiornato. Vuoi che ti guidi ad aggiornarlo?» Poi attendi la risposta.",
         "Solo se l'utente accetta, fornisci la guida passo per passo per aggiornare o riconnettere il connettore Termodel nel suo client. Dati per configurarlo: nome Termodel MCP, indirizzo https://termodel-mcp-gateway.onrender.com/mcp . Le schermate variano secondo client e versione: non inventare opzioni. Non chiedere credenziali in chat e non aggirare eventuali controlli di accesso del servizio.",
@@ -90,8 +212,11 @@
           headers:{"Authorization":"Bearer "+token},signal,cache:"no-store"
         });
         if(!response.ok||!response.body)throw Error("Canale browser HTTP "+response.status);
+        activeBrowserToken=token;
         setReady(sessionId);
-        status.textContent="Ticket ottenuto! Puoi iniziare la discussione con SOS AI.";
+        activeBrowserToken=token;
+        void fetchPending();
+        status.textContent="Ticket ottenuto. Verifica le richieste in sospeso prima di avviare la chat.";
         const reader=response.body.getReader();
         const decoder=new TextDecoder();
         let buffer="";
@@ -182,7 +307,7 @@
       status.textContent="Richiesta ticket interrotta. Puoi riprovare quando vuoi.";
     });
     function openChat(provider){
-      if(!readySession)return;
+      if(!readySession||!preflightApproved)return;
       const prompt=encodeURIComponent(bootstrap(readySession));
       const url=provider==="claude"?"https://claude.ai/new?q="+prompt:"https://chatgpt.com/?q="+prompt;
       window.open(url,"_blank","noopener,noreferrer");
