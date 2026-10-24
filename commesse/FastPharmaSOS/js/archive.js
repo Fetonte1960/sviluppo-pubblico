@@ -588,9 +588,19 @@ export function initializeDocumentEditor() {
     if (value.length > 5000000 || (kind.value === "image" && !value)) { status.textContent = "Contenuto non valido o superiore a 5 milioni di caratteri.";return; }
     status.textContent = "Salvataggio in corso...";
     try {
-      await savePharmacyDocument(pharmacyId,documentId,{kind:kind.value,title:title.value,content:value,location:location.value,fileName});
-      status.textContent = kind.value === "topology" ? "Modello topologico salvato come testo su Neon. La nuova revisione deve essere verificata dal server prima delle consultazioni MCP." : "Documento salvato su Neon.";
+      const updatedDocumentId = documentId;
+      const savedKind = kind.value;
+      await savePharmacyDocument(pharmacyId,updatedDocumentId,{kind:savedKind,title:title.value,content:value,location:location.value,fileName});
       await refresh();
+      if (updatedDocumentId && docs.some(d => String(d.id) === String(updatedDocumentId))) {
+        selection.value = String(updatedDocumentId);
+        editButton.disabled = false;
+        deleteButton.disabled = false;
+        if (clearButton) clearButton.disabled = false;
+      }
+      status.textContent = savedKind === "topology"
+        ? "Modello topologico aggiornato come testo su Neon. La nuova revisione richiede verifica e associazione sul server prima delle consultazioni MCP."
+        : "Documento salvato su Neon.";
     } catch (error) {
       const reason = typeof error.body?.error === "string" ? error.body.error : error.message;
       status.textContent = error.status === 401
