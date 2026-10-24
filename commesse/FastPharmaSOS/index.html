@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="it" data-app-version="1.1.11" data-app-release-date="24/10/2026" data-api-base="https://fastpharmasos.onrender.com">
+<html lang="it" data-app-version="1.1.12" data-app-release-date="24/10/2026" data-api-base="https://fastpharmasos.onrender.com">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Dashboard demo FastPharmaSOS per gestione archivi, immagini e assistente SOS.">
   <title>FastPharma SOS · Gestionale demo</title>
   <script>if (new URLSearchParams(location.search).has("password")) history.replaceState(null, "", location.pathname + location.hash);</script>
-  <link rel="stylesheet" href="./css/app.css?v=1.1.11">
+  <link rel="stylesheet" href="./css/app.css?v=1.1.12">
 </head>
 <body>
   <header class="topbar">
@@ -121,22 +121,23 @@
       </section>
     </section>
 
-    <section id="view-monitoraggio" class="app-view" aria-labelledby="monitor-title">
-      <div class="heading">
-        <div><p class="eyebrow">Form autonoma · operatività</p><h1 id="monitor-title">Monitoraggio attività</h1>
-          <p>Per ora: richieste di assistenza e interventi SOS, con stato operativo e controllo amministrativo distinti.</p>
+    <section id="view-monitoraggio" class="app-view activity-page" aria-labelledby="monitor-title">
+      <div class="activity-page-header">
+        <div>
+          <h1 id="monitor-title">Monitoraggio attività</h1>
+          <p>Richieste di assistenza e interventi SOS · seleziona una riga per gestirla.</p>
         </div>
-        <button id="monitor-refresh" type="button" class="secondary-action">Aggiorna richieste</button>
+        <button id="monitor-refresh" type="button" class="secondary-action">Aggiorna</button>
       </div>
-      <div class="metrics">
-        <article class="metric"><span>Interventi</span><strong id="monitor-total">—</strong></article>
-        <article class="metric"><span>Da esaminare</span><strong id="monitor-pending">—</strong></article>
-        <article class="metric"><span>In gestione</span><strong id="monitor-active">—</strong></article>
-        <article class="metric"><span>Completati (monitoraggio)</span><strong id="monitor-done">—</strong></article>
+      <div class="activity-summary-bar" aria-label="Riepilogo richieste">
+        <span>Interventi <strong id="monitor-total">—</strong></span>
+        <span>Da esaminare <strong id="monitor-pending">—</strong></span>
+        <span>In gestione <strong id="monitor-active">—</strong></span>
+        <span>Completati <strong id="monitor-done">—</strong></span>
       </div>
-      <div class="activity-columns">
-        <section class="panel">
-          <h2>Richieste di assistenza</h2>
+      <section class="panel activity-table-panel" aria-labelledby="monitor-list-title">
+        <div class="activity-table-heading">
+          <h2 id="monitor-list-title">Richieste di assistenza</h2>
           <form id="monitor-filters" class="activity-filters">
             <input name="q" type="search" placeholder="Numero pratica, oggetto, farmacia…" aria-label="Cerca richieste">
             <select name="stato" aria-label="Filtra stato monitoraggio"><option value="">Tutti gli stati</option>
@@ -144,44 +145,60 @@
               <option value="in_attesa">In attesa</option><option value="completata">Completata</option></select>
             <button type="submit" class="secondary-action">Filtra</button>
           </form>
-          <p id="monitor-status" role="status"></p>
-          <div id="monitor-list" class="activity-list" aria-label="Elenco interventi"></div>
-        </section>
-        <section class="panel">
-          <h2>Dettaglio e gestione</h2>
-          <p id="monitor-empty">Seleziona una richiesta dall'elenco.</p>
-          <form id="monitor-editor" hidden>
-            <p id="monitor-detail" class="activity-detail"></p>
+        </div>
+        <p id="monitor-status" class="activity-result-status" role="status"></p>
+        <div id="monitor-list" class="activity-table-wrap" aria-label="Elenco interventi SOS"></div>
+      </section>
+      <section class="panel activity-detail-panel" id="monitor-detail-panel" aria-labelledby="monitor-detail-title" hidden>
+        <div class="activity-detail-heading">
+          <h2 id="monitor-detail-title">Dettaglio e gestione della pratica</h2>
+          <button id="monitor-close" type="button" class="secondary-action">Chiudi dettagli</button>
+        </div>
+        <form id="monitor-editor" hidden>
+          <div id="monitor-detail" class="activity-detail-grid"></div>
+          <div class="activity-edit-row">
             <label>Stato di monitoraggio
               <select name="stato" required><option value="da_esaminare">Da esaminare</option>
                 <option value="in_esame">In esame</option><option value="in_attesa">In attesa</option>
-                <option value="completata">Completata</option></select></label>
-            <label>Note amministrative<textarea name="noteInterne" rows="5" maxlength="4000" placeholder="Verifiche, follow-up, ostacoli…"></textarea></label>
+                <option value="completata">Completata</option></select>
+            </label>
+            <label>Note amministrative
+              <textarea name="noteInterne" rows="2" maxlength="4000" placeholder="Verifiche, follow-up, ostacoli…"></textarea>
+            </label>
             <button class="primary-action" type="submit">Salva monitoraggio</button>
-            <p id="monitor-save-status" role="status"></p>
-            <h3>Eventi intervento</h3><div id="monitor-events" class="activity-events"></div>
-            <h3>Scheda tecnica registrata</h3><pre id="monitor-scheda" class="activity-json"></pre>
-          </form>
-        </section>
-      </div>
+          </div>
+          <p id="monitor-save-status" class="activity-result-status" role="status"></p>
+          <div class="activity-disclosures">
+            <details id="monitor-events-disclosure">
+              <summary>Eventi della pratica <span id="monitor-event-count"></span></summary>
+              <div id="monitor-events" class="activity-events-grid"></div>
+            </details>
+            <details id="monitor-scheda-disclosure">
+              <summary>Scheda tecnica completa</summary>
+              <pre id="monitor-scheda" class="activity-json"></pre>
+            </details>
+          </div>
+        </form>
+      </section>
     </section>
 
-    <section id="view-suggerimenti" class="app-view" aria-labelledby="feedback-title">
-      <div class="heading">
-        <div><p class="eyebrow">Form autonoma · qualità del servizio</p><h1 id="feedback-title">Soddisfazione e suggerimenti</h1>
-          <p>Le opinioni dei richiedenti e le osservazioni dell'AI sono distinte e riferite alla conversazione.</p>
+    <section id="view-suggerimenti" class="app-view activity-page" aria-labelledby="feedback-title">
+      <div class="activity-page-header">
+        <div>
+          <h1 id="feedback-title">Soddisfazione e suggerimenti</h1>
+          <p>Giudizi degli utenti e osservazioni dell’AI, con gestione indipendente.</p>
         </div>
-        <button id="feedback-refresh" type="button" class="secondary-action">Aggiorna suggerimenti</button>
+        <button id="feedback-refresh" type="button" class="secondary-action">Aggiorna</button>
       </div>
-      <div class="metrics">
-        <article class="metric"><span>Valutazioni ricevute</span><strong id="feedback-total">—</strong></article>
-        <article class="metric"><span>Soddisfatti</span><strong id="feedback-positive">—</strong></article>
-        <article class="metric"><span>Non soddisfatti</span><strong id="feedback-negative">—</strong></article>
-        <article class="metric"><span>Da esaminare</span><strong id="feedback-new">—</strong></article>
+      <div class="activity-summary-bar" aria-label="Riepilogo suggerimenti">
+        <span>Valutazioni <strong id="feedback-total">—</strong></span>
+        <span>Soddisfatti <strong id="feedback-positive">—</strong></span>
+        <span>Non soddisfatti <strong id="feedback-negative">—</strong></span>
+        <span>Da esaminare <strong id="feedback-new">—</strong></span>
       </div>
-      <div class="activity-columns">
-        <section class="panel">
-          <h2>Osservazioni delle conversazioni</h2>
+      <section class="panel activity-table-panel" aria-labelledby="feedback-list-title">
+        <div class="activity-table-heading">
+          <h2 id="feedback-list-title">Valutazioni ricevute</h2>
           <form id="feedback-filters" class="activity-filters">
             <input name="q" type="search" placeholder="Farmacia, suggerimento, osservazione…" aria-label="Cerca suggerimenti">
             <select name="stato" aria-label="Filtra gestione suggerimenti"><option value="">Tutti gli stati</option>
@@ -189,25 +206,32 @@
               <option value="accolto">Accolto</option><option value="archiviato">Archiviato</option></select>
             <button type="submit" class="secondary-action">Filtra</button>
           </form>
-          <p id="feedback-status" role="status"></p>
-          <div id="feedback-list" class="activity-list" aria-label="Elenco valutazioni"></div>
-        </section>
-        <section class="panel">
-          <h2>Revisione suggerimento</h2>
-          <p id="feedback-empty">Seleziona una valutazione dall'elenco.</p>
-          <form id="feedback-editor" hidden>
-            <div id="feedback-detail" class="activity-detail"></div>
-            <label>Gestione autonoma
+        </div>
+        <p id="feedback-status" class="activity-result-status" role="status"></p>
+        <div id="feedback-list" class="activity-table-wrap" aria-label="Elenco valutazioni delle chat"></div>
+      </section>
+      <section class="panel activity-detail-panel" id="feedback-detail-panel" aria-labelledby="feedback-detail-title" hidden>
+        <div class="activity-detail-heading">
+          <h2 id="feedback-detail-title">Revisione del suggerimento</h2>
+          <button id="feedback-close" type="button" class="secondary-action">Chiudi dettagli</button>
+        </div>
+        <form id="feedback-editor" hidden>
+          <div id="feedback-detail" class="activity-detail-grid"></div>
+          <div class="activity-edit-row">
+            <label>Stato di gestione
               <select name="stato" required><option value="nuovo">Nuovo</option>
                 <option value="in_esame">In esame</option><option value="accolto">Accolto</option>
-                <option value="archiviato">Archiviato</option></select></label>
-            <label>Note e azioni del responsabile<textarea name="noteInterne" rows="5" maxlength="4000" placeholder="Decisioni sulle proposte e miglioramento delle istruzioni…"></textarea></label>
-            <button type="submit" class="primary-action">Salva gestione suggerimento</button>
-            <p id="feedback-save-status" role="status"></p>
-          </form>
-        </section>
-      </div>
-      <p class="demo-note">La valutazione è volontaria. La soddisfazione dichiarata non equivale alla chiusura tecnica dell'intervento; le osservazioni AI non sono dichiarazioni del cliente.</p>
+                <option value="archiviato">Archiviato</option></select>
+            </label>
+            <label>Note del responsabile
+              <textarea name="noteInterne" rows="2" maxlength="4000" placeholder="Decisioni e miglioramento istruzioni…"></textarea>
+            </label>
+            <button type="submit" class="primary-action">Salva suggerimento</button>
+          </div>
+          <p id="feedback-save-status" class="activity-result-status" role="status"></p>
+        </form>
+      </section>
+      <p class="activity-footnote">Soddisfazione della chat e completamento tecnico dell’intervento sono informazioni distinte.</p>
     </section>
 
     <section id="view-archive" class="app-view">
@@ -573,6 +597,6 @@
     });
   })();
   </script>
-  <script type="module" src="./js/app.js?v=1.1.10"></script>
+  <script type="module" src="./js/app.js?v=1.1.12"></script>
 </body>
 </html>
