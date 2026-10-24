@@ -267,11 +267,28 @@ footer{text-align:center;color:#64748b;font-size:11px;margin-top:18px}
 .activity-filters input { min-width:170px;flex:1; }
 .activity-filters select { max-width:210px; }
 .activity-list { display:flex;flex-direction:column;gap:8px;max-height:70vh;overflow:auto; }
-.activity-entry { padding:12px; text-align:left; display:grid;gap:5px; background:var(--color-surface,#f7faf9); color:inherit; border:1px solid #aab8bc; border-radius:9px; cursor:pointer; width:100%; }
-.activity-entry strong {font-weight:700;}
-.activity-entry span {font-size:.88rem;line-height:1.4;overflow-wrap:anywhere;}
-.activity-entry[aria-pressed="true"] {border-color:#226c84;box-shadow:inset 3px 0 #226c84;}
-.activity-entry:focus-visible {outline:3px solid #226c84;}
+/* Gestionale v1.1.11: contrasto WCAG AA nelle card del tema scuro.
+   Mai usare color:inherit su sfondo card definito esplicitamente. */
+.activity-entry {
+  padding:12px;
+  text-align:left;
+  display:grid;
+  gap:6px;
+  width:100%;
+  background:#17263d;
+  color:#f1f6ff;
+  border:1px solid #547099;
+  border-radius:9px;
+  cursor:pointer;
+  transition:background-color .12s ease, border-color .12s ease;
+}
+.activity-entry strong { color:#ffffff; font-weight:700; line-height:1.4; }
+.activity-entry span { color:#d6e2f3; font-size:.88rem; line-height:1.45; overflow-wrap:anywhere; }
+.activity-entry:hover { background:#243b5d; border-color:#94b7fa; }
+.activity-entry[aria-pressed="true"] { background:#1b3d68; color:#ffffff; border-color:#91b9ff; box-shadow:inset 4px 0 #91b9ff; }
+.activity-entry[aria-pressed="true"] strong {color:#ffffff;}
+.activity-entry[aria-pressed="true"] span {color:#e5efff;}
+.activity-entry:focus-visible {outline:3px solid #a6c8ff;outline-offset:2px;}
 #monitor-editor,#feedback-editor {display:grid;gap:12px;}
 #monitor-editor[hidden],#feedback-editor[hidden] {display:none;}
 #monitor-editor label,#feedback-editor label {display:grid;gap:6px;}
