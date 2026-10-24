@@ -49,6 +49,7 @@ function showDetail(kind,id,fromClick=false) {
   if(isFeedback){
     line(body,"Valutazione",item.id);
     line(body,"Farmacia",(item.codiceFarmacia||"")+" · "+(item.farmacia||""));
+    line(body,"Utente SOS",(item.utente||"Non associato")+(item.utenteId?" · "+item.utenteId:""));
     line(body,"Pratica collegata",item.interventoId||"Nessuna");
     line(body,"Soddisfatto",item.soddisfatto===null?"Non espresso":item.soddisfatto?"Sì":"No");
     line(body,"Suggerimento del cliente",item.suggerimentoUtente);
@@ -62,6 +63,7 @@ function showDetail(kind,id,fromClick=false) {
   }else{
     line(body,"Pratica",item.id);
     line(body,"Farmacia",(item.codiceFarmacia||"")+" · "+(item.farmacia||""));
+    line(body,"Utente SOS",(item.utente||"Non associato")+(item.utenteId?" · "+item.utenteId:""));
     line(body,"Oggetto",item.oggetto);
     line(body,"Specializzazione",item.specializzazione);
     line(body,"Locale",item.locale);
@@ -149,7 +151,7 @@ function drawList(kind) {
     const td=document.createElement("td"),button=document.createElement("button");
     button.type="button";button.className="activity-open";button.dataset.id=row.id;
     button.textContent="Dettagli";button.setAttribute("aria-expanded",String(state.selectedId===row.id));
-    button.setAttribute("aria-label","Apri dettagli: "+(feedback?row.farmacia||row.id:row.oggetto||row.id));
+    button.setAttribute("aria-label","Apri dettagli: "+(feedback?row.farmacia||row.id:row.oggetto||row.id)+(row.utente?" · "+row.utente:""));
     button.addEventListener("click",()=>{
       if(state.selectedId===row.id)showDetail(kind,null);
       else showDetail(kind,row.id,true);
