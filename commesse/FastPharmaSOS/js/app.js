@@ -1,4 +1,4 @@
-import { initializeSosActivityForms } from "./sos-activities.js?v=1.1.12";
+import { initializeSosActivityForms } from "./sos-activities.js?v=1.1.13";
 import { initializeArchiveWorkspace, initializeDocumentEditor } from "./archive.js?v=1.1.10";
 import { initializeImageManager } from "./images.js?v=1.1.10";
 import { initializeCompanyManager } from "./companies.js?v=1.1.10";
