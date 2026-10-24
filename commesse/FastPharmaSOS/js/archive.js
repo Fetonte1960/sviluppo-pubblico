@@ -5,7 +5,7 @@ import {
   getCommesse,
   savePharmacyDocument,
   deletePharmacyDocument
-} from "./api.js?v=1.1.7";
+} from "./api.js?v=1.1.8";
 
 const $ = id => document.getElementById(id);
 
@@ -493,6 +493,7 @@ export function initializeDocumentEditor() {
   if (!form || !selection) return;
   const kind = $id("document-kind"), title = $id("document-title");
   const content = $id("document-content"), file = $id("document-file");
+  const textImport = $id("document-text-import");
   const location = $id("document-location");
   const status = $id("document-editor-status");
   let pharmacyId = null, documentId = null, docs = [], existingImage = null;
@@ -533,6 +534,32 @@ export function initializeDocumentEditor() {
     $id("document-text-field").hidden = kind.value === "image";
     $id("document-file-field").hidden = kind.value !== "image";
   });
+  // A topology JSON file is an ordinary UTF-8 text document at upload time.
+  // The authorized server validates its structure/provenance when it is used.
+  textImport.addEventListener("change", async () => {
+    const source = textImport.files?.[0];
+    if (!source) return;
+    if (!/\.(json|txt)$/i.test(source.name)) {
+      status.textContent = "Seleziona un file .json o .txt.";
+      textImport.value = "";
+      return;
+    }
+    if (source.size > 5000000) {
+      status.textContent = "File superiore al limite di 5 MB.";
+      textImport.value = "";
+      return;
+    }
+    try {
+      const text = await source.text();
+      if (text.length > 5000000) throw new Error("Testo superiore a 5 milioni di caratteri.");
+      content.value = text;
+      status.textContent = "File «" + source.name + "» caricato nel campo testo. Premi «Salva su Neon» per registrarlo; il server ne verificherà la topologia.";
+    } catch (error) {
+      status.textContent = "Impossibile leggere il file: " + error.message;
+    } finally {
+      textImport.value = "";
+    }
+  });
   $id("document-new").addEventListener("click", () => {
     if (!pharmacyId) { status.textContent = "Seleziona prima una farmacia salvata su Neon."; return; }
     form.reset(); documentId = null; existingImage = null; form.hidden = false;
@@ -562,9 +589,14 @@ export function initializeDocumentEditor() {
     status.textContent = "Salvataggio in corso...";
     try {
       await savePharmacyDocument(pharmacyId,documentId,{kind:kind.value,title:title.value,content:value,location:location.value,fileName});
-      status.textContent = "Documento salvato su Neon.";
+      status.textContent = kind.value === "topology" ? "Modello topologico salvato come testo su Neon. La nuova revisione deve essere verificata dal server prima delle consultazioni MCP." : "Documento salvato su Neon.";
       await refresh();
-    } catch (error) { status.textContent = error.status === 401 ? "Sessione scaduta: ricarica la pagina ed effettua nuovamente l'accesso." : "Salvataggio non riuscito: "+error.message; }
+    } catch (error) {
+      const reason = typeof error.body?.error === "string" ? error.body.error : error.message;
+      status.textContent = error.status === 401
+        ? "Sessione scaduta: ricarica la pagina ed effettua nuovamente l'accesso."
+        : "Salvataggio non riuscito: " + reason + (error.status ? " (HTTP " + error.status + ")" : "");
+    }
   });
   if (clearButton) clearButton.addEventListener("click", async () => {
     const d = docs.find(x => String(x.id) === selection.value);
