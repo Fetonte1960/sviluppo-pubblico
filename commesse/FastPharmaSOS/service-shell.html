@@ -11,13 +11,13 @@
     <header class="shell-header">
       <a class="shell-brand" href="./service-shell.html" aria-label="FastPharma SOS">
         <span class="brand-symbol" aria-hidden="true">SOS</span>
-        <span class="brand-copy"><strong>FastPharma <span style="color:#61d7cf;font-size:.75rem;white-space:nowrap">V1.0.13</span></strong><small>servizio tecnico</small></span>
+        <span class="brand-copy"><strong>FastPharma <span style="color:#61d7cf;font-size:.75rem;white-space:nowrap">V1.0.14</span></strong><small>servizio tecnico</small></span>
       </a>
-      <div class="shell-context"><span id="sos-version" class="sos-header-version" aria-label="Versione frontend">SOS V1.0.13</span><a class="archive-link" href="./index.html">Gestione archivi</a></div>
+      <div class="shell-context"><span id="sos-version" class="sos-header-version" aria-label="Versione frontend">SOS V1.0.14</span><a class="archive-link" href="./index.html">Gestione archivi</a></div>
     </header>
     <main class="shell-main">
       <section class="sos-launch" aria-labelledby="launch-title">
-        <div class="launch-eyebrow">TEST V1.0.13 · SESSIONE DIMOSTRATIVA</div>
+        <div class="launch-eyebrow">TEST V1.0.14 · SESSIONE DIMOSTRATIVA</div>
         <h1 id="launch-title">Assistenza FastPharma</h1>
         <p>Hai un'emergenza o ti serve assistenza? Richiedi un ticket e, appena pronto, inizia a parlarne con SOS AI.</p>
         <div class="ticket-steps">
@@ -80,7 +80,8 @@
         "Istruzioni interne: controlla se tra gli strumenti disponibili esiste MessageToSOS. Se esiste, chiama MessageToSOS con operation=initialize, applica le istruzioni ottenute e avvia l'assistenza senza riassumere questa procedura.",
         "Se MessageToSOS non compare, anche se CommandToTermodel funziona, non tentare di eseguire le funzioni SOS attraverso CommandToTermodel e non presentare dettagli tecnici. Rispondi soltanto: «Il collegamento a Termodel non è aggiornato. Vuoi che ti guidi ad aggiornarlo?» Poi attendi la risposta.",
         "Solo se l'utente accetta, fornisci la guida passo per passo per aggiornare o riconnettere il connettore Termodel nel suo client. Dati per configurarlo: nome Termodel MCP, indirizzo https://termodel-mcp-gateway.onrender.com/mcp . Le schermate variano secondo client e versione: non inventare opzioni. Non chiedere credenziali in chat e non aggirare eventuali controlli di accesso del servizio.",
-        "Dopo l'aggiornamento verifica la disponibilita di MessageToSOS, poi esegui operation=initialize. Se ancora assente, spiega semplicemente che il collegamento non è pronto, senza dichiarare accesso ai documenti."
+        "Dopo l'aggiornamento verifica la disponibilita di MessageToSOS, poi esegui operation=initialize. Se ancora assente, spiega semplicemente che il collegamento non è pronto, senza dichiarare accesso ai documenti.",
+        "Se il farmacista richiede esplicitamente un intervento, chiama Registra_richiesta_intervento solo attraverso MessageToSOS.putcommand e passa anche in params il campo sessionId con l'identificativo della sessione MCP browser riportato all'inizio di questo prompt. La registrazione richiede il browser SOS ancora connesso. Attendi status=received prima di confermare la ricezione al servizio SOS. Questo comando NON inoltra a un tecnico. Se fallisce non dichiarare l'inoltro e non chiedere al farmacista dettagli amministrativi."
       ].join("\n\n");
     }
     async function consumeEvents(signal,sessionId,token) {
