@@ -1,7 +1,7 @@
-import { initializeArchiveWorkspace, initializeDocumentEditor } from "./archive.js?v=1.1.7";
-import { initializeImageManager } from "./images.js?v=1.1.7";
-import { initializeCompanyManager } from "./companies.js?v=1.1.7";
-import { askAssistant, confirmEngineCandidate, getAiHealth, getCommesse, getDbHealth, getHealth, loginAdmin, setAdminToken } from "./api.js?v=1.1.7";
+import { initializeArchiveWorkspace, initializeDocumentEditor } from "./archive.js?v=1.1.8";
+import { initializeImageManager } from "./images.js?v=1.1.8";
+import { initializeCompanyManager } from "./companies.js?v=1.1.8";
+import { askAssistant, confirmEngineCandidate, getAiHealth, getCommesse, getDbHealth, getHealth, loginAdmin, setAdminToken } from "./api.js?v=1.1.8";
 
 const $ = id => document.getElementById(id);
 const apiStatus = $("api-status");
