@@ -260,3 +260,24 @@ footer{text-align:center;color:#64748b;font-size:11px;margin-top:18px}
 .company-convention-control select{min-width:170px;background:#1e293b;color:#f8fafc;border:1px solid #334155;border-radius:8px;padding:8px}
 .company-inactive-note{display:block;color:#fca5a5;font-size:11px;margin-top:5px}
 .company-table td:nth-child(5){min-width:280px}
+
+/* Dashboard gestionale v1.1.10 — form indipendenti monitoraggio e suggerimenti */
+.activity-columns { display:grid; grid-template-columns:minmax(270px,1fr) minmax(320px,1.15fr); gap:18px; align-items:start; }
+.activity-filters { display:flex;flex-wrap:wrap;gap:8px;align-items:center; }
+.activity-filters input { min-width:170px;flex:1; }
+.activity-filters select { max-width:210px; }
+.activity-list { display:flex;flex-direction:column;gap:8px;max-height:70vh;overflow:auto; }
+.activity-entry { padding:12px; text-align:left; display:grid;gap:5px; background:var(--color-surface,#f7faf9); color:inherit; border:1px solid #aab8bc; border-radius:9px; cursor:pointer; width:100%; }
+.activity-entry strong {font-weight:700;}
+.activity-entry span {font-size:.88rem;line-height:1.4;overflow-wrap:anywhere;}
+.activity-entry[aria-pressed="true"] {border-color:#226c84;box-shadow:inset 3px 0 #226c84;}
+.activity-entry:focus-visible {outline:3px solid #226c84;}
+#monitor-editor,#feedback-editor {display:grid;gap:12px;}
+#monitor-editor[hidden],#feedback-editor[hidden] {display:none;}
+#monitor-editor label,#feedback-editor label {display:grid;gap:6px;}
+#monitor-editor textarea,#feedback-editor textarea {width:100%;box-sizing:border-box;}
+.activity-detail {border-block:1px solid #bcc8cb;padding:8px 0;overflow-wrap:anywhere;}
+.activity-detail p {margin:7px 0;}
+.activity-json {white-space:pre-wrap;overflow-wrap:anywhere;max-height:360px;overflow:auto;font-size:12px;padding:12px;background:#edf2f2;color:#1d3034;border-radius:9px;}
+.activity-events {font-size:.9rem;max-height:210px;overflow:auto;}
+@media (max-width:850px) {.activity-columns{grid-template-columns:1fr;}}
