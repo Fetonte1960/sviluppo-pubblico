@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="it" data-app-version="1.1.7" data-app-release-date="23/10/2026" data-api-base="https://fastpharmasos.onrender.com">
+<html lang="it" data-app-version="1.1.8" data-app-release-date="24/10/2026" data-api-base="https://fastpharmasos.onrender.com">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Dashboard demo FastPharmaSOS per gestione archivi, immagini e assistente SOS.">
   <title>FastPharma SOS · Gestionale demo</title>
   <script>if (new URLSearchParams(location.search).has("password")) history.replaceState(null, "", location.pathname + location.hash);</script>
-  <link rel="stylesheet" href="./css/app.css?v=1.1.7">
+  <link rel="stylesheet" href="./css/app.css?v=1.1.8">
 </head>
 <body>
   <header class="topbar">
@@ -212,7 +212,13 @@
                 <label>Tipo <select id="document-kind"><option value="text">Testo / modello Termodel</option><option value="topology">Modello topologico per AI</option><option value="image">Immagine</option></select></label>
                 <label>Titolo <input id="document-title" maxlength="400" required placeholder="Titolo del documento" style="width:100%"></label>
                 <label>Locale o componente <input id="document-location" maxlength="2000" placeholder="Facoltativo" style="width:100%"></label>
-                <label id="document-text-field">Contenuto testuale <textarea id="document-content" rows="10" style="width:100%" placeholder="Incolla qui il contenuto del documento selezionato"></textarea></label>
+                <div id="document-text-field">
+                  <label>Contenuto testuale <textarea id="document-content" rows="12" style="width:100%" placeholder="Incolla qui il contenuto oppure importa un file .json o .txt"></textarea></label>
+                  <label style="display:block;margin-top:8px">Importa testo da file (.json o .txt)
+                    <input id="document-text-import" type="file" accept=".json,.txt,application/json,text/plain" style="display:block;margin-top:6px">
+                  </label>
+                  <small>Il file viene letto come testo senza validazione nel browser. Controlla il contenuto e premi «Salva su Neon» per aggiornare il documento esistente. La verifica topologica spetta al server.</small>
+                </div>
                 <label id="document-file-field" hidden>Immagine (PNG, JPEG o WebP; massimo 3 MB) <input id="document-file" type="file" accept="image/png,image/jpeg,image/webp"></label>
                 <p id="document-editor-status" role="status" aria-live="polite"></p>
                 <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="submit" class="primary-action">Salva su Neon</button><button type="button" id="document-cancel" class="secondary-action">Annulla</button></div>
@@ -474,6 +480,6 @@
     });
   })();
   </script>
-  <script type="module" src="./js/app.js?v=1.1.7"></script>
+  <script type="module" src="./js/app.js?v=1.1.8"></script>
 </body>
 </html>
