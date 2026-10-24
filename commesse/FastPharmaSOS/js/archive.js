@@ -5,7 +5,7 @@ import {
   getCommesse,
   savePharmacyDocument,
   deletePharmacyDocument
-} from "./api.js?v=1.1.8";
+} from "./api.js?v=1.1.9";
 
 const $ = id => document.getElementById(id);
 
@@ -590,7 +590,7 @@ export function initializeDocumentEditor() {
     try {
       const updatedDocumentId = documentId;
       const savedKind = kind.value;
-      await savePharmacyDocument(pharmacyId,updatedDocumentId,{kind:savedKind,title:title.value,content:value,location:location.value,fileName});
+      const saveResult = await savePharmacyDocument(pharmacyId,updatedDocumentId,{kind:savedKind,title:title.value,content:value,location:location.value,fileName});
       await refresh();
       if (updatedDocumentId && docs.some(d => String(d.id) === String(updatedDocumentId))) {
         selection.value = String(updatedDocumentId);
@@ -598,8 +598,13 @@ export function initializeDocumentEditor() {
         deleteButton.disabled = false;
         if (clearButton) clearButton.disabled = false;
       }
+      const verification = saveResult?.topologyValidation;
       status.textContent = savedKind === "topology"
-        ? "Modello topologico aggiornato come testo su Neon. La nuova revisione richiede verifica e associazione sul server prima delle consultazioni MCP."
+        ? verification === "verified"
+          ? "Topologia V3 salvata, verificata e aggiornata automaticamente sul server. Pronta per le interrogazioni MCP."
+          : verification?.startsWith("invalid_")
+            ? "Testo topologico salvato. Validazione server non superata (" + verification + "); il Gateway resta bloccato per sicurezza."
+            : "Testo topologico salvato su Neon. Non esiste ancora un'associazione di progetto approvata per questa farmacia."
         : "Documento salvato su Neon.";
     } catch (error) {
       const reason = typeof error.body?.error === "string" ? error.body.error : error.message;
