@@ -157,3 +157,18 @@ export const updateTechnicianConvention = (id, stato) => request(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ stato }) }, 30000
 );
+
+
+const QUALITY_API = "/api/fastpharmasos/v1";
+const qualityQuery = filters => {
+  const p = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters ?? {}))
+    if (value !== null && value !== undefined && String(value).trim()) p.set(key, String(value).trim());
+  return p.size ? "?" + p.toString() : "";
+};
+export const getMonitoring = filters => request(QUALITY_API + "/monitoraggio" + qualityQuery(filters), {}, 20000);
+export const saveMonitoring = (id, data) => request(QUALITY_API + "/monitoraggio/" + encodeURIComponent(id),
+  { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }, 20000);
+export const getFeedback = filters => request(QUALITY_API + "/suggerimenti" + qualityQuery(filters), {}, 20000);
+export const saveFeedbackReview = (id, data) => request(QUALITY_API + "/suggerimenti/" + encodeURIComponent(id),
+  { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }, 20000);
