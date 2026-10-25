@@ -11,13 +11,13 @@
     <header class="shell-header">
       <a class="shell-brand" href="./service-shell.html" aria-label="FastPharma SOS">
         <span class="brand-symbol" aria-hidden="true">SOS</span>
-        <span class="brand-copy"><strong>FastPharma <span style="color:#61d7cf;font-size:.75rem;white-space:nowrap">V1.0.20</span></strong><small>servizio tecnico</small></span>
+        <span class="brand-copy"><strong>FastPharma <span style="color:#61d7cf;font-size:.75rem;white-space:nowrap">V1.0.21</span></strong><small>servizio tecnico</small></span>
       </a>
-      <div class="shell-context"><span id="sos-version" class="sos-header-version" aria-label="Versione frontend">SOS V1.0.20</span><a class="archive-link" href="./index.html">Gestione archivi</a></div>
+      <div class="shell-context"><span id="sos-version" class="sos-header-version" aria-label="Versione frontend">SOS V1.0.21</span><a class="archive-link" href="./index.html">Gestione archivi</a></div>
     </header>
     <main class="shell-main">
       <section class="sos-launch" aria-labelledby="launch-title">
-        <div class="launch-eyebrow">TEST V1.0.20 · SESSIONE DIMOSTRATIVA</div>
+        <div class="launch-eyebrow">TEST V1.0.21 · SESSIONE DIMOSTRATIVA</div>
         <h1 id="launch-title">Assistenza FastPharma</h1>
         <p>Hai un'emergenza o ti serve assistenza? Richiedi un ticket e, appena pronto, inizia a parlarne con SOS AI.</p>
         <section id="sos-preflight" class="sos-preflight" aria-labelledby="preflight-title" hidden>
@@ -384,6 +384,75 @@
         viewerStatus.textContent="Viewer 3D collegato al Gateway; i comandi visuali sono disponibili.";
       else if(event.data.status==="failed")
         viewerStatus.textContent="Viewer non collegato: "+String(event.data.detail||event.data.message||"errore").slice(0,200);
+    });
+    // Explicit guided SOS intake: only the trusted paired viewer may ask, but
+    // the owner browser capability stays INSIDE this Shell and never crosses
+    // postMessage. A resumed practice must not open a second request.
+    let guidedAssistanceSending=false;
+    window.addEventListener("message",async event=>{
+      if(!readySession||!activeBrowserToken||!preflightApproved||
+         !viewerPaired||!viewerWindow ||
+         event.origin!==viewerOrigin||event.source!==viewerWindow||
+         !event.data||event.data.type!=="sos-viewer-assistance-request"||
+         event.data.sessionId!==readySession)return;
+      const input=event.data;
+      const requestId=typeof input.requestId==="string" &&
+        /^[a-f0-9-]{36}$/i.test(input.requestId)?input.requestId:null;
+      if(!requestId)return;
+      const reply=(payload)=>{
+        if(viewerWindow&&!viewerWindow.closed)
+          viewerWindow.postMessage({
+            type:"sos-viewer-assistance-result",sessionId:readySession,
+            requestId,...payload
+          },viewerOrigin);
+      };
+      if(selectedMode!=="new"){
+        reply({status:"not_registered",reason:
+          "Stai riprendendo una pratica: non puoi crearne una seconda. Prosegui con quella esistente."});
+        return;
+      }
+      if(guidedAssistanceSending){
+        reply({status:"not_registered",reason:"request_in_progress"});
+        return;
+      }
+      if(input.confermaEsplicita!==true||
+         typeof input.categoryNodeId!=="string"||
+         !Array.isArray(input.steps)||input.steps.length<1||input.steps.length>10||
+         typeof input.rischioPersone!=="boolean" ||
+         !["ordinaria","urgente","messa_in_sicurezza"].includes(input.urgenza)){
+        reply({status:"not_registered",reason:"invalid_guided_assistance"});
+        return;
+      }
+      guidedAssistanceSending=true;
+      try{
+        const result=await fetch(gateway+"/browser/sos/guided-assistance/"+
+          encodeURIComponent(readySession),{
+          method:"POST",cache:"no-store",
+          headers:{"Authorization":"Bearer "+activeBrowserToken,
+            "Content-Type":"application/json"},
+          body:JSON.stringify({
+            categoryNodeId:input.categoryNodeId,
+            steps:input.steps,
+            rischioPersone:input.rischioPersone,
+            urgenza:input.urgenza,
+            confermaEsplicita:true
+          })
+        });
+        const data=await result.json();
+        if(!result.ok||data.status!=="received"||!data.id){
+          reply({status:"not_registered",
+            reason:String(data.reason||data.error||"SOS HTTP "+result.status)});
+          return;
+        }
+        viewerStatus.textContent="Richiesta assistenza acquisita da SOS: "+data.id;
+        reply({status:"received",id:data.id,state:data.state,
+          duplicate:!!data.duplicate,scheda:data.scheda});
+      }catch(error){
+        reply({status:"not_registered",reason:
+          "Servizio non disponibile: "+String(error?.message||error)});
+      }finally{
+        guidedAssistanceSending=false;
+      }
     });
     function openChat(provider){
       if(!readySession||!preflightApproved)return;
