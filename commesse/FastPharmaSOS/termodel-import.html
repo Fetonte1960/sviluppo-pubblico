@@ -15,7 +15,7 @@ small{color:#56616e}#project{overflow-wrap:anywhere}
 <p>Il salvataggio sostituisce insieme <strong>progetto, topologia, 3D e Pianta pulita dei piani</strong>. In caso di errore resta valida la copia precedente.</p>
 <p id="project">In attesa del progetto Termodel…</p>
 <div id="login"><label for="password">Password amministrativa FastPharmaSOS</label>
-<input type="password" id="password" autocomplete="current-password">
+<input type="password" id="password" autocomplete="current-password" disabled>
 <small>L'autenticazione resta in questa finestra SOS. La password e il token non sono comunicati a WebCAD.</small></div>
 <button id="submit" type="button" disabled>Accedi e salva</button>
 <p role="status" aria-live="polite" id="message">Apri il comando «File → Salva in SOS» da WebCAD Admin.</p>
@@ -126,6 +126,7 @@ window.addEventListener('message',e=>{
     pending=null;
     submit.disabled=true;
     password.value='';
+    password.disabled=true;
     project.textContent='Progetto Termodel non pronto per il salvataggio.';
     notice('⚠ WebCAD non ha potuto preparare gli artefatti:\n'+
       String(e.data.detail || 'Errore sconosciuto')+
@@ -142,6 +143,7 @@ window.addEventListener('message',e=>{
   project.textContent='Progetto: '+String(data.bundle.projectName||'Senza nome')+
     ' · ID '+String(data.bundle.projectId||'')+' · 3 artefatti + '+
     data.bundle.cleanFloors.length+' Piante pulite';
+  password.disabled=false;
   submit.disabled=false;
   if (bearer) performSave();
   else notice('Progetto pronto. Inserisci la password SOS e premi «Accedi e salva».');
