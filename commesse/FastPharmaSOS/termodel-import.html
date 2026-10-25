@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FastPharmaSOS · Salva artefatti Termodel</title>
+<style>
+body{margin:0;background:#edf2f7;font:15px/1.5 "Segoe UI",Arial,sans-serif;color:#213547}
+main{max-width:610px;margin:24px auto;background:white;border:1px solid #ccd6df;border-radius:10px;padding:22px;box-shadow:0 7px 28px #17324d14}
+h1{font-size:21px;margin:0 0 8px}p{margin:7px 0 16px}strong{color:#13436a}label{display:block;margin:15px 0 5px;font-weight:600}
+input{box-sizing:border-box;width:100%;padding:11px;font:inherit;border:1px solid #8b9fac;border-radius:5px}
+button{margin-top:13px;padding:11px 19px;background:#205e88;color:#fff;border:0;border-radius:6px;font:inherit;cursor:pointer}
+button:disabled{opacity:.55;cursor:wait}#message{white-space:pre-wrap;padding:13px;border:1px solid #c1d0df;border-radius:6px;background:#f7fafc;min-height:46px}
+small{color:#56616e}#project{overflow-wrap:anywhere}
+</style></head><body><main>
+<h1>Salva in FastPharmaSOS</h1>
+<p>Farmacia destinataria: <strong>SOS-TEST-001 (ambiente DEMO)</strong>.</p>
+<p>Il salvataggio sostituisce i <strong>tre artefatti correnti</strong> insieme. In caso di errore resta valida la copia precedente.</p>
+<p id="project">In attesa del progetto Termodel…</p>
+<div id="login"><label for="password">Password amministrativa FastPharmaSOS</label>
+<input type="password" id="password" autocomplete="current-password">
+<small>L'autenticazione resta in questa finestra SOS. La password e il token non sono comunicati a WebCAD.</small></div>
+<button id="submit" type="button" disabled>Accedi e salva</button>
+<p role="status" aria-live="polite" id="message">Apri il comando «File → Salva in SOS» da WebCAD Admin.</p>
+</main>
+<script>
+'use strict';
+const API = 'https://fastpharmasos.onrender.com/api/fastpharmasos/v1';
+const TENANT = '70100000-0000-4000-8000-000000000001';
+const ALLOWED = new Set(['https://www.termodel.it','https://termodel.it','https://fetonte1960.github.io']);
+const password = document.getElementById('password');
+const submit = document.getElementById('submit');
+const message = document.getElementById('message');
+const project = document.getElementById('project');
+const login = document.getElementById('login');
+let bearer = '';
+let pending = null;
+let active = false;
+let senderOrigin = '';
+function notice(value){message.textContent = value;}
+function sendResult(ok, detail, extra = {}) {
+  if (!pending || !window.opener || !senderOrigin) return;
+  window.opener.postMessage({ type:'sos-import-result', requestId:pending.requestId, ok, detail, ...extra }, senderOrigin);
+}
+function ready(origin) {
+  if (window.opener) window.opener.postMessage({type:'sos-import-ready'},origin);
+}
+async function sha(text) {
+  const bytes = new TextEncoder().encode(text);
+  const hash = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(hash), b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function api(path, options={}) {
+  const response = await fetch(API+path,{...options,cache:'no-store',headers:{
+    ...(options.body ? {'Content-Type':'application/json'} : {}),
+    ...(bearer ? {Authorization:'Bearer '+bearer} : {})
+  }});
+  if (!response.ok) {
+    const problem = await response.json().catch(()=>null);
+    throw new Error('HTTP '+response.status+': '+(problem?.error || problem?.detail || 'richiesta non riuscita'));
+  }
+  return response.json();
+}
+async function authenticate() {
+  if (bearer) return;
+  const secret = password.value;
+  if (!secret) throw new Error('Inserisci la password amministrativa SOS.');
+  const response = await fetch(API+'/auth/login',{
+    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:secret}),cache:'no-store'
+  });
+  password.value = '';
+  if (!response.ok) throw new Error('Autenticazione SOS non riuscita (HTTP '+response.status+').');
+  const data=await response.json();
+  if (!data.token) throw new Error('Token amministrativo SOS mancante.');
+  bearer=data.token;
+  login.hidden=true;
+}
+async function performSave() {
+  if (!pending || active) return;
+  active = true; submit.disabled=true;
+  try {
+    await authenticate();
+    notice('Salvataggio in SOS in corso…');
+    const body=pending.bundle;
+    const base='/commesse/'+TENANT+'/termodel-imports';
+    const receipt=await api(base,{method:'POST',body:JSON.stringify(body)});
+    if (!receipt.committed || !receipt.importId) throw new Error('Ricevuta incompleta dal backend.');
+    notice('Controllo dei tre file salvati…');
+    for (const part of body.artifacts) {
+      const read=await api(base+'/'+encodeURIComponent(receipt.importId)+'/artifacts/'+part.kind);
+      if (read.content !== part.content || read.sha256 !== part.sha256 ||
+          read.byteLength !== part.byteLength || await sha(read.content) !== part.sha256)
+        throw new Error('La rilettura di '+part.kind+' non coincide con il file inviato.');
+    }
+    notice('✓ Salvataggio verificato: progetto, topologia e 3D correnti in SOS.');
+    sendResult(true,'Tre artefatti salvati e verificati in SOS',{importId:receipt.importId,status:receipt.status});
+    pending=null;
+  }catch(error){
+    const detail=error.message||String(error);
+    if (/HTTP 401/.test(detail)){bearer='';login.hidden=false}
+    notice('⚠ '+detail+'\nIl precedente modello SOS non è stato sostituito se la transazione non è stata completata.');
+    sendResult(false,detail);
+    pending=null;
+  }finally {active=false;submit.disabled=!pending}
+}
+submit.addEventListener('click',performSave);
+password.addEventListener('keydown',e=>{if(e.key==='Enter')performSave()});
+window.addEventListener('message',e=>{
+  if (!ALLOWED.has(e.origin) || e.source!==window.opener || !e.data || typeof e.data!=='object') return;
+  if (e.data.type==='sos-import-hello'){ready(e.origin);return}
+  if (e.data.type!=='sos-import-bundle' || active) return;
+  const data=e.data;
+  if (typeof data.requestId!=='string' || !data.bundle ||
+      !Array.isArray(data.bundle.artifacts) || data.bundle.artifacts.length!==3) return;
+  pending={requestId:data.requestId,bundle:data.bundle};
+  senderOrigin=e.origin;
+  project.textContent='Progetto: '+String(data.bundle.projectName||'Senza nome')+
+    ' · ID '+String(data.bundle.projectId||'')+' · 3 artefatti';
+  submit.disabled=false;
+  if (bearer) performSave();
+  else notice('Progetto pronto. Inserisci la password SOS e premi «Accedi e salva».');
+});
+</script></body></html>
