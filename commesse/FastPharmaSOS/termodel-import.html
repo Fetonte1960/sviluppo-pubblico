@@ -12,7 +12,7 @@ small{color:#56616e}#project{overflow-wrap:anywhere}
 </style></head><body><main>
 <h1>Salva in FastPharmaSOS</h1>
 <p>Farmacia destinataria: <strong>SOS-TEST-001 (ambiente DEMO)</strong>.</p>
-<p>Il salvataggio sostituisce i <strong>tre artefatti correnti</strong> insieme. In caso di errore resta valida la copia precedente.</p>
+<p>Il salvataggio sostituisce insieme <strong>progetto, topologia, 3D e Pianta pulita dei piani</strong>. In caso di errore resta valida la copia precedente.</p>
 <p id="project">In attesa del progetto Termodel…</p>
 <div id="login"><label for="password">Password amministrativa FastPharmaSOS</label>
 <input type="password" id="password" autocomplete="current-password">
@@ -82,15 +82,22 @@ async function performSave() {
     const base='/commesse/'+TENANT+'/termodel-imports';
     const receipt=await api(base,{method:'POST',body:JSON.stringify(body)});
     if (!receipt.committed || !receipt.importId) throw new Error('Ricevuta incompleta dal backend.');
-    notice('Controllo dei tre file salvati…');
+    notice('Controllo dei file salvati, comprese le Piante pulite…');
     for (const part of body.artifacts) {
       const read=await api(base+'/'+encodeURIComponent(receipt.importId)+'/artifacts/'+part.kind);
       if (read.content !== part.content || read.sha256 !== part.sha256 ||
           read.byteLength !== part.byteLength || await sha(read.content) !== part.sha256)
         throw new Error('La rilettura di '+part.kind+' non coincide con il file inviato.');
     }
-    notice('✓ Salvataggio verificato: progetto, topologia e 3D correnti in SOS.');
-    sendResult(true,'Tre artefatti salvati e verificati in SOS',{importId:receipt.importId,status:receipt.status});
+    for(const floor of body.cleanFloors||[]){
+      const read=await api(base+'/'+encodeURIComponent(receipt.importId)+
+        '/clean-floor/'+encodeURIComponent(floor.floorName));
+      if(read.content!==floor.content || read.sha256!==floor.sha256 ||
+         read.byteLength!==floor.byteLength || await sha(read.content)!==floor.sha256)
+        throw new Error('La Pianta pulita del piano '+floor.floorName+' non coincide con il Service.');
+    }
+    notice('✓ Salvataggio verificato: progetto, topologia, 3D e Piante pulite.');
+    sendResult(true,'Artefatti e Piante pulite salvati e verificati in SOS',{importId:receipt.importId,status:receipt.status});
     pending=null;
   }catch(error){
     const detail=error.message||String(error);
@@ -108,11 +115,13 @@ window.addEventListener('message',e=>{
   if (e.data.type!=='sos-import-bundle' || active) return;
   const data=e.data;
   if (typeof data.requestId!=='string' || !data.bundle ||
-      !Array.isArray(data.bundle.artifacts) || data.bundle.artifacts.length!==3) return;
+      !Array.isArray(data.bundle.artifacts) || data.bundle.artifacts.length!==3 ||
+      !Array.isArray(data.bundle.cleanFloors) || data.bundle.cleanFloors.length<1) return;
   pending={requestId:data.requestId,bundle:data.bundle};
   senderOrigin=e.origin;
   project.textContent='Progetto: '+String(data.bundle.projectName||'Senza nome')+
-    ' · ID '+String(data.bundle.projectId||'')+' · 3 artefatti';
+    ' · ID '+String(data.bundle.projectId||'')+' · 3 artefatti + '+
+    data.bundle.cleanFloors.length+' Piante pulite';
   submit.disabled=false;
   if (bearer) performSave();
   else notice('Progetto pronto. Inserisci la password SOS e premi «Accedi e salva».');
