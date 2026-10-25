@@ -11,13 +11,13 @@
     <header class="shell-header">
       <a class="shell-brand" href="./service-shell.html" aria-label="FastPharma SOS">
         <span class="brand-symbol" aria-hidden="true">SOS</span>
-        <span class="brand-copy"><strong>FastPharma <span style="color:#61d7cf;font-size:.75rem;white-space:nowrap">V1.0.16</span></strong><small>servizio tecnico</small></span>
+        <span class="brand-copy"><strong>FastPharma <span style="color:#61d7cf;font-size:.75rem;white-space:nowrap">V1.0.17</span></strong><small>servizio tecnico</small></span>
       </a>
-      <div class="shell-context"><span id="sos-version" class="sos-header-version" aria-label="Versione frontend">SOS V1.0.16</span><a class="archive-link" href="./index.html">Gestione archivi</a></div>
+      <div class="shell-context"><span id="sos-version" class="sos-header-version" aria-label="Versione frontend">SOS V1.0.17</span><a class="archive-link" href="./index.html">Gestione archivi</a></div>
     </header>
     <main class="shell-main">
       <section class="sos-launch" aria-labelledby="launch-title">
-        <div class="launch-eyebrow">TEST V1.0.16 · SESSIONE DIMOSTRATIVA</div>
+        <div class="launch-eyebrow">TEST V1.0.17 · SESSIONE DIMOSTRATIVA</div>
         <h1 id="launch-title">Assistenza FastPharma</h1>
         <p>Hai un'emergenza o ti serve assistenza? Richiedi un ticket e, appena pronto, inizia a parlarne con SOS AI.</p>
         <section id="sos-preflight" class="sos-preflight" aria-labelledby="preflight-title" hidden>
@@ -368,7 +368,7 @@
       if(event.data.status==="connected")
         viewerStatus.textContent="Viewer 3D collegato al Gateway; i comandi visuali sono disponibili.";
       else if(event.data.status==="failed")
-        viewerStatus.textContent="Viewer non collegato: "+String(event.data.message||"errore").slice(0,200);
+        viewerStatus.textContent="Viewer non collegato: "+String(event.data.detail||event.data.message||"errore").slice(0,200);
     });
     function openChat(provider){
       if(!readySession||!preflightApproved)return;
