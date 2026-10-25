@@ -4,20 +4,20 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="FastPharma SOS, avvio sessione MCP per ChatGPT e Claude.">
   <title>FastPharma SOS — Test V1</title>
-  <link rel="stylesheet" href="./css/service-shell.css?v=1.0.15">
+  <link rel="stylesheet" href="./css/service-shell.css?v=1.0.16">
 </head>
 <body>
   <div class="service-shell">
     <header class="shell-header">
       <a class="shell-brand" href="./service-shell.html" aria-label="FastPharma SOS">
         <span class="brand-symbol" aria-hidden="true">SOS</span>
-        <span class="brand-copy"><strong>FastPharma <span style="color:#61d7cf;font-size:.75rem;white-space:nowrap">V1.0.15</span></strong><small>servizio tecnico</small></span>
+        <span class="brand-copy"><strong>FastPharma <span style="color:#61d7cf;font-size:.75rem;white-space:nowrap">V1.0.16</span></strong><small>servizio tecnico</small></span>
       </a>
-      <div class="shell-context"><span id="sos-version" class="sos-header-version" aria-label="Versione frontend">SOS V1.0.15</span><a class="archive-link" href="./index.html">Gestione archivi</a></div>
+      <div class="shell-context"><span id="sos-version" class="sos-header-version" aria-label="Versione frontend">SOS V1.0.16</span><a class="archive-link" href="./index.html">Gestione archivi</a></div>
     </header>
     <main class="shell-main">
       <section class="sos-launch" aria-labelledby="launch-title">
-        <div class="launch-eyebrow">TEST V1.0.15 · SESSIONE DIMOSTRATIVA</div>
+        <div class="launch-eyebrow">TEST V1.0.16 · SESSIONE DIMOSTRATIVA</div>
         <h1 id="launch-title">Assistenza FastPharma</h1>
         <p>Hai un'emergenza o ti serve assistenza? Richiedi un ticket e, appena pronto, inizia a parlarne con SOS AI.</p>
         <section id="sos-preflight" class="sos-preflight" aria-labelledby="preflight-title" hidden>
@@ -41,7 +41,7 @@
         <div class="ticket-steps">
           <div class="ticket-step"><span class="ticket-step-number">1</span><button id="start-sos" type="button" class="launch-button">Richiedi un ticket per assistenza o emergenza</button></div>
           <div class="ticket-step"><span class="ticket-step-number">2</span><button id="cancel-sos" type="button" class="launch-button ticket-cancel" disabled>Interrompi richiesta ticket</button></div>
-          <div class="ticket-step"><span class="ticket-step-number">3</span><div class="chat-choice"><button id="start-gpt" type="button" class="launch-button" disabled aria-disabled="true">Avvia chat ChatGPT</button><button id="start-claude" type="button" class="launch-button" disabled aria-disabled="true">Avvia chat Claude</button></div></div>
+          <div class="ticket-step"><span class="ticket-step-number">3</span><div class="chat-choice"><button id="start-gpt" type="button" class="launch-button" disabled aria-disabled="true">Avvia chat ChatGPT</button><button id="start-claude" type="button" class="launch-button" disabled aria-disabled="true">Avvia chat Claude</button><button id="open-viewer" type="button" class="launch-button" disabled aria-disabled="true">Apri modello 3D Tiralinee</button></div></div>
         </div>
         <div class="help-copy-tools"><button type="button" id="open-help-ai" class="copy-button">Help fatti aiutare da AI</button></div>
         <dialog id="help-ai-dialog" class="help-ai-dialog" aria-labelledby="help-ai-title">
@@ -57,6 +57,7 @@
           <div class="help-ai-dialog-actions"><button type="button" id="copy-help-user" class="copy-button">Copia help negli appunti</button><button type="button" id="close-help-ai" class="launch-button">OK, ho capito</button></div>
           <p id="help-copy-status" role="status" aria-live="polite"></p>
         </dialog>
+        <p id="viewer-status" class="launch-hint" role="status">Visualizzatore: in attesa di sessione.</p>
         <p id="launch-status" class="launch-status" role="status" aria-live="polite">Pronto per iniziare il test.</p>
         <p id="session-indicator" class="launch-hint"></p>
         <p class="launch-hint">Mantieni questa pagina aperta durante la chat. Il collegamento MCP Termodel potrebbe richiedere una configurazione iniziale nel client AI; il collegamento ai documenti di prova avviene tramite MessageToSOS. Nessuna verifica automatica del connettore viene effettuata dal frontend.</p>
@@ -78,6 +79,13 @@
     const gateway = "https://termodel-mcp-gateway.onrender.com";
     const button = document.getElementById("start-sos");
     const chatButtons = [document.getElementById("start-gpt"),document.getElementById("start-claude")];
+    const viewerButton = document.getElementById("open-viewer");
+    const viewerStatus = document.getElementById("viewer-status");
+    // Termodel_front GitHub Pages (docs/CNAME = www.termodel.it).
+    const viewerUrl = "https://www.termodel.it/termodel-ui-demo/mcp-dump-test.html";
+    const viewerOrigin = new URL(viewerUrl).origin;
+    let viewerWindow = null, viewerPaired = false, viewerPairing = false;
+
     const cancelButton = document.getElementById("cancel-sos");
     let requestingTicket = false;
     let sessionActive = false;
@@ -99,14 +107,18 @@
     const preflightCancel=document.getElementById("preflight-cancel");
     const preflightContinue=document.getElementById("preflight-continue");
     function syncChat() {
-      for(const b of chatButtons){
+      for(const b of [...chatButtons, viewerButton]){
         b.disabled=!readySession||!preflightApproved;
         b.setAttribute("aria-disabled",String(b.disabled));
       }
     }
     function setReady(sessionId) {
       readySession=sessionId;preflightApproved=false;
-      if(!sessionId){activeBrowserToken=null;preflight.hidden=true;}
+      if(!sessionId){
+        activeBrowserToken=null;preflight.hidden=true;
+        viewerPaired=false;viewerPairing=false;viewerWindow=null;
+        viewerStatus.textContent="Visualizzatore scollegato: la sessione SOS non è attiva.";
+      }
       syncChat();
     }
     function showPendingRows(){
@@ -305,6 +317,58 @@
       controller.abort();controller=null;setSessionActive(false);setRequesting(false);setReady(null);
       indicator.textContent="";
       status.textContent="Richiesta ticket interrotta. Puoi riprovare quando vuoi.";
+    });
+    // Pairing secure by exact window and origin. The one-use handoff code
+    // never appears in the URL, HTML, localStorage or chat bootstrap.
+    viewerButton.addEventListener("click",()=>{
+      if(!readySession||!activeBrowserToken||!preflightApproved)return;
+      viewerPaired=false;viewerPairing=false;
+      const url=new URL(viewerUrl);
+      url.searchParams.set("sessionId",readySession);
+      viewerWindow=window.open(url.href,"sos-tiralinee-viewer");
+      viewerStatus.textContent=viewerWindow?
+        "Viewer Tiralinee aperto. In attesa del messaggio di collegamento sicuro (handoff V1.9).":
+        "Popup del viewer bloccato: autorizza l'apertura sul sito SOS.";
+    });
+    window.addEventListener("message",async event=>{
+      if(!readySession||!activeBrowserToken||!viewerWindow||
+         event.origin!==viewerOrigin||event.source!==viewerWindow||
+         !event.data||event.data.type!=="sos-viewer-ready"||
+         event.data.sessionId!==readySession||viewerPairing||viewerPaired)return;
+      viewerPairing=true;
+      viewerStatus.textContent="Viewer riconosciuto. Richiedo un codice monouso al Gateway...";
+      try{
+        const res=await fetch(gateway+"/browser/viewer/handoff/"+encodeURIComponent(readySession),{
+          method:"POST",
+          headers:{"Authorization":"Bearer "+activeBrowserToken},
+          cache:"no-store"
+        });
+        if(!res.ok)throw Error("Gateway HTTP "+res.status);
+        const grant=await res.json();
+        if(typeof grant.handoffCode!=="string"||grant.handoffCode.length!==64)
+          throw Error("Handoff non valido");
+        if(viewerWindow?.closed)throw Error("Finestra Tiralinee chiusa");
+        // One-time code only, not the browser owner credential.
+        viewerWindow.postMessage({
+          type:"sos-viewer-handoff",
+          sessionId:readySession,
+          handoffCode:grant.handoffCode
+        },viewerOrigin);
+        viewerPaired=true;
+        viewerStatus.textContent="Codice monouso consegnato al viewer; in attesa di conferma effettiva dal Gateway.";
+      }catch(error){
+        viewerStatus.textContent="Collegamento viewer non riuscito: "+error.message;
+      }finally{viewerPairing=false;}
+    });
+    window.addEventListener("message",event=>{
+      if(!readySession||!viewerWindow||
+         event.origin!==viewerOrigin||event.source!==viewerWindow||
+         !event.data||event.data.type!=="sos-viewer-state"||
+         event.data.sessionId!==readySession)return;
+      if(event.data.status==="connected")
+        viewerStatus.textContent="Viewer 3D collegato al Gateway; i comandi visuali sono disponibili.";
+      else if(event.data.status==="failed")
+        viewerStatus.textContent="Viewer non collegato: "+String(event.data.message||"errore").slice(0,200);
     });
     function openChat(provider){
       if(!readySession||!preflightApproved)return;
