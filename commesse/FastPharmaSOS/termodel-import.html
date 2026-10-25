@@ -111,7 +111,27 @@ submit.addEventListener('click',performSave);
 password.addEventListener('keydown',e=>{if(e.key==='Enter')performSave()});
 window.addEventListener('message',e=>{
   if (!ALLOWED.has(e.origin) || e.source!==window.opener || !e.data || typeof e.data!=='object') return;
-  if (e.data.type==='sos-import-hello'){ready(e.origin);return}
+  if (e.data.type==='sos-import-hello'){
+    ready(e.origin);
+    if (!pending && !active)
+      notice('Collegamento con WebCAD attivo. Preparazione degli artefatti in corso…');
+    return;
+  }
+  if (e.data.type==='sos-import-progress'){
+    if (!pending && !active) notice(String(e.data.detail || 'Preparazione in corso…'));
+    return;
+  }
+  if (e.data.type==='sos-import-preparation-error'){
+    if (active) return;
+    pending=null;
+    submit.disabled=true;
+    password.value='';
+    project.textContent='Progetto Termodel non pronto per il salvataggio.';
+    notice('⚠ WebCAD non ha potuto preparare gli artefatti:\\n'+
+      String(e.data.detail || 'Errore sconosciuto')+
+      '\\nTorna a WebCAD, correggi il problema segnalato e ripeti File → Salva in SOS.');
+    return;
+  }
   if (e.data.type!=='sos-import-bundle' || active) return;
   const data=e.data;
   if (typeof data.requestId!=='string' || !data.bundle ||
