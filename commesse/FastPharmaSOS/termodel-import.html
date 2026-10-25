@@ -127,9 +127,9 @@ window.addEventListener('message',e=>{
     submit.disabled=true;
     password.value='';
     project.textContent='Progetto Termodel non pronto per il salvataggio.';
-    notice('⚠ WebCAD non ha potuto preparare gli artefatti:\\n'+
+    notice('⚠ WebCAD non ha potuto preparare gli artefatti:\n'+
       String(e.data.detail || 'Errore sconosciuto')+
-      '\\nTorna a WebCAD, correggi il problema segnalato e ripeti File → Salva in SOS.');
+      '\nTorna a WebCAD, correggi il problema segnalato e ripeti File → Salva in SOS.');
     return;
   }
   if (e.data.type!=='sos-import-bundle' || active) return;
