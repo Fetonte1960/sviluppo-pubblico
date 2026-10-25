@@ -4,20 +4,20 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="FastPharma SOS, avvio sessione MCP per ChatGPT e Claude.">
   <title>FastPharma SOS — Test V1</title>
-  <link rel="stylesheet" href="./css/service-shell.css?v=1.0.16">
+  <link rel="stylesheet" href="./css/service-shell.css?v=1.0.18">
 </head>
 <body>
   <div class="service-shell">
     <header class="shell-header">
       <a class="shell-brand" href="./service-shell.html" aria-label="FastPharma SOS">
         <span class="brand-symbol" aria-hidden="true">SOS</span>
-        <span class="brand-copy"><strong>FastPharma <span style="color:#61d7cf;font-size:.75rem;white-space:nowrap">V1.0.17</span></strong><small>servizio tecnico</small></span>
+        <span class="brand-copy"><strong>FastPharma <span style="color:#61d7cf;font-size:.75rem;white-space:nowrap">V1.0.18</span></strong><small>servizio tecnico</small></span>
       </a>
-      <div class="shell-context"><span id="sos-version" class="sos-header-version" aria-label="Versione frontend">SOS V1.0.17</span><a class="archive-link" href="./index.html">Gestione archivi</a></div>
+      <div class="shell-context"><span id="sos-version" class="sos-header-version" aria-label="Versione frontend">SOS V1.0.18</span><a class="archive-link" href="./index.html">Gestione archivi</a></div>
     </header>
     <main class="shell-main">
       <section class="sos-launch" aria-labelledby="launch-title">
-        <div class="launch-eyebrow">TEST V1.0.17 · SESSIONE DIMOSTRATIVA</div>
+        <div class="launch-eyebrow">TEST V1.0.18 · SESSIONE DIMOSTRATIVA</div>
         <h1 id="launch-title">Assistenza FastPharma</h1>
         <p>Hai un'emergenza o ti serve assistenza? Richiedi un ticket e, appena pronto, inizia a parlarne con SOS AI.</p>
         <section id="sos-preflight" class="sos-preflight" aria-labelledby="preflight-title" hidden>
@@ -41,7 +41,7 @@
         <div class="ticket-steps">
           <div class="ticket-step"><span class="ticket-step-number">1</span><button id="start-sos" type="button" class="launch-button">Richiedi un ticket per assistenza o emergenza</button></div>
           <div class="ticket-step"><span class="ticket-step-number">2</span><button id="cancel-sos" type="button" class="launch-button ticket-cancel" disabled>Interrompi richiesta ticket</button></div>
-          <div class="ticket-step"><span class="ticket-step-number">3</span><div class="chat-choice"><button id="start-gpt" type="button" class="launch-button" disabled aria-disabled="true">Avvia chat ChatGPT</button><button id="start-claude" type="button" class="launch-button" disabled aria-disabled="true">Avvia chat Claude</button><button id="open-viewer" type="button" class="launch-button" disabled aria-disabled="true">Apri modello 3D Tiralinee</button></div></div>
+          <div class="ticket-step"><span class="ticket-step-number">3</span><div class="chat-choice"><button id="start-gpt" type="button" class="launch-button" disabled aria-disabled="true">Avvia chat ChatGPT</button><button id="start-claude" type="button" class="launch-button" disabled aria-disabled="true">Avvia chat Claude</button><button id="open-viewer" type="button" class="launch-button" disabled aria-disabled="true">Apri modello 3D Tiralinee</button><button id="open-viewer-api" type="button" class="launch-button" disabled aria-disabled="true">Apri Tiralinee + chat GPT API (prova)</button></div></div>
         </div>
         <div class="help-copy-tools"><button type="button" id="open-help-ai" class="copy-button">Help fatti aiutare da AI</button></div>
         <dialog id="help-ai-dialog" class="help-ai-dialog" aria-labelledby="help-ai-title">
@@ -58,6 +58,7 @@
           <p id="help-copy-status" role="status" aria-live="polite"></p>
         </dialog>
         <p id="viewer-status" class="launch-hint" role="status">Visualizzatore: in attesa di sessione.</p>
+        <p class="launch-hint">La nuova modalità GPT API apre chat e visualizzatore nella stessa finestra. La chat è per ora una <strong>anteprima non collegata</strong>: nessuna richiesta GPT verrà inviata.</p>
         <p id="launch-status" class="launch-status" role="status" aria-live="polite">Pronto per iniziare il test.</p>
         <p id="session-indicator" class="launch-hint"></p>
         <p class="launch-hint">Mantieni questa pagina aperta durante la chat. Il collegamento MCP Termodel potrebbe richiedere una configurazione iniziale nel client AI; il collegamento ai documenti di prova avviene tramite MessageToSOS. Nessuna verifica automatica del connettore viene effettuata dal frontend.</p>
@@ -80,6 +81,7 @@
     const button = document.getElementById("start-sos");
     const chatButtons = [document.getElementById("start-gpt"),document.getElementById("start-claude")];
     const viewerButton = document.getElementById("open-viewer");
+    const apiViewerButton = document.getElementById("open-viewer-api");
     const viewerStatus = document.getElementById("viewer-status");
     // Termodel_front GitHub Pages (docs/CNAME = www.termodel.it).
     const viewerUrl = "https://www.termodel.it/termodel-ui-demo/mcp-dump-test.html";
@@ -107,7 +109,7 @@
     const preflightCancel=document.getElementById("preflight-cancel");
     const preflightContinue=document.getElementById("preflight-continue");
     function syncChat() {
-      for(const b of [...chatButtons, viewerButton]){
+      for(const b of [...chatButtons, viewerButton, apiViewerButton]){
         b.disabled=!readySession||!preflightApproved;
         b.setAttribute("aria-disabled",String(b.disabled));
       }
@@ -320,16 +322,22 @@
     });
     // Pairing secure by exact window and origin. The one-use handoff code
     // never appears in the URL, HTML, localStorage or chat bootstrap.
-    viewerButton.addEventListener("click",()=>{
+    function openViewerWithMode(apiChat) {
       if(!readySession||!activeBrowserToken||!preflightApproved)return;
       viewerPaired=false;viewerPairing=false;
       const url=new URL(viewerUrl);
+      if(apiChat)url.searchParams.set("chat","api");
       url.searchParams.set("sessionId",readySession);
+      // La stessa finestra riceve ancora il codice handoff monouso da SOS.
+      // Il pannello GPT API resta scollegato indipendentemente dal viewer.
       viewerWindow=window.open(url.href,"sos-tiralinee-viewer");
       viewerStatus.textContent=viewerWindow?
-        "Viewer Tiralinee aperto. In attesa del messaggio di collegamento sicuro (handoff V1.9).":
+        (apiChat?"Tiralinee + GPT API (anteprima non connessa) aperto. Attendo pairing sicuro.":
+        "Viewer Tiralinee aperto. In attesa del messaggio di collegamento sicuro (handoff V1.9)."):
         "Popup del viewer bloccato: autorizza l'apertura sul sito SOS.";
-    });
+    }
+    viewerButton.addEventListener("click",()=>openViewerWithMode(false));
+    apiViewerButton.addEventListener("click",()=>openViewerWithMode(true));
     window.addEventListener("message",async event=>{
       if(!readySession||!activeBrowserToken||!viewerWindow||
          event.origin!==viewerOrigin||event.source!==viewerWindow||
