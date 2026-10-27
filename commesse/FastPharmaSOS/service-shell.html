@@ -11,14 +11,15 @@
     <header class="shell-header">
       <a class="shell-brand" href="./service-shell.html" aria-label="FastPharma SOS">
         <span class="brand-symbol" aria-hidden="true">SOS</span>
-        <span class="brand-copy"><strong>FastPharma <span style="color:#61d7cf;font-size:.75rem;white-space:nowrap">V1.0.21</span></strong><small>servizio tecnico</small></span>
+        <span class="brand-copy"><strong>FastPharma <span style="color:#61d7cf;font-size:.75rem;white-space:nowrap">V1.0.22</span></strong><small>servizio tecnico</small></span>
       </a>
-      <div class="shell-context"><span id="sos-version" class="sos-header-version" aria-label="Versione frontend">SOS V1.0.21</span><a class="archive-link" href="./index.html">Gestione archivi</a></div>
+      <div class="shell-context"><span id="sos-version" class="sos-header-version" aria-label="Versione frontend">SOS V1.0.22</span><a class="archive-link" href="./index.html">Gestione archivi</a></div>
     </header>
     <main class="shell-main">
       <section class="sos-launch" aria-labelledby="launch-title">
-        <div class="launch-eyebrow">TEST V1.0.21 · SESSIONE DIMOSTRATIVA</div>
+        <div class="launch-eyebrow">TEST V1.0.22 · SESSIONE DIMOSTRATIVA</div>
         <h1 id="launch-title">Assistenza FastPharma</h1>
+        <p id="sos-pharmacy-context" class="launch-hint" role="status"><strong>Farmacia selezionata: Farmacia Test SOS (SOS-TEST-001)</strong> · Ambiente sintetico di collaudo, disponibile senza password. L’elenco delle farmacie reali richiederà un’autenticazione dedicata e non è ancora attivo.</p>
         <p>Hai un'emergenza o ti serve assistenza? Richiedi un ticket e, appena pronto, inizia a parlarne con SOS AI.</p>
         <section id="sos-preflight" class="sos-preflight" aria-labelledby="preflight-title" hidden>
           <div class="preflight-heading">
@@ -41,7 +42,7 @@
         <div class="ticket-steps">
           <div class="ticket-step"><span class="ticket-step-number">1</span><button id="start-sos" type="button" class="launch-button">Richiedi un ticket per assistenza o emergenza</button></div>
           <div class="ticket-step"><span class="ticket-step-number">2</span><button id="cancel-sos" type="button" class="launch-button ticket-cancel" disabled>Interrompi richiesta ticket</button></div>
-          <div class="ticket-step"><span class="ticket-step-number">3</span><div class="chat-choice"><button id="start-gpt" type="button" class="launch-button" disabled aria-disabled="true">Avvia chat ChatGPT</button><button id="start-claude" type="button" class="launch-button" disabled aria-disabled="true">Avvia chat Claude</button><button id="open-viewer" type="button" class="launch-button" disabled aria-disabled="true">Apri modello 3D Tiralinee</button><button id="open-viewer-api" type="button" class="launch-button" disabled aria-disabled="true">Apri Tiralinee + chat (GPT / SH automatico)</button><button id="open-viewer-sh" type="button" class="launch-button" disabled aria-disabled="true">Apri Tiralinee + chat SH (prova)</button></div></div>
+          <div class="ticket-step"><span class="ticket-step-number">3</span><div class="chat-choice"><button id="start-gpt" type="button" class="launch-button" disabled aria-disabled="true">Avvia chat ChatGPT</button><button id="start-claude" type="button" class="launch-button" disabled aria-disabled="true">Avvia chat Claude</button><button id="open-viewer" type="button" class="launch-button" disabled aria-disabled="true">Apri modello 3D Tiralinee</button><button id="open-viewer-api" type="button" class="launch-button" disabled aria-disabled="true">Apri Tiralinee + chat (SH / GPT API in preparazione)</button><button id="open-viewer-sh" type="button" class="launch-button" disabled aria-disabled="true">Apri Tiralinee + chat SH (prova)</button></div></div>
         </div>
         <div class="help-copy-tools"><button type="button" id="open-help-ai" class="copy-button">Help fatti aiutare da AI</button></div>
         <dialog id="help-ai-dialog" class="help-ai-dialog" aria-labelledby="help-ai-title">
@@ -329,9 +330,8 @@
       const url=new URL(viewerUrl);
       if(chatMode)url.searchParams.set("chat",chatMode);
       url.searchParams.set("sessionId",readySession);
-      // Shared owner/commissioner test link, NOT an OpenAI API key.
-      // A reusable fragment is forwarded only to the paired viewer; it never
-      // becomes a query string nor an MCP bearer token.
+      // Reusable GPT-only pilot credential, NOT a pharmacy access grant or OpenAI API key.
+      // Real-pharmacy selection MUST later require separate authenticated server authorization.
       if(chatMode==="api"){
         const candidate=new URLSearchParams(window.location.hash.slice(1)).get("access")||"";
         if(/^[A-Za-z0-9_-]{16,128}$/.test(candidate))
@@ -341,7 +341,7 @@
       // Il pannello GPT API resta scollegato indipendentemente dal viewer.
       viewerWindow=window.open(url.href,"sos-tiralinee-viewer");
       viewerStatus.textContent=viewerWindow?
-        (chatMode==="api"?"Tiralinee aperto: il Gateway selezionerà GPT con codice valido, altrimenti SH. Attendo pairing sicuro.":chatMode==="sh"?"Tiralinee + SH Engine aperto. Attendo pairing sicuro.":
+        (chatMode==="api"?"Tiralinee demo aperto. GPT API disponibile soltanto dopo la verifica del codice riservato e il completamento del collaudo; SH resta operativo. Attendo pairing sicuro.":chatMode==="sh"?"Tiralinee + SH Engine aperto. Attendo pairing sicuro.":
         "Viewer Tiralinee aperto. In attesa del messaggio di collegamento sicuro (handoff V1.9)."):
         "Popup del viewer bloccato: autorizza l'apertura sul sito SOS.";
     }
