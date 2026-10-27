@@ -41,7 +41,7 @@
         <div class="ticket-steps">
           <div class="ticket-step"><span class="ticket-step-number">1</span><button id="start-sos" type="button" class="launch-button">Richiedi un ticket per assistenza o emergenza</button></div>
           <div class="ticket-step"><span class="ticket-step-number">2</span><button id="cancel-sos" type="button" class="launch-button ticket-cancel" disabled>Interrompi richiesta ticket</button></div>
-          <div class="ticket-step"><span class="ticket-step-number">3</span><div class="chat-choice"><button id="start-gpt" type="button" class="launch-button" disabled aria-disabled="true">Avvia chat ChatGPT</button><button id="start-claude" type="button" class="launch-button" disabled aria-disabled="true">Avvia chat Claude</button><button id="open-viewer" type="button" class="launch-button" disabled aria-disabled="true">Apri modello 3D Tiralinee</button><button id="open-viewer-api" type="button" class="launch-button" disabled aria-disabled="true">Apri Tiralinee + chat GPT API (prova)</button><button id="open-viewer-sh" type="button" class="launch-button" disabled aria-disabled="true">Apri Tiralinee + chat SH (prova)</button></div></div>
+          <div class="ticket-step"><span class="ticket-step-number">3</span><div class="chat-choice"><button id="start-gpt" type="button" class="launch-button" disabled aria-disabled="true">Avvia chat ChatGPT</button><button id="start-claude" type="button" class="launch-button" disabled aria-disabled="true">Avvia chat Claude</button><button id="open-viewer" type="button" class="launch-button" disabled aria-disabled="true">Apri modello 3D Tiralinee</button><button id="open-viewer-api" type="button" class="launch-button" disabled aria-disabled="true">Apri Tiralinee + chat (GPT / SH automatico)</button><button id="open-viewer-sh" type="button" class="launch-button" disabled aria-disabled="true">Apri Tiralinee + chat SH (prova)</button></div></div>
         </div>
         <div class="help-copy-tools"><button type="button" id="open-help-ai" class="copy-button">Help fatti aiutare da AI</button></div>
         <dialog id="help-ai-dialog" class="help-ai-dialog" aria-labelledby="help-ai-title">
@@ -329,11 +329,19 @@
       const url=new URL(viewerUrl);
       if(chatMode)url.searchParams.set("chat",chatMode);
       url.searchParams.set("sessionId",readySession);
+      // Shared owner/commissioner test link, NOT an OpenAI API key.
+      // A reusable fragment is forwarded only to the paired viewer; it never
+      // becomes a query string nor an MCP bearer token.
+      if(chatMode==="api"){
+        const candidate=new URLSearchParams(window.location.hash.slice(1)).get("access")||"";
+        if(/^[A-Za-z0-9_-]{16,128}$/.test(candidate))
+          url.hash="access="+encodeURIComponent(candidate);
+      }
       // La stessa finestra riceve ancora il codice handoff monouso da SOS.
       // Il pannello GPT API resta scollegato indipendentemente dal viewer.
       viewerWindow=window.open(url.href,"sos-tiralinee-viewer");
       viewerStatus.textContent=viewerWindow?
-        (chatMode==="api"?"Tiralinee + GPT API (anteprima non connessa) aperto. Attendo pairing sicuro.":chatMode==="sh"?"Tiralinee + SH Engine aperto. Attendo pairing sicuro.":
+        (chatMode==="api"?"Tiralinee aperto: il Gateway selezionerà GPT con codice valido, altrimenti SH. Attendo pairing sicuro.":chatMode==="sh"?"Tiralinee + SH Engine aperto. Attendo pairing sicuro.":
         "Viewer Tiralinee aperto. In attesa del messaggio di collegamento sicuro (handoff V1.9)."):
         "Popup del viewer bloccato: autorizza l'apertura sul sito SOS.";
     }
