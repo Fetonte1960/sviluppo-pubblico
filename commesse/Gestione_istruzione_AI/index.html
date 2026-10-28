@@ -21,7 +21,7 @@ button.document.current{background:#e6f3fa;border-left:4px solid #1673a4}
 .editor-head{padding:20px;border-bottom:1px solid #dde5eb;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .actions{display:flex;gap:9px;align-items:flex-start;flex-wrap:wrap}
 .controls{padding:13px 20px;background:#fbfdff;display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap;border-bottom:1px solid #dde5eb}
-input[type=search]{padding:9px;border:1px solid #bacfdf;border-radius:8px;width:210px;font:inherit}
+input[type=search],select{padding:9px;border:1px solid #bacfdf;border-radius:8px;width:100%;font:inherit} input[type=search]{width:210px}
 .content{padding:18px}
 textarea{display:block;width:100%;height:65vh;min-height:430px;resize:vertical;font:15px/1.55 Consolas,monospace;padding:16px;border:1px solid #bcd0df;border-radius:9px;color:#1a3a50}
 textarea:focus,input:focus{outline:2px solid #7bb9dc}
@@ -33,20 +33,22 @@ textarea:focus,input:focus{outline:2px solid #7bb9dc}
 .hidden{display:none!important}
 @media(max-width:820px){.layout{grid-template-columns:1fr}main{padding:10px}.headings{max-height:160px}textarea{height:60vh}}
 </style></head><body>
-<header><div><b>Gestione Istruzione AI</b><br><small>Termodel MCP · SOS · <strong id="frontendVersion">UI v1.0.2 (28/10/2026)</strong> · <span id="backendVersion">API non verificata</span></small></div><button id="logout" class="hidden">Esci</button></header>
+<header><div><b>Gestione Istruzione AI</b><br><small>Termodel MCP · SOS · <strong id="frontendVersion">UI v1.1.0 (28/10/2026)</strong> · <span id="backendVersion">API non verificata</span></small></div><button id="logout" class="hidden">Esci</button></header>
 <main><section id="login" class="panel login">
-<div class="kicker">Accesso amministrativo</div><h1>Esplora ed edita le istruzioni SOS</h1>
+<div class="kicker">Accesso amministrativo</div><h1>Gestione delle Root e istruzioni AI</h1>
 <p>Documenti Markdown caricati direttamente da Neon tramite il Gateway MCP Termodel. La password amministrativa è distinta dalle chiavi MCP e non viene memorizzata nel browser.</p>
 <form id="loginForm"><label for="password">Password amministratore (INSTRUCTIONS_ADMIN_PASSWORD)</label><input id="password" type="password" autocomplete="current-password" required><button type="submit" class="primary" id="submitLogin" disabled>Accedi</button></form>
 <p id="loginError" role="alert"></p><p class="muted" id="gatewayStatus" role="status" aria-live="polite">Risveglio automatico del Gateway Render Free…</p><button type="button" id="testGateway">Riprova collegamento e risveglio</button></section>
 <div id="layout" class="layout hidden">
-<aside class="panel sidebar"><div class="kicker">Personalizzazione attiva</div><h1>SOS</h1>
-<small>Root: SOS-ISTRUZIONI.md</small><h2>Documenti</h2><nav id="documents" aria-label="Documenti SOS"></nav>
+<aside class="panel sidebar"><div class="kicker">Personalizzazione attiva</div>
+<label for="profileSelect">Seleziona Root</label><select id="profileSelect" aria-label="Seleziona personalizzazione"></select>
+<div class="actions" style="margin:12px 0"><button id="createRoot">Nuova Root</button><button id="deleteRoot" disabled>Elimina Root</button></div>
+<small id="rootInfo">Root: SOS-ISTRUZIONI.md</small><h2>Documenti</h2><nav id="documents" aria-label="Documenti SOS"></nav>
 <div class="headings"><div class="kicker">Indice del documento</div><div id="headings"></div></div>
 <p class="muted">V1: tre documenti esistenti. Nessuna modifica al contratto MCP.</p></aside>
 <section class="panel">
 <div class="editor-head"><div><div class="kicker">Documento corrente</div><h1 id="title">—</h1><div id="meta" class="muted"></div></div>
-<div class="actions"><button id="download">Scarica .md</button><button id="save" class="primary" disabled>Salva e pubblica</button></div></div>
+<div class="actions"><button id="download">Scarica .md</button><button id="save" class="primary" disabled>Salva modifiche</button><button id="publishRoot" disabled>Pubblica Root</button></div></div>
 <div class="controls"><div class="actions"><button id="editTab" aria-pressed="true">Editor Markdown</button><button id="previewTab" aria-pressed="false">Anteprima</button></div>
 <div><input id="query" type="search" placeholder="Trova nel testo"><button id="find">Trova</button></div></div>
 <div class="content"><div id="status" class="status hidden" role="status"></div><textarea id="editor" spellcheck="false" aria-label="Contenuto Markdown"></textarea><div id="preview" class="preview hidden"></div></div>
@@ -56,8 +58,8 @@ textarea:focus,input:focus{outline:2px solid #7bb9dc}
 (()=>{
 "use strict";
 const $=id=>document.getElementById(id),api="https://termodel-mcp-gateway.onrender.com/api/instructions-admin/v1";
-const UI_VERSION="1.0.2",UI_RELEASE="2026-10-28.1",HEALTH_URL="https://termodel-mcp-gateway.onrender.com/health";
-let bearer="",items=[],active=null,original="",working=false;
+const UI_VERSION="1.1.0",UI_RELEASE="2026-10-28.2",HEALTH_URL="https://termodel-mcp-gateway.onrender.com/health";
+let bearer="",items=[],active=null,original="",working=false,currentProfile="SOS";
 function visible(id,on){$(id).classList.toggle("hidden",!on)}
 function msg(s,kind){$("status").textContent=s;$("status").className="status "+(kind||"");visible("status",!!s)}
 async function call(path,method="GET",payload=null,auth=true){
@@ -69,7 +71,7 @@ async function call(path,method="GET",payload=null,auth=true){
  if(response.status===401&&auth){logout(false);throw Error("Sessione scaduta: accedi nuovamente.")}
  if(!response.ok){
  const errors={admin_not_configured:"Password amministrativa non configurata sul Gateway.",
- invalid_credentials:"Password non corretta.",github_backup_not_configured:"Salvataggio disabilitato: configurare il token GitHub per il backup.",
+ invalid_credentials:"Password non corretta.",root_exists:"Root già presente nell’archivio.",invalid_profile:"Nome Root non valido.",confirmation_required:"Conferma obbligatoria non corrispondente.",protected_root:"La Root SOS è protetta dalla cancellazione.",already_published:"La Root è già pubblicata.",root_incomplete:"Completa e salva le istruzioni iniziali prima di pubblicare questa Root.",github_backup_not_configured:"Salvataggio disabilitato: configurare il token GitHub per il backup.",
  github_backup_failed:"Backup GitHub fallito; Neon non è stato modificato.",conflict:"Un altro operatore ha aggiornato il documento. Scarica la tua bozza e ricarica.",
  db_unavailable:"Neon non disponibile.",neon_commit_uncertain:"Backup creato, ma il commit Neon richiede verifica."};
  throw Error(errors[data.error]||data.detail||data.error||"Errore HTTP "+response.status);
@@ -78,16 +80,28 @@ async function call(path,method="GET",payload=null,auth=true){
 function isDirty(){return active&&$("editor").value!==original}
 function updateButtons(){
  $("save").disabled=!isDirty()||working;
+ $("publishRoot").disabled=!active||!active.root||active.published||!!isDirty()||working;
+ $("deleteRoot").disabled=currentProfile==="SOS"||!items.some(x=>x.name===rootDocument(currentProfile))||working;
+ $("createRoot").disabled=working;
  $("info").textContent=active?(isDirty()?"Modifiche non salvate · ":"Nessuna modifica · ")+$("editor").value.length.toLocaleString("it-IT")+" caratteri":"—";
 }
+function rootDocument(profile){return profile+"-ISTRUZIONI.md"}
+function profileFromRoot(name){return name.slice(0,-"-ISTRUZIONI.md".length)}
 function redrawDocs(){
- $("documents").replaceChildren(...items.map(x=>{
+ const roots=items.filter(x=>x.root).sort((a,b)=>a.name.localeCompare(b.name));
+ const select=$("profileSelect");
+ select.replaceChildren(...roots.map(x=>{const o=document.createElement("option");o.value=profileFromRoot(x.name);o.textContent=o.value+(x.published?"":" (bozza)");return o}));
+ select.value=currentProfile;
+ $("rootInfo").textContent="Root: "+rootDocument(currentProfile);
+ const shown=items.filter(x=>x.root?x.name===rootDocument(currentProfile):currentProfile==="SOS");
+ $("documents").replaceChildren(...shown.map(x=>{
  const b=document.createElement("button");b.type="button";b.className="document"+(active&&x.name===active.name?" current":"");
  const label=document.createElement("span");label.textContent=x.name;
  if(x.root){const r=document.createElement("span");r.className="root";r.textContent="ROOT";label.append(r)}
- const subtitle=document.createElement("small");subtitle.textContent="v"+x.version+" · "+(x.published?"Pubblicato":"Bozza");
+ const subtitle=document.createElement("small");subtitle.textContent="v"+x.version+" · "+(x.published?"Pubblicata":"Bozza");
  b.append(label,subtitle);b.onclick=()=>openDoc(x.name);return b;
- }))
+ }));
+ updateButtons();
 }
 function indexHeadings(){
  const pane=$("headings");pane.replaceChildren();let offset=0,count=0;
@@ -108,8 +122,8 @@ function showPreview(){
   else if(!line.trim()&&!code)flush();else text.push(line);
  }flush()
 }
-async function openDoc(name){
- if(working||isDirty()&&!confirm("Le modifiche non salvate verranno perse. Continuare?"))return;
+async function openDoc(name,skipConfirm=false){
+ if(working||(!skipConfirm&&isDirty()&&!confirm("Le modifiche non salvate verranno perse. Continuare?")))return;
  working=true;msg("");
  try{const d=await call("/documents/"+encodeURIComponent(name));active=d;original=d.content;
  $("editor").value=d.content;$("title").textContent=d.name;$("meta").textContent="Versione "+d.version+" · "+(d.published?"Pubblicata":"Non pubblicata")+" · "+new Date(d.updatedAt).toLocaleString("it-IT");
@@ -120,9 +134,78 @@ function logout(send=true){if(send&&bearer)call("/logout","POST").catch(()=>{});
 $("loginForm").onsubmit=async e=>{
  e.preventDefault();$("loginError").textContent="";
  try{const a=await call("/login","POST",{password:$("password").value},false);bearer=a.token;$("password").value="";
- const r=await call("/documents");items=r.documents;visible("login",false);visible("layout",true);visible("logout",true);await openDoc(r.root)}
+ const r=await call("/documents");items=r.documents;currentProfile="SOS";visible("login",false);visible("layout",true);visible("logout",true);await openDoc(r.root)}
  catch(err){$("loginError").textContent=err.message}
 };
+
+async function reloadItems(){const r=await call("/documents");items=r.documents;redrawDocs()}
+$("profileSelect").onchange=async()=>{
+ const next=$("profileSelect").value,prev=currentProfile;
+ if(next===prev)return;
+ if(isDirty()&&!confirm("Abbandonare le modifiche non salvate alla Root corrente?")){$("profileSelect").value=prev;return}
+ currentProfile=next;
+ await openDoc(rootDocument(next),true);
+};
+$("createRoot").onclick=async()=>{
+ if(working)return;
+ if(isDirty()&&!confirm("Le modifiche non salvate verranno perse. Creare una nuova Root?"))return;
+ const typed=prompt("Nome della nuova personalizzazione (solo A-Z, numeri, _ oppure -, massimo 40 caratteri):");
+ if(typed===null)return;
+ const profile=typed.trim().toUpperCase();
+ if(!/^[A-Z][A-Z0-9_-]{0,39}$/.test(profile)){msg("Nome personalizzazione non valido.","error");return}
+ const name=rootDocument(profile);
+ if(items.some(x=>x.name===name)){msg("Questa Root esiste già.","error");return}
+ if(!confirm("Creare "+name+" come BOZZA NON PUBBLICATA? Il backup GitHub è obbligatorio."))return;
+ const confirmation=prompt("Per confermare digita esattamente: CREA "+name);
+ if(confirmation!=="CREA "+name){msg("Creazione annullata: conferma non corrispondente.","error");return}
+ working=true;msg("Creazione bozza e backup GitHub in corso…");updateButtons();
+ try{
+  await call("/roots","POST",{profile,confirmation});
+  await reloadItems();currentProfile=profile;
+  active=null;original="";working=false;
+  await openDoc(name,true);
+  msg("Root "+name+" creata in bozza. Completa il testo e poi premi Pubblica Root.","success");
+ }catch(e){msg(e.message,"error")}
+ finally{working=false;updateButtons()}
+};
+$("publishRoot").onclick=async()=>{
+ if(!active||!active.root||active.published||working)return;
+ if(isDirty()){msg("Salva prima le modifiche alla bozza.","error");return}
+ const profile=profileFromRoot(active.name),phrase="PUBBLICA "+active.name;
+ if(!confirm("Pubblicare "+active.name+"? Diventerà immediatamente disponibile agli assistenti tramite MCP, dopo backup GitHub."))return;
+ if(prompt("Digita esattamente: "+phrase)!==phrase){msg("Pubblicazione annullata.","error");return}
+ working=true;msg("Backup GitHub e pubblicazione Root in corso…");updateButtons();
+ try{
+  const r=await call("/roots/"+encodeURIComponent(profile)+"/publish","POST",{
+   confirmation:phrase,expectedSha256:active.sha256,expectedVersion:active.version
+  });
+  active={...active,...r};await reloadItems();updateButtons();
+  msg("Root pubblicata. Backup GitHub "+r.backupCommit.slice(0,12),"success");
+ }catch(e){msg(e.message,"error")}finally{working=false;updateButtons()}
+};
+$("deleteRoot").onclick=async()=>{
+ if(currentProfile==="SOS"||working)return;
+ const name=rootDocument(currentProfile);
+ if(!active||active.name!==name){
+  msg("Prima apri la Root da cancellare e verifica il contenuto.");
+  await openDoc(name);return;
+ }
+ if(isDirty()){msg("Sono presenti modifiche non salvate: salva o annullale prima.","error");return}
+ const phrase="ELIMINA "+name;
+ if(!confirm("ATTENZIONE: vuoi eliminare "+name+"? La Root non sarà più disponibile via MCP. Verrà eseguito prima un backup GitHub."))return;
+ if(prompt("Seconda conferma obbligatoria: digita esattamente "+phrase)!==phrase){msg("Cancellazione annullata.","error");return}
+ if(!confirm("Ultima conferma: eliminare definitivamente "+name+" dal database Neon?"))return;
+ working=true;msg("Backup GitHub obbligatorio e cancellazione in corso…");updateButtons();
+ try{
+  const r=await call("/roots/"+encodeURIComponent(currentProfile),"DELETE",{
+   confirmation:phrase,expectedSha256:active.sha256,expectedVersion:active.version
+  });
+  active=null;original="";currentProfile="SOS";working=false;
+  await reloadItems();await openDoc(rootDocument("SOS"),true);
+  msg("Root "+name+" cancellata. Recuperabile tramite backup GitHub "+r.backupCommit.slice(0,12),"success");
+ }catch(e){msg(e.message,"error")}finally{working=false;updateButtons()}
+};
+
 $("logout").onclick=()=>{if(!isDirty()||confirm("Vuoi uscire perdendo le modifiche non salvate?"))logout()};
 $("editor").oninput=()=>{updateButtons();indexHeadings()};
 $("editTab").onclick=()=>{$("editor").classList.remove("hidden");$("preview").classList.add("hidden")};
@@ -196,12 +279,12 @@ $("testGateway").click();
 $("download").onclick=()=>{if(!active)return;const url=URL.createObjectURL(new Blob([$("editor").value],{type:"text/markdown;charset=utf-8"}));const a=document.createElement("a");a.href=url;a.download=active.name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
 $("save").onclick=async()=>{
  if(!isDirty()||working)return;
- if(!confirm("Pubblicare una nuova versione di "+active.name+"? Sarà immediatamente disponibile agli assistenti tramite MCP. Backup GitHub prima di Neon."))return;
+ if(!confirm("Salvare una nuova versione di "+active.name+"? "+(active.published?"Il testo aggiornato sarà subito visibile via MCP.":"La Root resterà in bozza, non visibile via MCP.")+" Backup GitHub obbligatorio."))return;
  working=true;updateButtons();msg("Backup e salvataggio in corso…");
  try{const r=await call("/documents/"+encodeURIComponent(active.name),"PUT",{content:$("editor").value,expectedSha256:active.sha256,expectedVersion:active.version});
   active={...active,...r};original=r.content;$("editor").value=r.content;
   items=items.map(x=>x.name===r.name?{...x,version:r.version}:x);redrawDocs();indexHeadings();
-  $("meta").textContent="Versione "+r.version+" · Pubblicata";msg("Pubblicata versione "+r.version+" · Backup GitHub "+r.backupCommit.slice(0,12),"success")}
+  $("meta").textContent="Versione "+r.version+" · "+(r.published?"Pubblicata":"Bozza");msg("Salvata versione "+r.version+" · "+(r.published?"Pubblicata":"Bozza")+" · Backup GitHub "+r.backupCommit.slice(0,12),"success")}
  catch(e){msg(e.message,"error")}
  finally{working=false;updateButtons()}
 };
