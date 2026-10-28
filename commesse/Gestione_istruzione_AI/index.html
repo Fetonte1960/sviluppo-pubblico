@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Gestione Istruzione AI · SOS</title>
+<title>Gestione Istruzione AI · SOS · V1</title>
 <style>
 :root{font-family:system-ui,"Segoe UI",sans-serif;color:#233c52;background:#f3f6fa;font-size:16px}
 *{box-sizing:border-box}body{margin:0}header{background:#102f4a;color:white;padding:17px 26px;display:flex;align-items:center;justify-content:space-between}h1{font-size:22px;margin:3px 0}h2{font-size:17px;margin:8px 0}small,.muted{color:#6a7e8e;font-size:13px}
@@ -64,7 +64,7 @@ async function call(path,method="GET",payload=null,auth=true){
  if(auth&&bearer)headers.Authorization="Bearer "+bearer;
  let response;try{response=await fetch(api+path,{method,headers,body:payload===null?undefined:JSON.stringify(payload),cache:"no-store"})}
  catch(e){throw Error("Gateway non raggiungibile oppure V1 non ancora distribuita.")}
- const data=await response.json().catch(()=>({error:"risposta_non_valida"}));
+ const data=await response.json().catch(()=>({error:"API amministrative non disponibili: verificare il deploy del Gateway"}));
  if(response.status===401&&auth){logout(false);throw Error("Sessione scaduta: accedi nuovamente.")}
  if(!response.ok){
  const errors={admin_not_configured:"Password amministrativa non configurata sul Gateway.",
