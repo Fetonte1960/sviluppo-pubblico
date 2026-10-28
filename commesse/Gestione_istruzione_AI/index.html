@@ -143,7 +143,8 @@ $("testGateway").onclick=async()=>{
  button.disabled=true;submit.disabled=true;
  $("backendVersion").textContent="API in verifica";
  const started=Date.now(),maxWait=150000;
- let live=false,lastIssue="Nessuna risposta";
+ let live=false,lastIssue="Nessuna risposta",waking=true;
+ const ticker=setInterval(()=>{if(waking)el.textContent="Risveglio Gateway Render Free… "+Math.floor((Date.now()-started)/1000)+" s trascorsi (max 150 s).";},1000);
  try{
   // Una richiesta GET /health risveglia Render Free senza aprire sessioni MCP.
   while(Date.now()-started<maxWait){
@@ -166,6 +167,7 @@ $("testGateway").onclick=async()=>{
    $("backendVersion").textContent="API non verificata";
    return;
   }
+  waking=false;
   el.textContent="Gateway Render attivo. Verifica API amministrative…";
   let response;
   try{response=await probeGet(api+"/status",25000)}
@@ -186,7 +188,7 @@ $("testGateway").onclick=async()=>{
   const ready=info.authentication==="ready";
   submit.disabled=!ready;
   el.textContent=ready?"Gateway Render attivo e API pronte. Accesso amministrativo disponibile.":"Gateway attivo, API installate ma INSTRUCTIONS_ADMIN_PASSWORD non configurata o non valida su Render.";
- }finally{button.disabled=false;checkingGateway=false;}
+ }finally{waking=false;clearInterval(ticker);button.disabled=false;checkingGateway=false;}
 };
 // La verifica è automatica solo all’apertura o su richiesta, senza ping periodici.
 $("testGateway").click();
