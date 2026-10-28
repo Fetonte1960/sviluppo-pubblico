@@ -37,7 +37,7 @@ textarea:focus,input:focus{outline:2px solid #7bb9dc}
 <main><section id="login" class="panel login">
 <div class="kicker">Accesso amministrativo</div><h1>Esplora ed edita le istruzioni SOS</h1>
 <p>Documenti Markdown caricati direttamente da Neon tramite il Gateway MCP Termodel. La password amministrativa è distinta dalle chiavi MCP e non viene memorizzata nel browser.</p>
-<form id="loginForm"><label for="password">Password amministratore (INSTRUCTIONS_ADMIN_PASSWORD)</label><input id="password" type="password" autocomplete="current-password" required><button type="submit" class="primary">Accedi</button></form>
+<form id="loginForm"><label for="password">Password amministratore (INSTRUCTIONS_ADMIN_PASSWORD)</label><input id="password" type="password" autocomplete="current-password" required><button type="submit" class="primary" id="submitLogin" disabled>Accedi</button></form>
 <p id="loginError" role="alert"></p><p class="muted" id="gatewayStatus" role="status">Controllo disponibilità API amministrative…</p><button type="button" id="testGateway">Verifica collegamento API</button></section>
 <div id="layout" class="layout hidden">
 <aside class="panel sidebar"><div class="kicker">Personalizzazione attiva</div><h1>SOS</h1>
@@ -129,13 +129,15 @@ $("previewTab").onclick=()=>{showPreview();$("editor").classList.add("hidden");$
 $("find").onclick=()=>{const term=$("query").value;if(!term)return;const t=$("editor"),all=t.value.toLowerCase(),from=t.selectionEnd;let i=all.indexOf(term.toLowerCase(),from);if(i<0)i=all.indexOf(term.toLowerCase());if(i<0){msg("Non trovato");return}$("editTab").click();t.focus();t.setSelectionRange(i,i+term.length);t.scrollTop=t.scrollHeight*i/Math.max(1,t.value.length);msg("")};
 $("query").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();$("find").click()}};
 $("testGateway").onclick=async()=>{
- const el=$("gatewayStatus");el.textContent="Verifica collegamento in corso…";
+ const el=$("gatewayStatus");$("submitLogin").disabled=true;el.textContent="Verifica collegamento in corso…";
  try{
   const r=await fetch(api+"/status",{cache:"no-store",headers:{Accept:"application/json"}});
   if(!r.ok){el.textContent="API amministrative non disponibili sul Gateway (HTTP "+r.status+").";return}
   const info=await r.json();
   if(info.service!=="GestioneIstruzioneAI"){el.textContent="Risposta API inattesa: verificare il deployment.";return}
-  el.textContent=info.authentication==="ready"?"API V"+info.apiVersion+" collegate. Login disponibile.":"API presenti, ma INSTRUCTIONS_ADMIN_PASSWORD non configurata su Render.";
+  const ready=info.authentication==="ready";
+  $("submitLogin").disabled=!ready;
+  el.textContent=ready?"API V"+info.apiVersion+" collegate. Login disponibile.":"API presenti, ma INSTRUCTIONS_ADMIN_PASSWORD non configurata su Render.";
  }catch(err){el.textContent="API amministrative non raggiungibili o non ancora pubblicate."}
 };
 $("testGateway").click();
