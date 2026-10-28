@@ -36,8 +36,8 @@ textarea:focus,input:focus{outline:2px solid #7bb9dc}
 <header><div><b>Gestione Istruzione AI</b><br><small>Termodel MCP · Prima personalizzazione: SOS</small></div><button id="logout" class="hidden">Esci</button></header>
 <main><section id="login" class="panel login">
 <div class="kicker">Accesso amministrativo</div><h1>Esplora ed edita le istruzioni SOS</h1>
-<p>Documenti Markdown caricati direttamente da Neon tramite il Gateway MCP Termodel. Nessuna password viene salvata nel browser.</p>
-<form id="loginForm"><label for="password">Password amministratore</label><input id="password" type="password" autocomplete="current-password" required><button type="submit" class="primary">Accedi</button></form>
+<p>Documenti Markdown caricati direttamente da Neon tramite il Gateway MCP Termodel. La chiave è usata solo per l’accesso e non viene salvata nel browser.</p>
+<form id="loginForm"><label for="password">Chiave MCP Termodel (TERMODEL_MCP_KEY)</label><input id="password" type="password" autocomplete="current-password" required><button type="submit" class="primary">Accedi</button></form>
 <p id="loginError" role="alert"></p></section>
 <div id="layout" class="layout hidden">
 <aside class="panel sidebar"><div class="kicker">Personalizzazione attiva</div><h1>SOS</h1>
