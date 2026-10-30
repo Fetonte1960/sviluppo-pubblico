@@ -228,5 +228,6 @@ $("import").onclick=()=>guard(async()=>{
     result.unresolved+" da verificare");
 });
 const onGitHubPages=location.hostname.toLowerCase().endsWith(".github.io");
+$("resetDemo").hidden=onGitHubPages; // Reset is available only for private localhost testing.
 if(apiBase || !onGitHubPages) guard(connect);
 else status("Frontend pubblico caricato · API demo non configurata.");
