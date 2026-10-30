@@ -7,6 +7,12 @@ const escapeHtml = s => String(s ?? "").replace(/[&<>"']/g, c =>
 // Public API origin is not a secret. Quote calculations and internal costs remain on Render.
 const defaultApiBase = "https://preventivi-demo-api.onrender.com";
 let apiBase = localStorage.getItem("preventivi-demo-api") || defaultApiBase;
+// Public demo sessions are independent; this ID is not an authentication credential.
+let demoSession = localStorage.getItem("preventivi-demo-session");
+if(!demoSession || !/^[0-9a-f-]{36}$/i.test(demoSession)){
+  demoSession=crypto.randomUUID();
+  localStorage.setItem("preventivi-demo-session",demoSession);
+}
 let companyId = "", quote = null, catalog = [], prices = [], batches = [], allQuotes = [];
 const fmt = n => n == null ? "DA DEFINIRE" : Number(n).toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
 const value = n => n == null ? "" : n;
@@ -16,7 +22,7 @@ async function request(url, opts={}){
   status("Richiesta API in corso (possibile cold start Render)...");
   const ctrl=new AbortController(); const timeout=setTimeout(()=>ctrl.abort(),90000);
   try{
-    const response=await fetch(apiBase + url,{...opts,signal:ctrl.signal,headers:{"Content-Type":"application/json",...(opts.headers||{})}});
+    const response=await fetch(apiBase + url,{...opts,signal:ctrl.signal,headers:{"Content-Type":"application/json","X-Preventivi-Demo-Session":demoSession,...(opts.headers||{})}});
     if(!response.ok){let t=await response.text();try{t=JSON.parse(t).detail||t}catch{} throw Error(response.status+" "+t);}
     status("API collegata · modalità DEMO");
     return response.headers.get("content-type")?.includes("application/pdf") ? await response.blob() : await response.json();
