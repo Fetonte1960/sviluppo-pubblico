@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="it">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Preventivi V0 — Demo sintetica</title><link rel="stylesheet" href="styles.css"></head>
+<body>
+<header><h1>Preventivi <small>V0 · DEMO SINTETICA</small></h1><p>Nessun collegamento a Neon operativo. Nessun dato reale FastPharma.</p></header>
+<main>
+  <section class="toolbar">
+    <label>Azienda emittente <select id="company"></select></label>
+    <label>Indirizzo API <input id="apiBase" placeholder="Stessa origine, oppure https://..."></label>
+    <button id="connect">Connetti</button>
+    <button id="resetDemo" title="Disponibile solo da localhost con autorizzazione esplicita del processo">Ripristina esempi</button>
+    <span id="status" aria-live="polite">Connessione non inizializzata</span>
+  </section>
+  <div class="layout">
+    <aside>
+      <h2>Archivio preventivi</h2>
+      <button id="newQuote">Nuova bozza</button><button id="reload">Ricarica</button>
+      <p class="hint" id="demoInfo">Gli archivi di esempio vengono caricati al primo avvio.</p>
+      <div id="quoteList"></div>
+      <h2>Import computi</h2>
+      <select id="batch"></select><button id="import">Importa lotto nel capitolo</button>
+      <p class="hint">Stesse righe importate due volte non producono duplicati. Lotto sintetico.</p>
+      <h2>Catalogo lavorazioni</h2>
+      <input id="searchCatalog" placeholder="Cerca codice o descrizione">
+      <div id="catalog"></div>
+      <h3>Nuova voce privata</h3>
+      <input id="newCode" placeholder="Codice"><input id="newTitle" placeholder="Titolo">
+      <input id="newUnit" placeholder="Unità, es. m2"><input id="newCategory" placeholder="Categoria">
+      <button id="addWork">Crea voce</button>
+    </aside>
+    <article>
+      <div class="actionbar">
+        <button id="save">Salva bozza</button><button id="revision">Archivia revisione</button>
+        <button id="previewPrices">Aggiorna prezzi…</button><button id="pdf">PDF cliente</button>
+      </div>
+      <div id="editor" class="empty">Crea o apri una bozza per iniziare.</div>
+      <h3>Revisioni conservate</h3><div id="revisions"></div>
+    </article>
+    <aside>
+      <h2>Prezziario corrente aziendale</h2>
+      <p class="hint">Costo interno riservato nella demo locale. Il PDF espone soltanto prezzi di vendita.</p>
+      <div id="priceList"></div>
+    </aside>
+  </div>
+</main>
+<script src="app.js"></script>
+</body></html>
