@@ -4,7 +4,9 @@
 const $ = id => document.getElementById(id);
 const escapeHtml = s => String(s ?? "").replace(/[&<>"']/g, c =>
   ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-let apiBase = localStorage.getItem("preventivi-demo-api") || "";
+// Public API origin is not a secret. Quote calculations and internal costs remain on Render.
+const defaultApiBase = "https://preventivi-demo-api.onrender.com";
+let apiBase = localStorage.getItem("preventivi-demo-api") || defaultApiBase;
 let companyId = "", quote = null, catalog = [], prices = [], batches = [], allQuotes = [];
 const fmt = n => n == null ? "DA DEFINIRE" : Number(n).toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
 const value = n => n == null ? "" : n;
@@ -23,7 +25,11 @@ async function request(url, opts={}){
 const json=(method,body)=>({method,body:JSON.stringify(body)});
 async function guard(fn){try{await fn()}catch(e){status(e.message,true);alert("Operazione non completata: "+e.message)}}
 async function connect(){
-  apiBase=$("apiBase").value.trim().replace(/\/$/,"");localStorage.setItem("preventivi-demo-api",apiBase);
+  apiBase=$("apiBase").value.trim().replace(/\/$/,"");
+  const parsed=new URL(apiBase);
+  if(parsed.protocol!=="https:" && !["localhost","127.0.0.1"].includes(parsed.hostname))
+    throw Error("Il servizio API deve utilizzare HTTPS.");
+  localStorage.setItem("preventivi-demo-api",apiBase);
   if(!apiBase && location.hostname.toLowerCase().endsWith(".github.io"))
     throw Error("Inserire l'indirizzo API demo autorizzata: GitHub Pages ospita solo il frontend statico.");
   const companies=await request("/api/demo/companies");
@@ -57,9 +63,7 @@ function renderPrices(){
   $("priceList").innerHTML=catalog.map(w=>{
     const p=prices.find(x=>x.workItemId===w.id)||{};
     return '<div class="priceitem" data-price="'+w.id+'"><b>'+escapeHtml(w.code+" — "+w.title)+'</b>'+
-      '<label>Costo interno DEMO<input data-field="internalCost" type="number" step=".0001" min="0" value="'+value(p.internalCost)+'"></label>'+
-      '<label>Prezzo manuale<input data-field="manualSalePrice" type="number" step=".0001" min="0" value="'+value(p.manualSalePrice)+'"></label>'+
-      '<label>Ricarico % (senza prezzo manuale)<input data-field="markupPercent" type="number" step=".01" min="0" value="'+value(p.markupPercent)+'"></label>'+
+      '<label>Prezzo vendita DEMO<input data-field="manualSalePrice" type="number" step=".0001" min="0" value="'+value(p.manualSalePrice)+'"></label>'+
       '<button data-saveprice="'+w.id+'">Aggiorna prezziario</button></div>';
   }).join("");
 }
@@ -192,8 +196,7 @@ $("priceList").onclick=e=>guard(async()=>{
   const field=f=>number(p.querySelector('[data-field="'+f+'"]').value);
   if(quote)await save();
   await request("/api/prices/"+companyId+"/"+b.dataset.saveprice,json("PUT",{
-    internalCost:field("internalCost"),manualSalePrice:field("manualSalePrice"),
-    markupPercent:field("markupPercent")}));await refresh();
+    manualSalePrice:field("manualSalePrice")}));await refresh();
 });
 $("editor").onclick=e=>guard(async()=>{
   const rm=e.target.closest("[data-remove]");

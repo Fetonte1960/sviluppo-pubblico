@@ -3,11 +3,11 @@
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Preventivi V0 — Demo sintetica</title><link rel="stylesheet" href="styles.css"></head>
 <body>
-<header><h1>Preventivi <small>V0 · DEMO SINTETICA</small></h1><p>Nessun collegamento a Neon operativo. Nessun dato reale FastPharma.</p></header>
+<header><h1>Preventivi <small>V0 · DEMO SINTETICA</small></h1><p>Frontend GitHub Pages, calcoli e preparazione preventivi nel servizio Render. Solo dati sintetici; Neon non collegato.</p></header>
 <main>
   <section class="toolbar">
     <label>Azienda emittente <select id="company"></select></label>
-    <label>Indirizzo API <input id="apiBase" placeholder="Stessa origine, oppure https://..."></label>
+    <label>Servizio API Render (demo) <input id="apiBase" placeholder="https://preventivi-demo-api.onrender.com"></label>
     <button id="connect">Connetti</button>
     <button id="resetDemo" title="Disponibile solo da localhost con autorizzazione esplicita del processo">Ripristina esempi</button>
     <span id="status" aria-live="polite">Connessione non inizializzata</span>
@@ -39,7 +39,7 @@
     </article>
     <aside>
       <h2>Prezziario corrente aziendale</h2>
-      <p class="hint">Costo interno riservato nella demo locale. Il PDF espone soltanto prezzi di vendita.</p>
+      <p class="hint">Il motore economico è sul server Render. Il browser riceve soltanto i prezzi di vendita DEMO, mai costi e ricarichi interni.</p>
       <div id="priceList"></div>
     </aside>
   </div>
