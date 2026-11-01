@@ -267,7 +267,7 @@ el("dicoPrint").onclick=async()=>{
   const pdf=await lib.PDFDocument.load(template.bytes);
   if(pdf.getPageCount()!==2)throw Error("Il modello fisso non contiene le due pagine attese.");
   const original=template.original,clientName=client.display_name.trim().toLocaleUpperCase("it-IT");
-  const pattern=new RegExp(dicoEscapeRegExp(original).replace(/\\\s+/g,"\\s+"),"gi");
+  const pattern=new RegExp(dicoEscapeRegExp(original).replace(/\s+/g,"\\s+"),"i");
   const matches=pdf.getForm().getFields().filter(f=>f instanceof lib.PDFTextField&&pattern.test(f.getText()||""));
   if(matches.length!==1)throw Error("Il campo committente del modello fisso non è univoco ("+matches.length+"). La stampa resta bloccata per evitare modifiche errate.");
   const field=matches[0],oldValue=field.getText()||"";
@@ -278,7 +278,7 @@ el("dicoPrint").onclick=async()=>{
    if(viewer&&!viewer.closed)viewer.close();return;
   }
   field.setText(newValue);
-  form=pdf.getForm();
+  const form=pdf.getForm();
   form.updateFieldAppearances(await pdf.embedFont(lib.StandardFonts.Helvetica));
   const out=await pdf.save();
   const verified=await lib.PDFDocument.load(out);
