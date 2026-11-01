@@ -106,14 +106,14 @@ function syncLevelTabs(){
  showLevel(activeLevel);
 }
 setupHierarchy();
-function canLeave(){return !Object.keys(dirty).length||confirm("Ci sono modifiche non salvate. Abbandonarle?");}
+function canLeave(){return (!Object.keys(dirty).length&&!clientProfileDirty&&!siteProfileDirty)||confirm("Ci sono modifiche non salvate. Abbandonarle?");}
 function status(){const n=Object.keys(dirty).length;el("saveAll").disabled=!n;el("saveStatus").textContent=n?n+" modifiche da salvare":"Nessuna modifica da salvare";}
 let contextEpoch=0,previousSelection={client:"",caseId:"",procedure:""};
 function forgetProcedure(){fields=[];dirty={};clearMacro();el("editor").hidden=true;el("fields").replaceChildren();el("tabs").replaceChildren();status();}
 function invalidate(){contextEpoch++;archiveGroups=null;forgetProcedure();el("archives").textContent="Aggiornamento archivio…";}
-function remember(){previousSelection={client:el("clients").value,caseId:el("cases").value,procedure:el("procedures").value};syncLevelTabs();}
-async function clients(){invalidate();const epoch=contextEpoch;const rows=await api("/api/v1/clients");if(epoch!==contextEpoch)return;options("clients",rows,"client_id","display_name");await cases();}
-async function cases(){invalidate();const epoch=contextEpoch,client=el("clients").value;options("cases",[],"case_id","title");options("procedures",[],"procedure_id","title");if(!client){await loadArchives();remember();return;}try{const rows=await api("/api/v1/cases/"+encodeURIComponent(client));if(epoch!==contextEpoch||client!==el("clients").value)return;options("cases",rows,"case_id","title");await loadCaseInstaller();await procedures();}catch(e){if(epoch===contextEpoch)el("archives").textContent="Errore caricamento pratiche: "+e.message;}}
+function remember(){previousSelection={client:el("clients").value,caseId:el("cases").value,procedure:el("procedures").value};refreshProfiles();syncLevelTabs();}
+async function clients(){invalidate();const epoch=contextEpoch;const rows=await api("/api/v1/clients");if(epoch!==contextEpoch)return;clientsCache=rows;options("clients",rows,"client_id","display_name");await cases();}
+async function cases(){invalidate();const epoch=contextEpoch,client=el("clients").value;casesCache=[];options("cases",[],"case_id","title");options("procedures",[],"procedure_id","title");if(!client){await loadArchives();remember();return;}try{const rows=await api("/api/v1/cases/"+encodeURIComponent(client));if(epoch!==contextEpoch||client!==el("clients").value)return;casesCache=rows;options("cases",rows,"case_id","title");await loadCaseInstaller();await procedures();}catch(e){if(epoch===contextEpoch)el("archives").textContent="Errore caricamento pratiche: "+e.message;}}
 async function procedures(){invalidate();const epoch=contextEpoch,caseId=el("cases").value;options("procedures",[],"procedure_id","title");if(!caseId){await loadArchives();remember();return;}try{const rows=await api("/api/v1/procedures/"+encodeURIComponent(caseId));if(epoch!==contextEpoch||caseId!==el("cases").value)return;options("procedures",rows,"procedure_id","title");await load();}catch(e){if(epoch===contextEpoch)el("archives").textContent="Errore caricamento procedimenti: "+e.message;}}
 async function load(){invalidate();const epoch=contextEpoch,id=el("procedures").value;if(!id){await loadArchives();remember();return;}try{const loaded=await api("/api/v1/fields/"+encodeURIComponent(id));if(epoch!==contextEpoch||id!==el("procedures").value)return;fields=loaded;el("editor").hidden=false;tab="Autorizza";draw();status();await loadArchives();remember();}catch(e){if(epoch===contextEpoch)el("archives").textContent="Errore caricamento campi: "+e.message;}}
 async function loadArchives(){
@@ -257,7 +257,7 @@ for(const [scope,btnId,selectId] of [["client","delclient","clients"],["case","d
  };
 }
 el("search").oninput=draw;el("clients").onchange=async()=>{if(!canLeave()){el("clients").value=previousSelection.client;return;}await cases();};el("cases").onchange=async()=>{if(!canLeave()){el("cases").value=previousSelection.caseId;return;}await procedures();};el("procedures").onchange=async()=>{if(!canLeave()){el("procedures").value=previousSelection.procedure;return;}await load();};
-el("refreshDb").onclick=async()=>{const pending=Object.keys(dirty).length;
+el("refreshDb").onclick=async()=>{const pending=Object.keys(dirty).length+(clientProfileDirty?1:0)+(siteProfileDirty?1:0);
  if(pending&&!confirm("Hai "+pending+" modifiche non salvate. Aggiornando tutto da DB queste modifiche andranno perse. Continuare?"))return;
  const btn=el("refreshDb"), notice=el("refreshStatus");
  const selectedClient=el("clients").value, selectedCase=el("cases").value, selectedProcedure=el("procedures").value;
@@ -271,10 +271,11 @@ el("refreshDb").onclick=async()=>{const pending=Object.keys(dirty).length;
    const procedureRows=caseId?await api("/api/v1/procedures/"+encodeURIComponent(caseId)):[];
    const procedureId=procedureRows.some(r=>r.procedure_id===selectedProcedure)?selectedProcedure:(procedureRows[0]?.procedure_id??"");
    const refreshedFields=procedureId?await api("/api/v1/fields/"+encodeURIComponent(procedureId)):[];
+   clientsCache=clientRows;casesCache=caseRows;
    options("clients",clientRows,"client_id","display_name");el("clients").value=clientId;
    options("cases",caseRows,"case_id","title");el("cases").value=caseId;
    options("procedures",procedureRows,"procedure_id","title");el("procedures").value=procedureId;
-   contextEpoch++;fields=refreshedFields;dirty={};clearMacro();el("editor").hidden=!procedureId;remember();
+   contextEpoch++;fields=refreshedFields;dirty={};refreshProfiles(true);clearMacro();el("editor").hidden=!procedureId;remember();
    if(procedureId)draw();else el("fields").innerHTML="";
    status();
    await loadArchives();
@@ -283,7 +284,7 @@ el("refreshDb").onclick=async()=>{const pending=Object.keys(dirty).length;
  finally{btn.disabled=false;}
 };
 el("saveAll").onclick=async()=>{const values=Object.entries(dirty).map(([fieldId,value])=>({fieldId,value}));if(!values.length)return;const btn=el("saveAll");btn.disabled=true;el("saveStatus").textContent="Salvataggio in corso…";try{const id=el("procedures").value;await api("/api/v1/values/"+encodeURIComponent(id),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({values})});for(const v of values){const f=fields.find(x=>x.field_id===v.fieldId);if(f)f.captured_value=v.value;delete dirty[v.fieldId];}status();el("saveStatus").textContent=values.length+" campi salvati nel database";}catch(e){status();el("saveStatus").textContent="Errore: nessuna modifica salvata. "+e.message;}};
-window.addEventListener("beforeunload",e=>{if(Object.keys(dirty).length){e.preventDefault();e.returnValue="";}});
+window.addEventListener("beforeunload",e=>{if(Object.keys(dirty).length||clientProfileDirty||siteProfileDirty){e.preventDefault();e.returnValue="";}});
 el("auth").onsubmit=async e=>{e.preventDefault();try{const r=await fetch(API+"/api/demo/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:el("pw").value})});el("pw").value="";if(!r.ok)throw Error("Accesso negato: HTTP "+r.status);token=(await r.json()).token;await clients();await loadInstallers();await loadCaseInstaller();await refreshAssignments();el("login").hidden=true;el("workspace").hidden=false;}catch(err){el("authmsg").textContent=err.message;}};
 const installerKeys=[["businessName","Ragione sociale / nome"],["vatNumber","Partita IVA"],["taxCode","Codice fiscale"],["address","Indirizzo"],["city","Comune"],["province","Provincia"],["postalCode","CAP"],["email","Email"],["pec","PEC"],["phone","Telefono"],["chamberRegistration","Iscrizione CCIAA / abilitazioni"],["technicalManager","Responsabile tecnico"],["technicalManagerTaxCode","CF responsabile tecnico"],["notes","Note"]];const portalKeys=[["portalName","Portale"],["portalIdentifier","Identificativo sul portale (non password)"],["portalRole","Ruolo sul portale"],["authorizationStatus","Stato abilitazione"],["delegateName","Delegato / referente"],["validUntil","Scadenza abilitazione"],["notes","Note"]];let installersCache=[],portalCache=[],editingInstaller="",editingPortal="";
 function buildInstallerFields(target,keys,prefix){el(target).innerHTML=keys.map(([k,label])=>'<label style="display:inline-block;margin:5px;min-width:220px">'+escapeHtml(label)+'<input style="display:block;max-width:240px;width:100%" id="'+prefix+k+'" '+(k==="validUntil"?'type="date"':'maxlength="250"')+'></label>').join("");}
