@@ -285,6 +285,31 @@ el("refreshDb").onclick=async()=>{const pending=Object.keys(dirty).length+(clien
 };
 el("saveAll").onclick=async()=>{const values=Object.entries(dirty).map(([fieldId,value])=>({fieldId,value}));if(!values.length)return;const btn=el("saveAll");btn.disabled=true;el("saveStatus").textContent="Salvataggio in corso…";try{const id=el("procedures").value;await api("/api/v1/values/"+encodeURIComponent(id),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({values})});for(const v of values){const f=fields.find(x=>x.field_id===v.fieldId);if(f)f.captured_value=v.value;delete dirty[v.fieldId];}status();el("saveStatus").textContent=values.length+" campi salvati nel database";}catch(e){status();el("saveStatus").textContent="Errore: nessuna modifica salvata. "+e.message;}};
 window.addEventListener("beforeunload",e=>{if(Object.keys(dirty).length||clientProfileDirty||siteProfileDirty){e.preventDefault();e.returnValue="";}});
+
+function profilePayload(prefix,keys){return Object.fromEntries(keys.map(([key])=>[key,el(prefix+key).value.trim()||null]));}
+el("cl_Form").onsubmit=async e=>{
+ e.preventDefault();const id=el("clients").value;if(!id||id!==clientFormId)return;
+ const button=el("cl_Form").querySelector('button[type="submit"]');button.disabled=true;el("cl_Status").textContent="Salvataggio…";
+ try{
+  await api("/api/v1/clients/"+encodeURIComponent(id)+"/profile",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(profilePayload("cl_",clientKeys))});
+  clientsCache=await api("/api/v1/clients");
+  const current=el("clients").value;options("clients",clientsCache,"client_id","display_name");el("clients").value=current;
+  clientProfileDirty=false;profileValue("cl_",clientKeys,clientsCache.find(x=>x.client_id===id));syncLevelTabs();
+  el("cl_Status").textContent="Anagrafica salvata.";
+ }catch(error){el("cl_Status").textContent="Errore: "+error.message;}
+ finally{button.disabled=!el("clients").value;}
+};
+el("site_Form").onsubmit=async e=>{
+ e.preventDefault();const id=el("cases").value;if(!id||id!==siteFormId)return;
+ const button=el("site_Form").querySelector('button[type="submit"]');button.disabled=true;el("site_Status").textContent="Salvataggio…";
+ try{
+  await api("/api/v1/cases/"+encodeURIComponent(id)+"/site",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(profilePayload("site_",siteKeys))});
+  casesCache=await api("/api/v1/cases/"+encodeURIComponent(el("clients").value));
+  siteProfileDirty=false;profileValue("site_",siteKeys,casesCache.find(x=>x.case_id===id));
+  el("site_Status").textContent="Dati immobile salvati.";
+ }catch(error){el("site_Status").textContent="Errore: "+error.message;}
+ finally{button.disabled=!el("cases").value;}
+};
 el("auth").onsubmit=async e=>{e.preventDefault();try{const r=await fetch(API+"/api/demo/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:el("pw").value})});el("pw").value="";if(!r.ok)throw Error("Accesso negato: HTTP "+r.status);token=(await r.json()).token;await clients();await loadInstallers();await loadCaseInstaller();await refreshAssignments();el("login").hidden=true;el("workspace").hidden=false;}catch(err){el("authmsg").textContent=err.message;}};
 const installerKeys=[["businessName","Ragione sociale / nome"],["vatNumber","Partita IVA"],["taxCode","Codice fiscale"],["address","Indirizzo"],["city","Comune"],["province","Provincia"],["postalCode","CAP"],["email","Email"],["pec","PEC"],["phone","Telefono"],["chamberRegistration","Iscrizione CCIAA / abilitazioni"],["technicalManager","Responsabile tecnico"],["technicalManagerTaxCode","CF responsabile tecnico"],["notes","Note"]];const portalKeys=[["portalName","Portale"],["portalIdentifier","Identificativo sul portale (non password)"],["portalRole","Ruolo sul portale"],["authorizationStatus","Stato abilitazione"],["delegateName","Delegato / referente"],["validUntil","Scadenza abilitazione"],["notes","Note"]];let installersCache=[],portalCache=[],editingInstaller="",editingPortal="";
 function buildInstallerFields(target,keys,prefix){el(target).innerHTML=keys.map(([k,label])=>'<label style="display:inline-block;margin:5px;min-width:220px">'+escapeHtml(label)+'<input style="display:block;max-width:240px;width:100%" id="'+prefix+k+'" '+(k==="validUntil"?'type="date"':'maxlength="250"')+'></label>').join("");}
