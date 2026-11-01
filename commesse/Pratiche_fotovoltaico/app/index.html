@@ -278,9 +278,9 @@ el("dicoPrint").onclick=async()=>{
    if(viewer&&!viewer.closed)viewer.close();return;
   }
   field.setText(newValue);
-  const form=pdf.getForm();
-  form.updateFieldAppearances(await pdf.embedFont(lib.StandardFonts.Helvetica));
-  const out=await pdf.save();
+  // Aggiorna l’aspetto del solo campo modificato; non rigenerare gli altri campi.
+  field.updateAppearances(await pdf.embedFont(lib.StandardFonts.Helvetica));
+  const out=await pdf.save({updateFieldAppearances:false});
   const verified=await lib.PDFDocument.load(out);
   if(verified.getForm().getTextField(field.getName()).getText()!==newValue)throw Error("La verifica del PDF compilato non è riuscita.");
   const url=URL.createObjectURL(new Blob([out],{type:"application/pdf"}));
