@@ -324,6 +324,10 @@ el("dicoPrint").onclick=async()=>{
  const caseId=el("cases").value,procedureId=el("procedures").value,clientId=el("clients").value;
  if(!caseId||!procedureId||!clientId){dicoStatus("Selezionare cliente, pratica e procedimento Fase 2.");return;}
  if(Object.keys(dirty).length){dicoStatus("Salvare prima le modifiche locali del procedimento.");return;}
+ // Aprire la scheda nel gesto diretto del clic: i popup successivi alle await
+ // sono spesso bloccati. Se il browser blocca la scheda, resta il download.
+ const viewer=window.open("about:blank","_blank");
+ if(viewer){viewer.document.title="Preparazione stampa Di.Co.";viewer.document.body.textContent="Verifica del modello PDF…";}
  dicoPrintBusy=true;el("dicoPrint").disabled=true;dicoStatus("Verifica pratica e modello PDF…");
  try{
   const [clientRows,caseRows,procedureRows,bytes,lib]=await Promise.all([
@@ -345,9 +349,7 @@ el("dicoPrint").onclick=async()=>{
   const oldValue=field.getText()||"";
   if(!oldValue.trim())throw Error("Il campo PDF scelto è vuoto: verificare che sia quello del committente.");
   const clientName=client.display_name.trim().toLocaleUpperCase("it-IT");
-  if(!confirm("STAMPA DI PROVA, NON DEFINITIVA.\n\nCampo PDF: "+fieldName+"\nValore originale: "+oldValue+"\nNuovo committente: "+clientName+"\n\nSostituire soltanto questo campo, lasciando invariato il resto del modello?"))return;
-  const viewer=window.open("about:blank","_blank");
-  if(viewer){viewer.document.title="Preparazione stampa Di.Co.";viewer.document.body.textContent="Preparazione del PDF di prova…";}
+  if(!confirm("STAMPA DI PROVA, NON DEFINITIVA.\n\nCampo PDF: "+fieldName+"\nValore originale: "+oldValue+"\nNuovo committente: "+clientName+"\n\nSostituire soltanto questo campo, lasciando invariato il resto del modello?")){if(viewer&&!viewer.closed)viewer.close();return;}
   try{
    field.setText(clientName);
    form.updateFieldAppearances(await pdf.embedFont(lib.StandardFonts.Helvetica));
@@ -361,7 +363,7 @@ el("dicoPrint").onclick=async()=>{
    }
    dicoStatus("PDF di prova pronto per «"+client.display_name+"». Apri Stampa dal visualizzatore (Ctrl+P). Solo il campo committente è stato sostituito; gli altri dati originali non sono verificati per questa pratica.");
   }catch(e){if(viewer&&!viewer.closed)viewer.close();throw e;}
- }catch(e){dicoStatus("Stampa non eseguita: "+e.message);}
+ }catch(e){if(viewer&&!viewer.closed)viewer.close();dicoStatus("Stampa non eseguita: "+e.message);}
  finally{dicoPrintBusy=false;el("dicoPrint").disabled=false;}
 };
 
