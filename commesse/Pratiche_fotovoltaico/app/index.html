@@ -118,49 +118,70 @@ async function saveDicoChecks(e){
  finally{btn.disabled=false;}
 }
 
-/* Tipologia intervento: dato codificato della PRATICA, una sola scelta. */
+/* Motivo dei lavori: una sola selezione nella Pratica.
+   Stato e fonte restano metadati distinti; il testo 'Altro' non e' la fonte. */
 let dicoInterventionCase="",dicoInterventionDirty=false;
+function syncDicoInterventionOther(){
+ const other=el("dicoInterventionType").value==="other";
+ el("dicoInterventionOtherLabel").hidden=!other;
+ el("dicoInterventionOther").disabled=!other;
+ el("dicoInterventionOther").required=other;
+}
 function setupDicoIntervention(){
  const panel=document.createElement("section");panel.className="profile-form admin-only";panel.id="dicoInterventionPanel";
- panel.innerHTML='<h5>Tipologia di intervento per la Di.Co.</h5>'+
- '<p class="subtle">Dato della pratica: scegli una sola tipologia e indica se è documentata o confermata.</p>'+
+ panel.innerHTML='<h5>Motivo dei lavori — Di.Co.</h5>'+
+ '<p class="subtle">Seleziona una sola voce: la casella corrispondente verrà spuntata nella Di.Co. Se scegli «Altro», specifica il testo da stampare.</p>'+
  '<form id="dicoInterventionForm"><div class="profile-grid">'+
- '<label>Intervento<select id="dicoInterventionType"><option value="">Da definire</option><option value="new">Nuovo impianto</option><option value="transform">Trasformazione</option><option value="extend">Ampliamento</option><option value="maintain">Manutenzione straordinaria</option><option value="other">Altro</option></select></label>'+
- '<label>Stato<select id="dicoInterventionStatus"><option value="">Da verificare</option><option value="reported">Riportato in documento</option><option value="yes">Confermato dall’operatore / installatore</option></select></label>'+
- '<label>Fonte o conferma<input id="dicoInterventionSource" type="text" maxlength="1000" placeholder="Documento o conferma"></label>'+
- '</div><div class="profile-actions"><button type="submit">Salva tipologia intervento</button> <span role="status" id="dicoInterventionMessage"></span></div></form>';
+ '<label>Motivo dei lavori<select id="dicoInterventionType"><option value="">Da definire</option><option value="new">Nuovo impianto</option><option value="transform">Trasformazione</option><option value="extend">Ampliamento</option><option value="maintain">Manutenzione straordinaria</option><option value="other">Altro</option></select></label>'+
+ '<label id="dicoInterventionOtherLabel" hidden>Specificare «Altro»<input id="dicoInterventionOther" type="text" maxlength="200" placeholder="Motivo da riportare nella Di.Co."></label>'+
+ '<label>Provenienza<select id="dicoInterventionStatus"><option value="">Da verificare</option><option value="reported">Riportato in documento</option><option value="yes">Confermato dall’operatore / installatore</option></select></label>'+
+ '<label>Fonte o conferma<input id="dicoInterventionSource" type="text" maxlength="1000" placeholder="Riferimento fonte del dato"></label>'+
+ '</div><div class="profile-actions"><button type="submit">Salva motivo dei lavori</button> <span role="status" id="dicoInterventionMessage"></span></div></form>';
  el("level-case").insertBefore(panel,el("archiveSlot-case"));
- for(const id of ["dicoInterventionType","dicoInterventionStatus","dicoInterventionSource"]){
-  el(id).addEventListener("change",()=>{dicoInterventionDirty=true;el("dicoInterventionMessage").textContent="Modifiche da salvare.";});
+ for(const id of ["dicoInterventionType","dicoInterventionOther","dicoInterventionStatus","dicoInterventionSource"]){
+  el(id).addEventListener("change",()=>{
+   if(id==="dicoInterventionType")syncDicoInterventionOther();
+   dicoInterventionDirty=true;el("dicoInterventionMessage").textContent="Modifiche da salvare.";
+  });
   el(id).addEventListener("input",()=>{dicoInterventionDirty=true;el("dicoInterventionMessage").textContent="Modifiche da salvare.";});
  }
  el("dicoInterventionForm").onsubmit=saveDicoIntervention;
+ syncDicoInterventionOther();
 }
 async function loadDicoIntervention(force=false){
  const id=el("cases").value;
  if(!force&&id===dicoInterventionCase)return;
  dicoInterventionCase=id;dicoInterventionDirty=false;
- for(const name of ["dicoInterventionType","dicoInterventionStatus","dicoInterventionSource"])el(name).value="";
+ for(const name of ["dicoInterventionType","dicoInterventionOther","dicoInterventionStatus","dicoInterventionSource"])el(name).value="";
+ syncDicoInterventionOther();
  el("dicoInterventionForm").querySelector("button").disabled=!id;
  if(!id){el("dicoInterventionMessage").textContent="Seleziona una pratica.";return;}
  const result=await api("/api/v1/cases/"+encodeURIComponent(id)+"/dico-intervention");
  if(id!==el("cases").value)return;
  el("dicoInterventionType").value=result.interventionType||"";
+ el("dicoInterventionOther").value=result.otherText||"";
  el("dicoInterventionStatus").value=result.interventionStatus||"";
  el("dicoInterventionSource").value=result.interventionSource||"";
- el("dicoInterventionMessage").textContent=result.interventionStatus==="reported"?"Valore storico da verificare, non spuntato in stampa.":"";
+ syncDicoInterventionOther();
+ el("dicoInterventionMessage").textContent=result.interventionStatus==="reported"?"Scelta riportata da un documento storico.":"";
 }
 async function saveDicoIntervention(e){
  e.preventDefault();const id=el("cases").value;
  if(!id||id!==dicoInterventionCase)return;
- const data={interventionType:el("dicoInterventionType").value||null,interventionStatus:el("dicoInterventionStatus").value||null,interventionSource:el("dicoInterventionSource").value.trim()||null};
- if(!!data.interventionType!==!!data.interventionStatus){el("dicoInterventionMessage").textContent="Seleziona sia intervento sia stato.";return;}
+ const data={
+  interventionType:el("dicoInterventionType").value||null,
+  interventionStatus:el("dicoInterventionStatus").value||null,
+  interventionSource:el("dicoInterventionSource").value.trim()||null,
+  otherText:el("dicoInterventionType").value==="other"?el("dicoInterventionOther").value.trim()||null:null
+ };
+ if(!!data.interventionType!==!!data.interventionStatus){el("dicoInterventionMessage").textContent="Seleziona sia il motivo sia la provenienza.";return;}
  if(data.interventionStatus&&!data.interventionSource){el("dicoInterventionMessage").textContent="Indica la fonte del dato.";return;}
+ if(data.interventionType==="other"&&!data.otherText){el("dicoInterventionMessage").textContent="Scrivi il motivo dei lavori in «Altro». ";return;}
  const button=el("dicoInterventionForm").querySelector("button");button.disabled=true;
  try{
   await api("/api/v1/cases/"+encodeURIComponent(id)+"/dico-intervention",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
   dicoInterventionDirty=false;await loadDicoIntervention(true);
-  el("dicoInterventionMessage").textContent="Tipo intervento salvato in Neon.";
+  el("dicoInterventionMessage").textContent="Motivo dei lavori salvato in Neon.";
  }catch(err){el("dicoInterventionMessage").textContent="Errore: "+err.message;}
  finally{button.disabled=false;}
 }
