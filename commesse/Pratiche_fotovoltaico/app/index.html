@@ -18,6 +18,7 @@
 .canonical-field{font-size:13px;display:flex;flex-direction:column;gap:6px;font-weight:600}
 .canonical-field input,.canonical-field select{width:100%;max-width:100%;box-sizing:border-box}
 .canonical-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0}
+.canonical-mapping-results{overflow:auto;max-height:400px}.canonical-mapping-table{border-collapse:collapse;width:100%;font-size:12px}.canonical-mapping-table td,.canonical-mapping-table th{border:1px solid #d6e2ec;padding:6px;text-align:left;vertical-align:top}.canonical-mapping-table th{background:#e8f1f8;position:sticky;top:0}
 </style></head><body><header><h2>Pratiche fotovoltaiche — Gestione pratiche <small style="font-size:12px;opacity:.85">V4.0 · Archivi canonici — Issue #6</small></h2></header><main><section class="panel" id="login"><h3>Accesso riservato</h3><form id="auth"><input type="password" id="pw" required placeholder="Segreto Render" autocomplete="current-password"><button>Accedi</button></form><p class="msg" id="authmsg"></p></section>
 <section id="workspace" hidden><section class="panel admin-only" id="installerPanel"><details><summary><strong>Anagrafica e profili portale</strong></summary><p>Registro condiviso tra pratiche. Non inserire password, OTP o credenziali.</p><label>Installatore <select id="installerSelect"></select></label> <button type="button" id="installerReload">Aggiorna installatori</button> <button type="button" id="installerNew">Nuovo installatore</button><form id="installerForm" style="margin-top:12px"><div id="installerFields"></div><button type="submit">Salva anagrafica</button> <span id="installerStatus" role="status"></span></form><hr><h4>Profili portale</h4><label>Profilo <select id="portalProfileSelect"></select></label> <button type="button" id="portalNew">Nuovo profilo</button><form id="portalProfileForm"><div id="portalFields"></div><button type="submit">Salva profilo portale</button> <span id="portalStatus" role="status"></span></form><hr><h4>Collegamento alla pratica selezionata</h4><label>Ruolo <select id="installerAssignmentRole"><option value="INSTALLATORE">Installatore</option><option value="FIRMATARIO_DICO">Firmatario Di.Co.</option><option value="FIRMATARIO_AUTOTEST">Firmatario asseverazione post-autotest</option></select></label> <button type="button" id="installerAssign">Associa alla pratica</button><p id="installerAssigned"></p></details></section><div style="display:flex;gap:8px;align-items:center;padding:5px 0"><button id="copyHelp" type="button" style="background:#276b3c;font-weight:700">📋 Copia help per AI</button><span id="helpStatus" role="status"></span> <button id="portalMode" type="button" aria-pressed="false">Compilazione portale</button><span id="modeStatus" role="status"></span></div><div class="panel"><h3>Archivio pratiche fotovoltaiche</h3><div style="margin:10px 0"><button id="refreshDb" type="button">Aggiorna da DB</button> <span id="refreshStatus" role="status"></span></div><label>Cliente <select id="clients"></select></label> <button class="admin-only" id="newclient">Nuovo cliente</button> <button class="admin-only" type="button" id="delclient" style="background:#9e3131">Elimina</button> <label>Pratica fotovoltaica <select id="cases"></select></label> <label class="admin-only">Installatore della pratica <select id="caseInstaller"><option value="">Non assegnato</option></select></label> <button type="button" class="admin-only" id="saveCaseInstaller">Salva installatore</button> <span id="caseInstallerStatus"></span> <button class="admin-only" id="newcase">Nuova pratica fotovoltaica</button> <button class="admin-only" type="button" id="delcase" style="background:#9e3131">Elimina</button> <label>Procedimento <select id="procedures"></select></label> <button class="admin-only" id="newprocedure">Nuovo procedimento</button> <button class="admin-only" type="button" id="delprocedure" style="background:#9e3131">Elimina</button></div><section class="panel admin-only"><h3>Archivio testuale / OCR</h3><p style="color:#52687c">Testi OCR, targhe e note consultabili ai tre livelli. Puoi aggiungere un documento manualmente.</p><form id="newArchive" class="fieldset" style="padding:12px"><h4>Nuovo documento testuale</h4><label>Livello <select id="archiveScope"><option value="client">Cliente</option><option value="case">Pratica</option><option value="procedure">Procedimento</option></select></label> <label>Tipo <select id="archiveKind"><option>OCR</option><option>TRASCRIZIONE</option><option>TARGA</option><option>NOTA</option><option>ALTRO</option></select></label><p><label>Titolo <input id="archiveTitle" required maxlength="250" style="width:100%;box-sizing:border-box"></label></p><p><label>Fonte / provenienza <input id="archiveSource" maxlength="1000" style="width:100%;box-sizing:border-box"></label></p><p><label>Testo del documento <textarea id="archiveBody" required maxlength="200000" rows="9" style="display:block;width:100%;box-sizing:border-box;font:inherit"></textarea></label></p><button id="archiveSubmit" type="submit">Salva nuovo documento</button> <span id="archiveMessage" role="status"></span></form><div id="archives" role="region" aria-live="polite">Seleziona un cliente per visualizzare gli archivi.</div></section><section id="editor" class="panel" hidden><h3 id="title">Procedimento</h3><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><button id="saveAll" type="button" disabled>Salva modifiche</button><button id="dicoPrint" type="button" title="Genera la Di.Co. da cliente, pratica, procedimento e installatore">Stampa Di.Co.</button><span id="dicoStatus" role="status" style="font-size:13px;color:#52687c"></span><span id="saveStatus" role="status">Nessuna modifica</span></div><details class="fieldset admin-only" id="macroPanel"><summary>Importa macro campi PV-MACRO-1</summary><div style="padding:12px"><p>Incolla il JSON prodotto da GPT. L'anteprima non salva nulla: «Applica ai campi» prepara le modifiche, poi premi «Salva modifiche».</p><button type="button" id="copyCatalog">Copia catalogo campi del procedimento</button><p><textarea id="macroText" rows="8" spellcheck="false" placeholder='{"formato":"PV-MACRO-1","procedimento_id":"...","operazioni":[{"campo_id":"F2-001","valore":"..."}]}' style="display:block;box-sizing:border-box;width:100%;font:13px monospace"></textarea></p><button type="button" id="previewMacro">Verifica e mostra anteprima</button> <button type="button" id="applyMacro" disabled>Applica ai campi</button><p id="macroMessage" role="status"></p><div id="macroPreview"></div></div></details><nav id="tabs" class="nav" aria-label="Schede procedimento"></nav><input id="search" type="search" placeholder="Cerca campo, sezione o ID"><div id="fields"></div></section></section><dialog id="createDialog" style="border:1px solid #b8c8da;border-radius:10px;width:min(600px,94vw);box-sizing:border-box"><form id="createForm"><h3 id="createHeading">Nuovo</h3><label>Modalità <select id="createMode"><option value="empty">Crea vuoto</option><option value="clone">Clona da esistente</option></select></label><p><label id="createNameLabel">Nome / titolo <input id="createName" required maxlength="250" style="width:100%;box-sizing:border-box"></label></p><div id="cloneSettings" hidden><p><label>Origine <select id="cloneSource" style="max-width:100%"></select></label></p><p><label><input type="checkbox" id="cloneChildren" checked> Includi elementi collegati (pratiche o procedimenti)</label></p><p><label><input type="checkbox" id="cloneValues" checked> Copia valori dei campi dei procedimenti</label></p><p><label><input type="checkbox" id="cloneArchives" checked> Copia documenti testuali/OCR ai livelli inclusi</label></p><p style="font-size:13px;color:#52687c">I numeri ufficiali delle pratiche non vengono copiati. Tutti i dati clonati sono da verificare prima dell'uso.</p></div><p id="createFeedback" role="status"></p><div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" id="createCancel">Annulla</button><button type="submit" id="createSubmit">Crea</button></div></form></dialog></main><script>
 const API="https://pratiche-fotovoltaico-demo-api.onrender.com";let token="",fields=[],tab="Autorizza",dirty={};const el=id=>document.getElementById(id);
@@ -372,6 +373,51 @@ function setupCanonicalUI(){
 async function initializeCanonical(){
  const schema=await api("/api/v1/canonical/schema");canonicalSchema=Object.fromEntries(schema.map(x=>[x.id,x]));
  setupCanonicalUI();
+ setupCanonicalMappingPreview();
+}
+
+/* Preview read-only del mapping. No POST/PUT sul mirror, nessun bottone di inoltro. */
+function setupCanonicalMappingPreview(){
+ const panel=document.createElement("details");panel.className="canonical-panel admin-only";panel.id="canonicalMappingPreview";
+ panel.innerHTML='<summary>Anteprima mapping Di.Co. / G-bis / Mirror (sola lettura)</summary>'+
+ '<div class="canonical-body"><p class="subtle">Confronto tra valori già presenti, proposte canoniche e dati mancanti. Non modifica il mirror.</p>'+
+ '<div class="canonical-controls"><select id="canonicalMappingTarget" aria-label="Destinazione">'+
+ '<option value="DICO">Di.Co.</option><option value="GBIS">Asseverazione G-bis</option>'+
+ '<option value="MIRROR">Mirror e-Distribuzione</option></select>'+
+ '<button type="button" id="canonicalMappingRead">Calcola anteprima</button></div>'+
+ '<p id="canonicalMappingStatus" role="status"></p>'+
+ '<div id="canonicalMappingResults" class="canonical-mapping-results"></div></div>';
+ el("level-case").append(panel);
+ el("canonicalMappingRead").onclick=async()=>{
+  const caseId=el("cases").value;
+  const target=el("canonicalMappingTarget").value;
+  const status=el("canonicalMappingStatus"),result=el("canonicalMappingResults");
+  if(!caseId){status.textContent="Seleziona una pratica.";return;}
+  status.textContent="Lettura non modificante…";result.replaceChildren();
+  try{
+   const data=await api("/api/v1/canonical/mappings/"+target+"/"+encodeURIComponent(caseId)+
+      "?procedureId="+encodeURIComponent(el("procedures").value||""));
+   if(caseId!==el("cases").value)return;
+   const mapped=data.mappings.filter(m=>m.mappingStatus==="mapped").length;
+   const proposed=data.mappings.filter(m=>m.proposedValue!==null&&m.proposedValue!=="").length;
+   status.textContent=data.mappings.length+" campi di destinazione · "+mapped+
+      " mapping definiti · "+proposed+" valori canonici proposti. Nessun dato è stato scritto.";
+   const table=document.createElement("table");table.className="canonical-mapping-table";
+   const head=document.createElement("tr");
+   for(const name of ["Destinazione","Origine","Valore attuale","Proposto","Stato"]){
+    const th=document.createElement("th");th.textContent=name;head.append(th);
+   }
+   table.append(head);
+   for(const row of data.mappings){
+    const tr=document.createElement("tr");
+    for(const value of [row.field,row.source||"—",row.currentMirrorValue??"—",row.proposedValue??"—",row.mappingStatus]){
+     const td=document.createElement("td");td.textContent=String(value);tr.append(td);
+    }
+    table.append(tr);
+   }
+   result.append(table);
+  }catch(err){status.textContent="Anteprima non disponibile: "+err.message;}
+ };
 }
 function setupHierarchy(){
  const root=el("clients").closest(".panel"),installer=el("installerPanel"),archive=el("newArchive").closest("section"),editor=el("editor");
