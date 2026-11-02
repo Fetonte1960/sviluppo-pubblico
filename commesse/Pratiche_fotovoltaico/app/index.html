@@ -768,8 +768,16 @@ el("dicoPrint").onclick=async()=>{
   const response=await fetch(url,{headers:{"Authorization":"Bearer "+token},cache:"no-store"});
   if(!response.ok)throw Error("Servizio Di.Co. non disponibile (HTTP "+response.status+").");
   const html=await response.text();
-  if(!html.includes('class="page"')||!html.includes("Avvertenze per la compilazione"))
-    throw Error("Documento Di.Co. ricevuto incompleto.");
+  // La Di.Co. attuale e' una sola pagina A4: non richiedere il foglio note rimosso.
+  const parsed=new DOMParser().parseFromString(html,"text/html");
+  const sheets=parsed.querySelectorAll("article.page");
+  const printedText=sheets.length===1?(sheets[0].textContent||""):"";
+  if(sheets.length!==1 || !sheets[0].classList.contains("dico-page")
+     ||!printedText.includes("DICHIARAZIONE DI CONFORMITA")
+     ||!printedText.includes("DICHIARA")
+     ||!printedText.includes("Allegati obbligatori")
+     ||!printedText.includes("Il dichiarante"))
+    throw Error("Documento Di.Co. ricevuto incompleto: struttura della pagina non valida.");
   if(caseId!==el("cases").value||procedureId!==el("procedures").value)
     throw Error("Selezione modificata durante la generazione: ripeti la stampa.");
   if(viewer.closed)throw Error("Finestra di stampa chiusa.");
