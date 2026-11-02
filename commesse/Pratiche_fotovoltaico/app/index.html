@@ -10,7 +10,15 @@
 .dico-check-row{display:grid;grid-template-columns:minmax(170px,1.35fr) minmax(170px,1fr) minmax(150px,1.5fr);gap:9px;align-items:center;border-top:1px solid #edf1f5;padding:7px 0;font-size:13px}
 .dico-check-row select,.dico-check-row input{font-size:13px;width:100%;min-width:0;box-sizing:border-box;padding:8px}
 @media(max-width:780px){.dico-check-row{grid-template-columns:1fr}.dico-check-row>span{font-weight:600}}
-</style></head><body><header><h2>Pratiche fotovoltaiche — Gestione pratiche <small style="font-size:12px;opacity:.85">V3.7 · Dati Di.Co. codificati per livello</small></h2></header><main><section class="panel" id="login"><h3>Accesso riservato</h3><form id="auth"><input type="password" id="pw" required placeholder="Segreto Render" autocomplete="current-password"><button>Accedi</button></form><p class="msg" id="authmsg"></p></section>
+
+.canonical-panel{border:1px solid #d6e2ec;border-radius:9px;margin:14px 0;background:#fbfcff}
+.canonical-panel>summary{cursor:pointer;padding:12px;font-weight:700;background:#f2f6fb}
+.canonical-body{padding:12px}.canonical-controls{display:flex;gap:9px;margin:10px 0;flex-wrap:wrap}
+.canonical-controls select{min-width:220px;max-width:100%}.canonical-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:11px}
+.canonical-field{font-size:13px;display:flex;flex-direction:column;gap:6px;font-weight:600}
+.canonical-field input,.canonical-field select{width:100%;max-width:100%;box-sizing:border-box}
+.canonical-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0}
+</style></head><body><header><h2>Pratiche fotovoltaiche — Gestione pratiche <small style="font-size:12px;opacity:.85">V4.0 · Archivi canonici — Issue #6</small></h2></header><main><section class="panel" id="login"><h3>Accesso riservato</h3><form id="auth"><input type="password" id="pw" required placeholder="Segreto Render" autocomplete="current-password"><button>Accedi</button></form><p class="msg" id="authmsg"></p></section>
 <section id="workspace" hidden><section class="panel admin-only" id="installerPanel"><details><summary><strong>Anagrafica e profili portale</strong></summary><p>Registro condiviso tra pratiche. Non inserire password, OTP o credenziali.</p><label>Installatore <select id="installerSelect"></select></label> <button type="button" id="installerReload">Aggiorna installatori</button> <button type="button" id="installerNew">Nuovo installatore</button><form id="installerForm" style="margin-top:12px"><div id="installerFields"></div><button type="submit">Salva anagrafica</button> <span id="installerStatus" role="status"></span></form><hr><h4>Profili portale</h4><label>Profilo <select id="portalProfileSelect"></select></label> <button type="button" id="portalNew">Nuovo profilo</button><form id="portalProfileForm"><div id="portalFields"></div><button type="submit">Salva profilo portale</button> <span id="portalStatus" role="status"></span></form><hr><h4>Collegamento alla pratica selezionata</h4><label>Ruolo <select id="installerAssignmentRole"><option value="INSTALLATORE">Installatore</option><option value="FIRMATARIO_DICO">Firmatario Di.Co.</option><option value="FIRMATARIO_AUTOTEST">Firmatario asseverazione post-autotest</option></select></label> <button type="button" id="installerAssign">Associa alla pratica</button><p id="installerAssigned"></p></details></section><div style="display:flex;gap:8px;align-items:center;padding:5px 0"><button id="copyHelp" type="button" style="background:#276b3c;font-weight:700">📋 Copia help per AI</button><span id="helpStatus" role="status"></span> <button id="portalMode" type="button" aria-pressed="false">Compilazione portale</button><span id="modeStatus" role="status"></span></div><div class="panel"><h3>Archivio pratiche fotovoltaiche</h3><div style="margin:10px 0"><button id="refreshDb" type="button">Aggiorna da DB</button> <span id="refreshStatus" role="status"></span></div><label>Cliente <select id="clients"></select></label> <button class="admin-only" id="newclient">Nuovo cliente</button> <button class="admin-only" type="button" id="delclient" style="background:#9e3131">Elimina</button> <label>Pratica fotovoltaica <select id="cases"></select></label> <label class="admin-only">Installatore della pratica <select id="caseInstaller"><option value="">Non assegnato</option></select></label> <button type="button" class="admin-only" id="saveCaseInstaller">Salva installatore</button> <span id="caseInstallerStatus"></span> <button class="admin-only" id="newcase">Nuova pratica fotovoltaica</button> <button class="admin-only" type="button" id="delcase" style="background:#9e3131">Elimina</button> <label>Procedimento <select id="procedures"></select></label> <button class="admin-only" id="newprocedure">Nuovo procedimento</button> <button class="admin-only" type="button" id="delprocedure" style="background:#9e3131">Elimina</button></div><section class="panel admin-only"><h3>Archivio testuale / OCR</h3><p style="color:#52687c">Testi OCR, targhe e note consultabili ai tre livelli. Puoi aggiungere un documento manualmente.</p><form id="newArchive" class="fieldset" style="padding:12px"><h4>Nuovo documento testuale</h4><label>Livello <select id="archiveScope"><option value="client">Cliente</option><option value="case">Pratica</option><option value="procedure">Procedimento</option></select></label> <label>Tipo <select id="archiveKind"><option>OCR</option><option>TRASCRIZIONE</option><option>TARGA</option><option>NOTA</option><option>ALTRO</option></select></label><p><label>Titolo <input id="archiveTitle" required maxlength="250" style="width:100%;box-sizing:border-box"></label></p><p><label>Fonte / provenienza <input id="archiveSource" maxlength="1000" style="width:100%;box-sizing:border-box"></label></p><p><label>Testo del documento <textarea id="archiveBody" required maxlength="200000" rows="9" style="display:block;width:100%;box-sizing:border-box;font:inherit"></textarea></label></p><button id="archiveSubmit" type="submit">Salva nuovo documento</button> <span id="archiveMessage" role="status"></span></form><div id="archives" role="region" aria-live="polite">Seleziona un cliente per visualizzare gli archivi.</div></section><section id="editor" class="panel" hidden><h3 id="title">Procedimento</h3><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><button id="saveAll" type="button" disabled>Salva modifiche</button><button id="dicoPrint" type="button" title="Genera la Di.Co. da cliente, pratica, procedimento e installatore">Stampa Di.Co.</button><span id="dicoStatus" role="status" style="font-size:13px;color:#52687c"></span><span id="saveStatus" role="status">Nessuna modifica</span></div><details class="fieldset admin-only" id="macroPanel"><summary>Importa macro campi PV-MACRO-1</summary><div style="padding:12px"><p>Incolla il JSON prodotto da GPT. L'anteprima non salva nulla: «Applica ai campi» prepara le modifiche, poi premi «Salva modifiche».</p><button type="button" id="copyCatalog">Copia catalogo campi del procedimento</button><p><textarea id="macroText" rows="8" spellcheck="false" placeholder='{"formato":"PV-MACRO-1","procedimento_id":"...","operazioni":[{"campo_id":"F2-001","valore":"..."}]}' style="display:block;box-sizing:border-box;width:100%;font:13px monospace"></textarea></p><button type="button" id="previewMacro">Verifica e mostra anteprima</button> <button type="button" id="applyMacro" disabled>Applica ai campi</button><p id="macroMessage" role="status"></p><div id="macroPreview"></div></div></details><nav id="tabs" class="nav" aria-label="Schede procedimento"></nav><input id="search" type="search" placeholder="Cerca campo, sezione o ID"><div id="fields"></div></section></section><dialog id="createDialog" style="border:1px solid #b8c8da;border-radius:10px;width:min(600px,94vw);box-sizing:border-box"><form id="createForm"><h3 id="createHeading">Nuovo</h3><label>Modalità <select id="createMode"><option value="empty">Crea vuoto</option><option value="clone">Clona da esistente</option></select></label><p><label id="createNameLabel">Nome / titolo <input id="createName" required maxlength="250" style="width:100%;box-sizing:border-box"></label></p><div id="cloneSettings" hidden><p><label>Origine <select id="cloneSource" style="max-width:100%"></select></label></p><p><label><input type="checkbox" id="cloneChildren" checked> Includi elementi collegati (pratiche o procedimenti)</label></p><p><label><input type="checkbox" id="cloneValues" checked> Copia valori dei campi dei procedimenti</label></p><p><label><input type="checkbox" id="cloneArchives" checked> Copia documenti testuali/OCR ai livelli inclusi</label></p><p style="font-size:13px;color:#52687c">I numeri ufficiali delle pratiche non vengono copiati. Tutti i dati clonati sono da verificare prima dell'uso.</p></div><p id="createFeedback" role="status"></p><div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" id="createCancel">Annulla</button><button type="submit" id="createSubmit">Crea</button></div></form></dialog></main><script>
 const API="https://pratiche-fotovoltaico-demo-api.onrender.com";let token="",fields=[],tab="Autorizza",dirty={};const el=id=>document.getElementById(id);
 const escapeHtml=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -204,6 +212,167 @@ async function saveDicoRegistration(e){
  }catch(err){el("dicoRegistrationMessage").textContent="Errore: "+err.message;}
  finally{button.disabled=false;}
 }
+
+/* Issue #6: editor canonico isolato dal mirror; nessuna chiamata a pv_procedure_values. */
+const canonicalSections=[
+ ["installer","installer",()=>el("installerSelect").value],
+ ["signatories","installer",()=>"all"],
+ ["client","client",()=>el("clients").value],
+ ["case","case",()=>el("cases").value],
+ ["parties","case",()=>el("cases").value],
+ ["equipment","case",()=>el("cases").value],
+ ["equipment-links","case",()=>el("cases").value],
+ ["equipment-fields","case",()=>canonicalSelectedId("equipment")],
+ ["test-reports","case",()=>el("cases").value],
+ ["test-results","case",()=>canonicalSelectedId("test-reports")],
+ ["case-signatories","case",()=>el("cases").value],
+ ["documents","case",()=>el("cases").value],
+ ["declarations","case",()=>canonicalSelectedId("documents")],
+ ["procedure","procedure",()=>el("procedures").value]
+];
+const canonicalCache=new Map();
+let canonicalSchema={},canonicalDirty=false;
+function canonicalSelectedId(section){const input=document.getElementById("canonical-"+section+"-record");return input?.value||"";}
+function canonicalText(node,value){node.textContent=String(value??"");}
+function canonicalOwner(section){return canonicalSections.find(x=>x[0]===section)?.[2]?.()||"";}
+function canonicalFieldControl(section,field){
+ const label=document.createElement("label");label.className="canonical-field";label.textContent=field.label;
+ let node;
+ if(field.choices?.length){
+  node=document.createElement("select");
+  if(field.type==="array"){node.multiple=true;node.size=Math.min(7,field.choices.length);node.title="Ctrl+clic per scegliere più valori";}
+  else node.add(new Option("— Non specificato —",""));
+  for(const choice of field.choices)node.add(new Option(choice,choice));
+ }else{
+  node=document.createElement("input");
+  node.type=field.type==="date"?"date":field.type==="timestamp"?"datetime-local":
+     ["decimal","smallint","integer"].includes(field.type)?"number":"text";
+  if(node.type==="number")node.step="any";
+  if(node.type==="text")node.maxLength=3000;
+ }
+ node.dataset.field=field.key;
+ node.addEventListener("input",()=>{canonicalDirty=true;canonicalText(el("canonical-"+section+"-status"),"Modifiche da salvare");});
+ node.addEventListener("change",()=>{canonicalDirty=true;canonicalText(el("canonical-"+section+"-status"),"Modifiche da salvare");});
+ label.append(node);return label;
+}
+function canonicalBuildSection(section,level){
+ const schema=canonicalSchema[section];if(!schema)return;
+ const details=document.createElement("details");details.className="canonical-panel admin-only";details.id="canonical-"+section;
+ const sum=document.createElement("summary");sum.textContent=schema.title;details.append(sum);
+ const body=document.createElement("div");body.className="canonical-body";
+ const caption=document.createElement("p");caption.className="subtle";
+ caption.textContent="Dati strutturati con fonte, salvati soltanto negli archivi canonici. Il mirror non viene modificato.";
+ body.append(caption);
+ const controls=document.createElement("div");controls.className="canonical-controls";
+ const selector=document.createElement("select");selector.id="canonical-"+section+"-record";
+ selector.setAttribute("aria-label","Selezione record "+schema.title);
+ const isParent=schema.scope==="parent";
+ if(!isParent){
+  selector.add(new Option("Nuovo elemento",""));
+  const button=document.createElement("button");button.type="button";button.textContent="Nuovo elemento";
+  button.onclick=()=>{selector.value="";canonicalShow(section);};
+  controls.append(button);
+ }
+ controls.prepend(selector);body.append(controls);
+ const form=document.createElement("form");form.id="canonical-"+section+"-form";
+ const fields=document.createElement("div");fields.className="canonical-fields";
+ if(!isParent && ["equipment-fields","case-signatories","declarations"].includes(section)){
+  const ident=document.createElement("label");ident.className="canonical-field";
+  ident.textContent=schema.key+" (codice identificativo)";
+  const input=document.createElement("input");input.dataset.identity=schema.key;input.maxLength=200;ident.append(input);fields.append(ident);
+ }
+ for(const field of schema.fields)fields.append(canonicalFieldControl(section,field));
+ form.append(fields);
+ const actions=document.createElement("div");actions.className="canonical-actions";
+ const save=document.createElement("button");save.type="submit";save.textContent="Salva dati canonici";
+ const status=document.createElement("span");status.id="canonical-"+section+"-status";status.setAttribute("role","status");
+ actions.append(save,status);form.append(actions);body.append(form);
+ details.append(body);el("level-"+level).append(details);
+ details.addEventListener("toggle",()=>{if(details.open)canonicalLoad(section).catch(e=>canonicalText(status,e.message));});
+ selector.addEventListener("change",()=>canonicalShow(section));
+ form.addEventListener("submit",async e=>{
+  e.preventDefault();
+  const owner=canonicalOwner(section),id=selector.value;if(!owner){canonicalText(status,"Seleziona il contesto superiore.");return;}
+  const payload={};
+  for(const field of schema.fields){
+   const node=form.querySelector('[data-field="'+field.key+'"]');
+   if(!node)continue;
+   if(field.type==="array")payload[field.key]=[...node.selectedOptions].map(o=>o.value);
+   else payload[field.key]=node.value.trim()||null;
+  }
+  const identity=form.querySelector("[data-identity]");
+  if(identity&&!id){if(!identity.value.trim()){canonicalText(status,"Indica il codice del nuovo record.");return;}payload[schema.key]=identity.value.trim();}
+  const update=isParent||!!id;
+  const recordId=isParent?owner:id;
+  canonicalText(status,"Salvataggio...");
+  save.disabled=true;
+  try{
+   const result=await api("/api/v1/canonical/"+encodeURIComponent(section)+"/"+encodeURIComponent(owner)+
+     (update?"/"+encodeURIComponent(recordId):""),{
+       method:update?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+   canonicalDirty=false;
+   await canonicalLoad(section,true,result.id||recordId);
+   canonicalText(status,"Dati canonici salvati e riletti.");
+  }catch(err){canonicalText(status,"Errore: "+err.message);}
+  finally{save.disabled=false;}
+ });
+ canonicalCache.set(section,{details,selector,form,rows:[],owner:""});
+}
+function canonicalShow(section){
+ const state=canonicalCache.get(section);if(!state)return;
+ const meta=canonicalSchema[section],record=state.rows.find(r=>String(r[meta.key])===state.selector.value);
+ for(const field of meta.fields){
+  const node=state.form.querySelector('[data-field="'+field.key+'"]');if(!node)continue;
+  const value=record?.[field.key];
+  if(field.type==="array")for(const opt of node.options)opt.selected=Array.isArray(value)&&value.includes(opt.value);
+  else if(field.type==="date")node.value=typeof value==="string"?value.slice(0,10):"";
+  else if(field.type==="timestamp")node.value=typeof value==="string"?value.slice(0,16):"";
+  else node.value=value??"";
+ }
+ const identity=state.form.querySelector("[data-identity]");
+ if(identity){identity.value=record?.[meta.key]||"";identity.disabled=!!record;}
+ canonicalDirty=false;
+}
+async function canonicalLoad(section,force=false,preferredId=null){
+ const state=canonicalCache.get(section);if(!state)return;
+ const owner=canonicalOwner(section);if(!owner){
+  state.rows=[];state.owner="";state.selector.replaceChildren();
+  canonicalText(el("canonical-"+section+"-status"),"Seleziona il contesto superiore.");
+  canonicalShow(section);return;
+ }
+ if(!force&&state.owner===owner&&state.rows.length)return;
+ const rows=await api("/api/v1/canonical/"+encodeURIComponent(section)+"/"+encodeURIComponent(owner));
+ if(owner!==canonicalOwner(section))return;
+ const previous=preferredId||state.selector.value;
+ state.rows=rows;state.owner=owner;state.selector.replaceChildren();
+ if(canonicalSchema[section].scope!=="parent")state.selector.add(new Option("Nuovo elemento",""));
+ for(const row of rows){
+  const id=String(row[canonicalSchema[section].key]||"");
+  const title=canonicalSchema[section].scope==="parent"?"Dati del record corrente":
+    (row.full_name||row.model||row.document_type||row.equipment_type||row.party_role||row.test_code||row.test_type||row.declaration_code||id);
+  state.selector.add(new Option(String(title)+" · "+id,id));
+ }
+ state.selector.value=rows.some(x=>String(x[canonicalSchema[section].key])===previous)?previous:
+    canonicalSchema[section].scope==="parent"?(rows.length?String(rows[0][canonicalSchema[section].key]):""):"";
+ canonicalShow(section);
+}
+function setupCanonicalUI(){
+ const ownerLevel={installer:"installer",client:"client",case:"case",procedure:"procedure"};
+ for(const [section,level] of canonicalSections)canonicalBuildSection(section,level);
+ const notice=document.createElement("p");notice.className="subtle";
+ notice.textContent="Compila mirror: NON ATTIVO. I 275 valori esistenti del mirror non vengono mai alterati da questi moduli.";
+ el("level-case").append(notice);
+ for(const id of ["clients","cases","procedures","installerSelect"]){
+  el(id).addEventListener("change",()=>{
+   for(const [sec,level] of canonicalSections)if(canonicalCache.get(sec)?.details.open)
+     canonicalLoad(sec,true).catch(e=>canonicalText(el("canonical-"+sec+"-status"),e.message));
+  });
+ }
+}
+async function initializeCanonical(){
+ const schema=await api("/api/v1/canonical/schema");canonicalSchema=Object.fromEntries(schema.map(x=>[x.id,x]));
+ setupCanonicalUI();
+}
 function setupHierarchy(){
  const root=el("clients").closest(".panel"),installer=el("installerPanel"),archive=el("newArchive").closest("section"),editor=el("editor");
  const head=root.querySelector("h3"),refresh=el("refreshDb").parentElement;
@@ -280,6 +449,7 @@ function syncLevelTabs(){
  showLevel(activeLevel);
 }
 setupHierarchy();
+/* Canonical panels initialize after successful authentication. */
 function canLeave(){return (!Object.keys(dirty).length&&!clientProfileDirty&&!siteProfileDirty&&!dicoChecksDirty&&!dicoInterventionDirty&&!dicoRegDirty)||confirm("Ci sono modifiche non salvate. Abbandonarle?");}
 function status(){const n=Object.keys(dirty).length;el("saveAll").disabled=!n;el("saveStatus").textContent=n?n+" modifiche da salvare":"Nessuna modifica da salvare";}
 let contextEpoch=0,previousSelection={client:"",caseId:"",procedure:""};
