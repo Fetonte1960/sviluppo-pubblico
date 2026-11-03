@@ -19,7 +19,14 @@
 .canonical-field input,.canonical-field select{width:100%;max-width:100%;box-sizing:border-box}
 .canonical-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0}
 .canonical-mapping-results{overflow:auto;max-height:400px}.canonical-mapping-table{border-collapse:collapse;width:100%;font-size:12px}.canonical-mapping-table td,.canonical-mapping-table th{border:1px solid #d6e2ec;padding:6px;text-align:left;vertical-align:top}.canonical-mapping-table th{background:#e8f1f8;position:sticky;top:0}
-</style></head><body><header><h2>Pratiche fotovoltaiche — Gestione pratiche <small style="font-size:12px;opacity:.85">V4.1 · Di.Co. canonica — Issue #7</small></h2></header><main><section class="panel" id="login"><h3>Accesso riservato</h3><form id="auth"><input type="password" id="pw" required placeholder="Segreto Render" autocomplete="current-password"><button>Accedi</button></form><p class="msg" id="authmsg"></p></section>
+
+.plant-body{padding:12px}.plant-group{margin:14px 0;border:1px solid #dce5ee;border-radius:8px;padding:12px}
+.plant-group h5{margin:0 0 9px;font-size:15px}.plant-row{display:grid;grid-template-columns:minmax(150px,2fr) 90px minmax(110px,1fr) minmax(100px,1fr) auto;gap:8px;align-items:end;padding:10px 0;border-top:1px solid #e5ebf2}
+.plant-row label,.plant-create label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:600}.plant-row input,.plant-row select,.plant-create input,.plant-create select{box-sizing:border-box;width:100%;padding:8px;font-size:13px;min-width:0}
+.plant-row button,.plant-create button{font-size:13px;padding:8px}.plant-row button[data-remove]{background:#a34040}.plant-note{font-size:12px;color:#52687c;margin:6px 0}
+.plant-create{padding:12px;background:#f6f9fc;border:1px solid #d6e2ec;border-radius:8px;margin:15px 0}.plant-create-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:9px;align-items:end}
+@media(max-width:780px){.plant-row{grid-template-columns:1fr 1fr}.plant-row label:first-child{grid-column:1/-1}.plant-row .plant-actions{grid-column:1/-1}}
+</style></head><body><header><h2>Pratiche fotovoltaiche — Gestione pratiche <small style="font-size:12px;opacity:.85">V4.2 · Scheda impianto — cataloghi generali</small></h2></header><main><section class="panel" id="login"><h3>Accesso riservato</h3><form id="auth"><input type="password" id="pw" required placeholder="Segreto Render" autocomplete="current-password"><button>Accedi</button></form><p class="msg" id="authmsg"></p></section>
 <section id="workspace" hidden><section class="panel admin-only" id="installerPanel"><details><summary><strong>Anagrafica e profili portale</strong></summary><p>Registro condiviso tra pratiche. Non inserire password, OTP o credenziali.</p><label>Installatore <select id="installerSelect"></select></label> <button type="button" id="installerReload">Aggiorna installatori</button> <button type="button" id="installerNew">Nuovo installatore</button><form id="installerForm" style="margin-top:12px"><div id="installerFields"></div><button type="submit">Salva anagrafica</button> <span id="installerStatus" role="status"></span></form><hr><h4>Profili portale</h4><label>Profilo <select id="portalProfileSelect"></select></label> <button type="button" id="portalNew">Nuovo profilo</button><form id="portalProfileForm"><div id="portalFields"></div><button type="submit">Salva profilo portale</button> <span id="portalStatus" role="status"></span></form><hr><h4>Collegamento alla pratica selezionata</h4><label>Ruolo <select id="installerAssignmentRole"><option value="INSTALLATORE">Installatore</option><option value="FIRMATARIO_DICO">Firmatario Di.Co.</option><option value="FIRMATARIO_AUTOTEST">Firmatario asseverazione post-autotest</option></select></label> <button type="button" id="installerAssign">Associa alla pratica</button><p id="installerAssigned"></p></details></section><div style="display:flex;gap:8px;align-items:center;padding:5px 0"><button id="copyHelp" type="button" style="background:#276b3c;font-weight:700">📋 Copia help per AI</button><span id="helpStatus" role="status"></span> <button id="portalMode" type="button" aria-pressed="false">Compilazione portale</button><span id="modeStatus" role="status"></span></div><div class="panel"><h3>Archivio pratiche fotovoltaiche</h3><div style="margin:10px 0"><button id="refreshDb" type="button">Aggiorna da DB</button> <span id="refreshStatus" role="status"></span></div><label>Cliente <select id="clients"></select></label> <button class="admin-only" id="newclient">Nuovo cliente</button> <button class="admin-only" type="button" id="delclient" style="background:#9e3131">Elimina</button> <label>Pratica fotovoltaica <select id="cases"></select></label> <label class="admin-only">Installatore della pratica <select id="caseInstaller"><option value="">Non assegnato</option></select></label> <button type="button" class="admin-only" id="saveCaseInstaller">Salva installatore</button> <span id="caseInstallerStatus"></span> <button class="admin-only" id="newcase">Nuova pratica fotovoltaica</button> <button class="admin-only" type="button" id="delcase" style="background:#9e3131">Elimina</button> <label>Procedimento <select id="procedures"></select></label> <button class="admin-only" id="newprocedure">Nuovo procedimento</button> <button class="admin-only" type="button" id="delprocedure" style="background:#9e3131">Elimina</button></div><section class="panel admin-only"><h3>Archivio testuale / OCR</h3><p style="color:#52687c">Testi OCR, targhe e note consultabili ai tre livelli. Puoi aggiungere un documento manualmente.</p><form id="newArchive" class="fieldset" style="padding:12px"><h4>Nuovo documento testuale</h4><label>Livello <select id="archiveScope"><option value="client">Cliente</option><option value="case">Pratica</option><option value="procedure">Procedimento</option></select></label> <label>Tipo <select id="archiveKind"><option>OCR</option><option>TRASCRIZIONE</option><option>TARGA</option><option>NOTA</option><option>ALTRO</option></select></label><p><label>Titolo <input id="archiveTitle" required maxlength="250" style="width:100%;box-sizing:border-box"></label></p><p><label>Fonte / provenienza <input id="archiveSource" maxlength="1000" style="width:100%;box-sizing:border-box"></label></p><p><label>Testo del documento <textarea id="archiveBody" required maxlength="200000" rows="9" style="display:block;width:100%;box-sizing:border-box;font:inherit"></textarea></label></p><button id="archiveSubmit" type="submit">Salva nuovo documento</button> <span id="archiveMessage" role="status"></span></form><div id="archives" role="region" aria-live="polite">Seleziona un cliente per visualizzare gli archivi.</div></section><section id="editor" class="panel" hidden><h3 id="title">Procedimento</h3><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><button id="saveAll" type="button" disabled>Salva modifiche</button><button id="dicoPrint" type="button" title="Genera la Di.Co. dai soli dati strutturati canonici">Stampa Di.Co.</button><label>Committente (titolare pratica, sola lettura): <output id="dicoCustomerName"></output></label><span id="dicoStatus" role="status" style="font-size:13px;color:#52687c"></span><span id="saveStatus" role="status">Nessuna modifica</span></div><details class="fieldset admin-only" id="macroPanel"><summary>Importa macro campi PV-MACRO-1</summary><div style="padding:12px"><p>Incolla il JSON prodotto da GPT. L'anteprima non salva nulla: «Applica ai campi» prepara le modifiche, poi premi «Salva modifiche».</p><button type="button" id="copyCatalog">Copia catalogo campi del procedimento</button><p><textarea id="macroText" rows="8" spellcheck="false" placeholder='{"formato":"PV-MACRO-1","procedimento_id":"...","operazioni":[{"campo_id":"F2-001","valore":"..."}]}' style="display:block;box-sizing:border-box;width:100%;font:13px monospace"></textarea></p><button type="button" id="previewMacro">Verifica e mostra anteprima</button> <button type="button" id="applyMacro" disabled>Applica ai campi</button><p id="macroMessage" role="status"></p><div id="macroPreview"></div></div></details><nav id="tabs" class="nav" aria-label="Schede procedimento"></nav><input id="search" type="search" placeholder="Cerca campo, sezione o ID"><div id="fields"></div></section></section><dialog id="createDialog" style="border:1px solid #b8c8da;border-radius:10px;width:min(600px,94vw);box-sizing:border-box"><form id="createForm"><h3 id="createHeading">Nuovo</h3><label>Modalità <select id="createMode"><option value="empty">Crea vuoto</option><option value="clone">Clona da esistente</option></select></label><p><label id="createNameLabel">Nome / titolo <input id="createName" required maxlength="250" style="width:100%;box-sizing:border-box"></label></p><div id="cloneSettings" hidden><p><label>Origine <select id="cloneSource" style="max-width:100%"></select></label></p><p><label><input type="checkbox" id="cloneChildren" checked> Includi elementi collegati (pratiche o procedimenti)</label></p><p><label><input type="checkbox" id="cloneValues" checked> Copia valori dei campi dei procedimenti</label></p><p><label><input type="checkbox" id="cloneArchives" checked> Copia documenti testuali/OCR ai livelli inclusi</label></p><p style="font-size:13px;color:#52687c">I numeri ufficiali delle pratiche non vengono copiati. Tutti i dati clonati sono da verificare prima dell'uso.</p></div><p id="createFeedback" role="status"></p><div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" id="createCancel">Annulla</button><button type="submit" id="createSubmit">Crea</button></div></form></dialog></main><script>
 const API="https://pratiche-fotovoltaico-demo-api.onrender.com";let token="",fields=[],tab="Autorizza",dirty={};const el=id=>document.getElementById(id);
 const escapeHtml=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -516,13 +523,161 @@ function syncLevelTabs(){
  showLevel(activeLevel);
 }
 setupHierarchy();
+
+/* Scheda Impianto (livello Pratica): seleziona modelli condivisi e salva solo
+   quantità, matricola e firmware effettivi delle apparecchiature installate.
+   Non usa i valori del mirror e non modifica i dati di targa del catalogo. */
+const plantKinds=[
+ {type:"PV_MODULE",title:"Pannelli fotovoltaici",unit:"Wp",rating:"Potenza nominale del pannello (Wp)"},
+ {type:"INVERTER",title:"Inverter",unit:"kW",rating:"Potenza nominale AC (kW)"},
+ {type:"BATTERY",title:"Batterie",unit:"kWh",rating:"Capacità nominale della batteria (kWh)"}
+];
+let plantCatalogs={},plantItems=[],plantCaseId="",plantRequest=0;
+function setupPlantSheet(){
+ const panel=document.createElement("details");
+ panel.id="plantSheet";panel.className="canonical-panel admin-only";
+ panel.innerHTML='<summary>Scheda impianto — pannelli, inverter e batterie</summary>'+
+ '<div class="plant-body"><p class="plant-note">Seleziona i modelli dal catalogo generale e indica quante unità sono installate. '+
+ 'Le caratteristiche di targa non sono duplicate nella pratica; dati non censiti o non verificati restano da confermare.</p>'+
+ '<div id="plantSheetContent"></div><p id="plantSheetStatus" role="status"></p>'+
+ '<form id="plantCatalogCreate" class="plant-create"><h5>Nuovo modello nell’archivio generale</h5>'+
+ '<p class="plant-note">Usa questo comando solo se il modello non è già in catalogo. Potrai completarne la scheda tecnica successivamente.</p>'+
+ '<div class="plant-create-fields"><label>Categoria<select name="type" required></select></label>'+
+ '<label>Marca<input name="manufacturer" required maxlength="200"></label>'+
+ '<label>Modello<input name="model" required maxlength="200"></label>'+
+ '<label id="plantRatingLabel">Valore nominale<input name="nominalRating" type="number" step="any" min="0.000001"></label>'+
+ '<button type="submit">Registra modello generale</button></div></form></div>';
+ el("level-case").insertBefore(panel,el("archiveSlot-case"));
+ const categories=panel.querySelector('select[name="type"]');
+ for(const kind of plantKinds)categories.add(new Option(kind.title,kind.type));
+ const ratingLabel=panel.querySelector("#plantRatingLabel");
+ categories.onchange=()=>{ratingLabel.firstChild.textContent=plantKinds.find(x=>x.type===categories.value).rating;};
+ categories.onchange();
+ panel.addEventListener("toggle",()=>{if(panel.open)plantLoad().catch(e=>el("plantSheetStatus").textContent=e.message);});
+ el("plantSheetContent").addEventListener("submit",plantSave);
+ el("plantSheetContent").addEventListener("click",plantRemove);
+ el("plantCatalogCreate").addEventListener("submit",plantAddModel);
+}
+const plantHtml=s=>escapeHtml(s??"");
+function plantOptions(kind,selected){
+ const options=plantCatalogs[kind.type]||[];
+ return '<option value="">Seleziona un modello dal catalogo</option>'+
+  options.map(x=>'<option value="'+plantHtml(x.id)+'"'+(x.id===selected?' selected':'')+'>'+
+   plantHtml(x.manufacturer+" "+x.model+(x.variant?" "+x.variant:"")+
+    (x.nominalRating==null?"":" · "+x.nominalRating+" "+x.unit))+'</option>').join("");
+}
+function plantRow(item,kind){
+ const isExisting=!!item,selected=item?.modelId||"";
+ const desc=isExisting&&item.modelId==null
+  ?'<p class="plant-note">Storico senza collegamento al catalogo: '+
+   plantHtml([item.manufacturer,item.model].filter(Boolean).join(" ")||"modello non indicato")+
+   '. Il salvataggio aggiorna solo quantità, modello collegato, matricola e firmware.</p>'
+  :'';
+ return '<form class="plant-row" data-kind="'+kind.type+'" data-id="'+plantHtml(item?.equipmentId||"")+'">'+
+  '<label>Modello<select name="modelId" required>'+plantOptions(kind,selected)+'</select></label>'+
+  '<label>Quantità<input type="number" name="quantity" min="1" max="100000" step="1" required value="'+
+   plantHtml(item?.quantity||1)+'"></label>'+
+  '<label>Matricola (opzionale)<input name="serialNumber" maxlength="200" value="'+plantHtml(item?.serialNumber||"")+'"></label>'+
+  '<label>Firmware installato (opzionale)<input name="firmwareVersion" maxlength="150" value="'+plantHtml(item?.firmwareVersion||"")+'"></label>'+
+  '<div class="plant-actions"><button type="submit">'+(isExisting?"Aggiorna":"Aggiungi")+'</button>'+
+  (isExisting?' <button type="button" data-remove="'+plantHtml(item.equipmentId)+'">Elimina</button>':"")+'</div>'+
+  (desc?'<div style="grid-column:1/-1">'+desc+'</div>':"")+'</form>';
+}
+function plantRender(){
+ const parent=el("plantSheetContent");parent.replaceChildren();
+ for(const kind of plantKinds){
+  const rows=plantItems.filter(x=>x.equipmentType===kind.type);
+  const group=document.createElement("section");group.className="plant-group";
+  const total=rows.reduce((sum,x)=>sum+(x.nominalRating==null||!x.modelId?0:Number(x.nominalRating)*(x.quantity||0)),0);
+  const incomplete=rows.some(x=>x.nominalRating==null||!x.modelId||!x.quantity);
+  const subtitle=rows.length?rows.reduce((s,x)=>s+(x.quantity||0),0)+" unità"+(total?" · "+total.toLocaleString("it-IT",{maximumFractionDigits:3})+" "+kind.unit+(incomplete?" (parziale)":""):""):"Nessun componente registrato";
+  const missing=!(plantCatalogs[kind.type]||[]).length;
+  group.innerHTML='<h5>'+plantHtml(kind.title)+'</h5><p class="plant-note">'+plantHtml(subtitle)+
+   (missing?" · Catalogo vuoto: registra prima un modello nell’archivio generale.":"")+
+   '</p>'+rows.map(x=>plantRow(x,kind)).join("")+
+   '<h5>Aggiungi '+plantHtml(kind.title.toLowerCase())+'</h5>'+plantRow(null,kind);
+  parent.append(group);
+ }
+}
+async function plantLoad(){
+ const caseId=el("cases").value,seq=++plantRequest;
+ const status=el("plantSheetStatus");
+ if(!caseId){plantItems=[];plantRender();status.textContent="Seleziona una pratica.";return;}
+ status.textContent="Caricamento scheda impianto…";
+ const [catalogs,items]=await Promise.all([
+  api("/api/v1/plant/catalogs"),
+  api("/api/v1/plant/cases/"+encodeURIComponent(caseId))
+ ]);
+ if(seq!==plantRequest||caseId!==el("cases").value)return;
+ plantCatalogs=catalogs;plantItems=items;plantCaseId=caseId;plantRender();
+ status.textContent="Scheda letta da Neon. Modelli generali condivisi; nessuna modifica automatica ai dati storici.";
+}
+async function plantSave(e){
+ if(!e.target.matches("form.plant-row"))return;
+ e.preventDefault();
+ const form=e.target,caseId=el("cases").value;
+ if(!caseId)return;
+ const input={
+  equipmentType:form.dataset.kind,
+  modelId:form.elements.modelId.value,
+  quantity:Number(form.elements.quantity.value),
+  serialNumber:form.elements.serialNumber.value.trim()||null,
+  firmwareVersion:form.elements.firmwareVersion.value.trim()||null
+ };
+ if(!input.modelId||!Number.isInteger(input.quantity)||input.quantity<1)return;
+ const id=form.dataset.id,button=form.querySelector('button[type="submit"]');
+ button.disabled=true;el("plantSheetStatus").textContent="Salvataggio in corso…";
+ try{
+  await api("/api/v1/plant/cases/"+encodeURIComponent(caseId)+(id?"/"+encodeURIComponent(id):""),{
+   method:id?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(input)
+  });
+  if(caseId===el("cases").value){await plantLoad();el("plantSheetStatus").textContent="Scheda impianto salvata in Neon.";}
+ }catch(err){el("plantSheetStatus").textContent="Errore salvataggio: "+err.message;}
+ finally{button.disabled=false;}
+}
+async function plantRemove(e){
+ const button=e.target.closest("button[data-remove]");
+ if(!button)return;
+ const form=button.closest("form.plant-row"),id=button.dataset.remove,caseId=el("cases").value;
+ if(!confirm("Eliminare questa apparecchiatura dalla pratica? Eventuali prove collegate impediranno l'eliminazione."))return;
+ button.disabled=true;el("plantSheetStatus").textContent="Eliminazione…";
+ try{
+  await api("/api/v1/plant/cases/"+encodeURIComponent(caseId)+"/"+encodeURIComponent(id),{method:"DELETE"});
+  if(caseId===el("cases").value){await plantLoad();el("plantSheetStatus").textContent="Apparecchiatura eliminata dalla pratica. Catalogo generale invariato.";}
+ }catch(err){el("plantSheetStatus").textContent="Impossibile eliminare: "+err.message;}
+ finally{button.disabled=false;}
+}
+async function plantAddModel(e){
+ e.preventDefault();
+ const form=e.target,kind=form.elements.type.value,button=form.querySelector('button[type="submit"]');
+ const rating=form.elements.nominalRating.value;
+ button.disabled=true;el("plantSheetStatus").textContent="Registrazione modello generale…";
+ try{
+  const response=await api("/api/v1/plant/catalogs/"+encodeURIComponent(kind),{
+   method:"POST",headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({
+    manufacturer:form.elements.manufacturer.value.trim(),
+    model:form.elements.model.value.trim(),
+    nominalRating:rating?Number(rating):null
+   })
+  });
+  form.elements.manufacturer.value="";form.elements.model.value="";form.elements.nominalRating.value="";
+  await plantLoad();
+  const target=el("plantSheetContent").querySelector('form.plant-row[data-kind="'+kind+'"][data-id=""] select');
+  if(target)target.value=response.id;
+  el("plantSheetStatus").textContent="Modello generale creato. Imposta la quantità e premi Aggiungi per collegarlo alla pratica.";
+ }catch(err){el("plantSheetStatus").textContent="Impossibile registrare modello: "+err.message;}
+ finally{button.disabled=false;}
+}
+setupPlantSheet();
+
 /* Canonical panels initialize after successful authentication. */
 function canLeave(){return (!Object.keys(dirty).length&&!clientProfileDirty&&!siteProfileDirty&&!dicoChecksDirty&&!dicoInterventionDirty&&!dicoRegDirty)||confirm("Ci sono modifiche non salvate. Abbandonarle?");}
 function status(){const n=Object.keys(dirty).length;el("saveAll").disabled=!n;el("saveStatus").textContent=n?n+" modifiche da salvare":"Nessuna modifica da salvare";}
 let contextEpoch=0,previousSelection={client:"",caseId:"",procedure:""};
 function forgetProcedure(){fields=[];dirty={};clearMacro();el("editor").hidden=true;el("fields").replaceChildren();el("tabs").replaceChildren();status();}
 function invalidate(){contextEpoch++;archiveGroups=null;forgetProcedure();el("archives").textContent="Aggiornamento archivio…";}
-function remember(){el("dicoCustomerName").textContent=clientsCache.find(x=>x.client_id===el("clients").value)?.display_name||"";previousSelection={client:el("clients").value,caseId:el("cases").value,procedure:el("procedures").value};refreshProfiles();if(el("cases").value!==dicoInterventionCase)loadDicoIntervention().catch(e=>el("dicoInterventionMessage").textContent=e.message);syncLevelTabs();if(el("dicoChecksPanel").open&&dicoChecksCase!==el("cases").value){dicoChecksCase="";loadDicoChecks().catch(e=>el("dicoChecksStatus").textContent=e.message);}}
+function remember(){el("dicoCustomerName").textContent=clientsCache.find(x=>x.client_id===el("clients").value)?.display_name||"";previousSelection={client:el("clients").value,caseId:el("cases").value,procedure:el("procedures").value};refreshProfiles();if(el("cases").value!==dicoInterventionCase)loadDicoIntervention().catch(e=>el("dicoInterventionMessage").textContent=e.message);syncLevelTabs();if(el("plantSheet")?.open&&plantCaseId!==el("cases").value)plantLoad().catch(e=>el("plantSheetStatus").textContent=e.message);if(el("dicoChecksPanel").open&&dicoChecksCase!==el("cases").value){dicoChecksCase="";loadDicoChecks().catch(e=>el("dicoChecksStatus").textContent=e.message);}}
 async function clients(){invalidate();const epoch=contextEpoch;const rows=await api("/api/v1/clients");if(epoch!==contextEpoch)return;clientsCache=rows;options("clients",rows,"client_id","display_name");await cases();}
 async function cases(){invalidate();const epoch=contextEpoch,client=el("clients").value;casesCache=[];options("cases",[],"case_id","title");options("procedures",[],"procedure_id","title");if(!client){await loadArchives();remember();return;}try{const rows=await api("/api/v1/cases/"+encodeURIComponent(client));if(epoch!==contextEpoch||client!==el("clients").value)return;casesCache=rows;options("cases",rows,"case_id","title");await loadCaseInstaller();await procedures();}catch(e){if(epoch===contextEpoch)el("archives").textContent="Errore caricamento pratiche: "+e.message;}}
 async function procedures(){invalidate();const epoch=contextEpoch,caseId=el("cases").value;options("procedures",[],"procedure_id","title");if(!caseId){await loadArchives();remember();return;}try{const rows=await api("/api/v1/procedures/"+encodeURIComponent(caseId));if(epoch!==contextEpoch||caseId!==el("cases").value)return;options("procedures",rows,"procedure_id","title");await load();}catch(e){if(epoch===contextEpoch)el("archives").textContent="Errore caricamento procedimenti: "+e.message;}}
