@@ -533,6 +533,81 @@ function syncLevelTabs(){
 }
 setupHierarchy();
 
+/* Dati personali per la bozza Gbis, al livello Pratica. L'impresa resta quella
+   scelta in "Installatore della pratica"; non viene creata una seconda impresa. */
+const caseSignerFields=[
+ ["fullName","Nome e cognome del firmatario","text"],
+ ["taxCode","Codice fiscale del firmatario","text"],
+ ["birthCity","Comune di nascita","text"],
+ ["birthDate","Data di nascita","date"],
+ ["residenceCity","Comune di residenza","text"],
+ ["residenceProvince","Provincia di residenza","text"],
+ ["residenceAddress","Via di residenza","text"],
+ ["residenceStreetNumber","Civico di residenza","text"],
+ ["phone","Telefono personale (facoltativo)","text"],
+ ["fax","Fax","text"],["email","E-mail personale","email"],
+ ["professionalTitle","Titolo o qualifica professionale","text"],
+ ["registerType","Ordine/collegio/albo personale","text"],
+ ["registerProvince","Provincia iscrizione personale","text"],
+ ["registerNumber","Numero iscrizione personale","text"]
+];
+function setupCaseSigner(){
+ const d=document.createElement("details");d.id="caseSignerPanel";d.className="canonical-panel admin-only";
+ d.innerHTML='<summary>Firmatario asseverazione — dati personali</summary>'+
+  '<div class="canonical-body"><p id="caseSignerCompany" class="subtle">Seleziona una pratica.</p>'+
+  '<p class="subtle">L’impresa è quella già assegnata alla pratica. Il legale rappresentante dell’impresa NON è automaticamente il tecnico firmatario. La registrazione non equivale alla firma o alla verifica dell’abilitazione.</p>'+
+  '<form id="caseSignerForm"><div id="caseSignerFields" class="canonical-fields"></div>'+
+  '<div class="canonical-actions"><button type="submit">Salva dati del firmatario</button><span id="caseSignerStatus" role="status"></span></div></form>'+
+  '<p class="subtle">La provincia di nascita del responsabile tecnico si completa nella scheda Installatori → Anagrafica.</p></div>';
+ el("level-case").insertBefore(d,el("archiveSlot-case"));
+ const body=el("caseSignerFields");
+ for(const [id,label,type] of caseSignerFields){
+  const box=document.createElement("label");box.className="canonical-field";
+  box.textContent=label;
+  const input=document.createElement("input");input.id="caseSigner_"+id;input.type=type;
+  if(id==="fullName")input.required=true;
+  if(type==="text"||type==="email")input.maxLength=250;
+  box.append(input);body.append(box);
+ }
+ el("caseSignerForm").onsubmit=async event=>{
+  event.preventDefault();
+  const caseId=el("cases").value;if(!caseId)return;
+  const input=Object.fromEntries(caseSignerFields.map(([id])=>[id,el("caseSigner_"+id).value.trim()||null]));
+  if(!input.fullName){el("caseSignerStatus").textContent="Inserisci il nome della persona che firmerà.";return;}
+  const btn=el("caseSignerForm").querySelector("button[type=submit]");btn.disabled=true;
+  try{
+   await api("/api/v1/cases/"+encodeURIComponent(caseId)+"/asseverazione/signer",{
+    method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(input)});
+   el("caseSignerStatus").textContent="Dati personali salvati. Riapri Genera asseverazione: il documento legge il database aggiornato.";
+   await loadCaseSigner();
+  }catch(error){el("caseSignerStatus").textContent="Salvataggio non riuscito: "+error.message;}
+  finally{btn.disabled=false;}
+ };
+}
+async function loadCaseSigner(){
+ const caseId=el("cases").value;
+ for(const [id] of caseSignerFields)el("caseSigner_"+id).value="";
+ el("caseSignerStatus").textContent="";
+ if(!caseId){el("caseSignerCompany").textContent="Seleziona una pratica.";return;}
+ try{
+  const result=await api("/api/v1/cases/"+encodeURIComponent(caseId)+"/asseverazione/signer");
+  if(caseId!==el("cases").value)return;
+  el("caseSignerCompany").textContent="Impresa assegnata: "+result.business_name+
+    ". Legale rappresentante registrato: "+(result.legal_representative_name||"non indicato")+".";
+  const person=result.signatory;
+  if(!person){el("caseSignerStatus").textContent="Non è ancora registrato alcun firmatario tecnico per questa pratica.";return;}
+  for(const [id] of caseSignerFields){
+   const field=id.replace(/[A-Z]/g,x=>"_"+x.toLowerCase());
+   const value=person[field]??"";
+   el("caseSigner_"+id).value=id==="birthDate"&&value?String(value).slice(0,10):value;
+  }
+  el("caseSignerStatus").textContent="Anagrafica collegata alla pratica. Verifica qualifica e incarico prima della firma.";
+ }catch(error){
+  if(caseId===el("cases").value)el("caseSignerCompany").textContent="Impossibile leggere il firmatario: "+error.message;
+ }
+}
+setupCaseSigner();
+
 /* Archivio generale Norme tecniche vigenti, indipendente dall'installatore selezionato.
    La norma vigente oggi non viene automaticamente assegnata a pratiche storiche. */
 let technicalStandards=[],editingStandardId="";
@@ -997,8 +1072,8 @@ el("installerForm").onsubmit=async e=>{e.preventDefault();const data=formData(in
 el("portalProfileForm").onsubmit=async e=>{e.preventDefault();if(!editingInstaller)return alert("Salva prima l'installatore.");const data=formData(portalKeys,"portal_");try{const id=editingPortal;const out=await api(id?"/api/v1/installers/portals/"+encodeURIComponent(id):"/api/v1/installers/"+encodeURIComponent(editingInstaller)+"/portals",{method:id?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});await loadPortals();el("portalProfileSelect").value=id||out.profile_id;showPortal();el("portalStatus").textContent="Profilo salvato.";}catch(err){el("portalStatus").textContent=err.message;}};
 el("installerAssign").onclick=async()=>{const caseId=el("cases").value,installerId=el("installerSelect").value;if(!caseId||!installerId)return alert("Seleziona una pratica e un installatore.");try{await api("/api/v1/cases/"+encodeURIComponent(caseId)+"/installers",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({installerId,assignmentRole:el("installerAssignmentRole").value})});await refreshAssignments();}catch(e){el("installerAssigned").textContent=e.message;}};
 function renderCaseInstallerOptions(){const s=el("caseInstaller");s.innerHTML='<option value="">Non assegnato</option>';installersCache.forEach(i=>s.add(new Option(i.business_name,i.installer_id)));}
-async function loadCaseInstaller(){const id=el("cases").value,s=el("caseInstaller");s.value="";if(!id)return;try{const rows=await api("/api/v1/cases/"+encodeURIComponent(id)+"/installers");if(id!==el("cases").value)return;const a=rows.filter(x=>x.assignment_role==="INSTALLATORE");if(a.length===1)s.value=a[0].installer_id;el("caseInstallerStatus").textContent=a.length>1?"Più installatori presenti: scegliere quello principale.":"";}catch(e){el("caseInstallerStatus").textContent=e.message;}}
-el("saveCaseInstaller").onclick=async()=>{const id=el("cases").value,installerId=el("caseInstaller").value;if(!id)return;try{await api("/api/v1/cases/"+encodeURIComponent(id)+"/primary-installer",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({installerId:installerId||null})});el("caseInstallerStatus").textContent="Salvato";await refreshAssignments();}catch(e){el("caseInstallerStatus").textContent=e.message;}};
+async function loadCaseInstaller(){const id=el("cases").value,s=el("caseInstaller");s.value="";if(!id)return;try{const rows=await api("/api/v1/cases/"+encodeURIComponent(id)+"/installers");if(id!==el("cases").value)return;const a=rows.filter(x=>x.assignment_role==="INSTALLATORE");if(a.length===1)s.value=a[0].installer_id;el("caseInstallerStatus").textContent=a.length>1?"Più installatori presenti: scegliere quello principale.":"";}catch(e){el("caseInstallerStatus").textContent=e.message;}finally{await loadCaseSigner();}}
+el("saveCaseInstaller").onclick=async()=>{const id=el("cases").value,installerId=el("caseInstaller").value;if(!id)return;try{await api("/api/v1/cases/"+encodeURIComponent(id)+"/primary-installer",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({installerId:installerId||null})});el("caseInstallerStatus").textContent="Salvato";await refreshAssignments();await loadCaseSigner();}catch(e){el("caseInstallerStatus").textContent=e.message;}};
 async function refreshAssignments(){const id=el("cases").value;if(!id){el("installerAssigned").textContent="Nessuna pratica selezionata.";return;}try{const rows=await api("/api/v1/cases/"+encodeURIComponent(id)+"/installers");el("installerAssigned").textContent=rows.length?rows.map(x=>x.business_name+" ("+x.assignment_role+")").join(" · "):"Nessun installatore associato.";}catch(e){el("installerAssigned").textContent=e.message;}}
 el("cases").addEventListener("change",()=>{loadCaseInstaller();refreshAssignments();});
 
