@@ -26,7 +26,16 @@
 .plant-row button,.plant-create button{font-size:13px;padding:8px}.plant-row button[data-remove]{background:#a34040}.plant-note{font-size:12px;color:#52687c;margin:6px 0}
 .plant-create{padding:12px;background:#f6f9fc;border:1px solid #d6e2ec;border-radius:8px;margin:15px 0}.plant-create-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:9px;align-items:end}
 @media(max-width:780px){.plant-row{grid-template-columns:1fr 1fr}.plant-row label:first-child{grid-column:1/-1}.plant-row .plant-actions{grid-column:1/-1}}
-</style></head><body><header><h2>Pratiche fotovoltaiche — Gestione pratiche <small style="font-size:12px;opacity:.85">V4.2 · Scheda impianto — cataloghi generali</small></h2></header><main><section class="panel" id="login"><h3>Accesso riservato</h3><form id="auth"><input type="password" id="pw" required placeholder="Segreto Render" autocomplete="current-password"><button>Accedi</button></form><p class="msg" id="authmsg"></p></section>
+
+.standards-body{padding:12px}.standards-list{margin:12px 0;display:grid;gap:9px}
+.standard-record{border:1px solid #dce5ed;border-radius:8px;padding:11px;display:flex;gap:12px;align-items:start;justify-content:space-between;flex-wrap:wrap}
+.standard-record p{margin:5px 0;font-size:13px}.standard-record small{color:#52687c}
+.standard-editor{padding:12px;background:#f6f9fc;border:1px solid #dce5ed;border-radius:8px}
+.standard-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:10px}
+.standard-fields label{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:600}
+.standard-fields input,.standard-fields select,.standard-fields textarea{box-sizing:border-box;width:100%;font:inherit;padding:8px}
+.standard-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+</style></head><body><header><h2>Pratiche fotovoltaiche — Gestione pratiche <small style="font-size:12px;opacity:.85">V4.3 · Norme tecniche vigenti</small></h2></header><main><section class="panel" id="login"><h3>Accesso riservato</h3><form id="auth"><input type="password" id="pw" required placeholder="Segreto Render" autocomplete="current-password"><button>Accedi</button></form><p class="msg" id="authmsg"></p></section>
 <section id="workspace" hidden><section class="panel admin-only" id="installerPanel"><details><summary><strong>Anagrafica e profili portale</strong></summary><p>Registro condiviso tra pratiche. Non inserire password, OTP o credenziali.</p><label>Installatore <select id="installerSelect"></select></label> <button type="button" id="installerReload">Aggiorna installatori</button> <button type="button" id="installerNew">Nuovo installatore</button><form id="installerForm" style="margin-top:12px"><div id="installerFields"></div><button type="submit">Salva anagrafica</button> <span id="installerStatus" role="status"></span></form><hr><h4>Profili portale</h4><label>Profilo <select id="portalProfileSelect"></select></label> <button type="button" id="portalNew">Nuovo profilo</button><form id="portalProfileForm"><div id="portalFields"></div><button type="submit">Salva profilo portale</button> <span id="portalStatus" role="status"></span></form><hr><h4>Collegamento alla pratica selezionata</h4><label>Ruolo <select id="installerAssignmentRole"><option value="INSTALLATORE">Installatore</option><option value="FIRMATARIO_DICO">Firmatario Di.Co.</option><option value="FIRMATARIO_AUTOTEST">Firmatario asseverazione post-autotest</option></select></label> <button type="button" id="installerAssign">Associa alla pratica</button><p id="installerAssigned"></p></details></section><div style="display:flex;gap:8px;align-items:center;padding:5px 0"><button id="copyHelp" type="button" style="background:#276b3c;font-weight:700">📋 Copia help per AI</button><span id="helpStatus" role="status"></span> <button id="portalMode" type="button" aria-pressed="false">Compilazione portale</button><span id="modeStatus" role="status"></span></div><div class="panel"><h3>Archivio pratiche fotovoltaiche</h3><div style="margin:10px 0"><button id="refreshDb" type="button">Aggiorna da DB</button> <span id="refreshStatus" role="status"></span></div><label>Cliente <select id="clients"></select></label> <button class="admin-only" id="newclient">Nuovo cliente</button> <button class="admin-only" type="button" id="delclient" style="background:#9e3131">Elimina</button> <label>Pratica fotovoltaica <select id="cases"></select></label> <label class="admin-only">Installatore della pratica <select id="caseInstaller"><option value="">Non assegnato</option></select></label> <button type="button" class="admin-only" id="saveCaseInstaller">Salva installatore</button> <span id="caseInstallerStatus"></span> <button class="admin-only" id="newcase">Nuova pratica fotovoltaica</button> <button class="admin-only" type="button" id="delcase" style="background:#9e3131">Elimina</button> <label>Procedimento <select id="procedures"></select></label> <button class="admin-only" id="newprocedure">Nuovo procedimento</button> <button class="admin-only" type="button" id="delprocedure" style="background:#9e3131">Elimina</button></div><section class="panel admin-only"><h3>Archivio testuale / OCR</h3><p style="color:#52687c">Testi OCR, targhe e note consultabili ai tre livelli. Puoi aggiungere un documento manualmente.</p><form id="newArchive" class="fieldset" style="padding:12px"><h4>Nuovo documento testuale</h4><label>Livello <select id="archiveScope"><option value="client">Cliente</option><option value="case">Pratica</option><option value="procedure">Procedimento</option></select></label> <label>Tipo <select id="archiveKind"><option>OCR</option><option>TRASCRIZIONE</option><option>TARGA</option><option>NOTA</option><option>ALTRO</option></select></label><p><label>Titolo <input id="archiveTitle" required maxlength="250" style="width:100%;box-sizing:border-box"></label></p><p><label>Fonte / provenienza <input id="archiveSource" maxlength="1000" style="width:100%;box-sizing:border-box"></label></p><p><label>Testo del documento <textarea id="archiveBody" required maxlength="200000" rows="9" style="display:block;width:100%;box-sizing:border-box;font:inherit"></textarea></label></p><button id="archiveSubmit" type="submit">Salva nuovo documento</button> <span id="archiveMessage" role="status"></span></form><div id="archives" role="region" aria-live="polite">Seleziona un cliente per visualizzare gli archivi.</div></section><section id="editor" class="panel" hidden><h3 id="title">Procedimento</h3><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><button id="saveAll" type="button" disabled>Salva modifiche</button><button id="dicoPrint" type="button" title="Genera la Di.Co. dai soli dati strutturati canonici">Stampa Di.Co.</button><label>Committente (titolare pratica, sola lettura): <output id="dicoCustomerName"></output></label><span id="dicoStatus" role="status" style="font-size:13px;color:#52687c"></span><span id="saveStatus" role="status">Nessuna modifica</span></div><details class="fieldset admin-only" id="macroPanel"><summary>Importa macro campi PV-MACRO-1</summary><div style="padding:12px"><p>Incolla il JSON prodotto da GPT. L'anteprima non salva nulla: «Applica ai campi» prepara le modifiche, poi premi «Salva modifiche».</p><button type="button" id="copyCatalog">Copia catalogo campi del procedimento</button><p><textarea id="macroText" rows="8" spellcheck="false" placeholder='{"formato":"PV-MACRO-1","procedimento_id":"...","operazioni":[{"campo_id":"F2-001","valore":"..."}]}' style="display:block;box-sizing:border-box;width:100%;font:13px monospace"></textarea></p><button type="button" id="previewMacro">Verifica e mostra anteprima</button> <button type="button" id="applyMacro" disabled>Applica ai campi</button><p id="macroMessage" role="status"></p><div id="macroPreview"></div></div></details><nav id="tabs" class="nav" aria-label="Schede procedimento"></nav><input id="search" type="search" placeholder="Cerca campo, sezione o ID"><div id="fields"></div></section></section><dialog id="createDialog" style="border:1px solid #b8c8da;border-radius:10px;width:min(600px,94vw);box-sizing:border-box"><form id="createForm"><h3 id="createHeading">Nuovo</h3><label>Modalità <select id="createMode"><option value="empty">Crea vuoto</option><option value="clone">Clona da esistente</option></select></label><p><label id="createNameLabel">Nome / titolo <input id="createName" required maxlength="250" style="width:100%;box-sizing:border-box"></label></p><div id="cloneSettings" hidden><p><label>Origine <select id="cloneSource" style="max-width:100%"></select></label></p><p><label><input type="checkbox" id="cloneChildren" checked> Includi elementi collegati (pratiche o procedimenti)</label></p><p><label><input type="checkbox" id="cloneValues" checked> Copia valori dei campi dei procedimenti</label></p><p><label><input type="checkbox" id="cloneArchives" checked> Copia documenti testuali/OCR ai livelli inclusi</label></p><p style="font-size:13px;color:#52687c">I numeri ufficiali delle pratiche non vengono copiati. Tutti i dati clonati sono da verificare prima dell'uso.</p></div><p id="createFeedback" role="status"></p><div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" id="createCancel">Annulla</button><button type="submit" id="createSubmit">Crea</button></div></form></dialog></main><script>
 const API="https://pratiche-fotovoltaico-demo-api.onrender.com";let token="",fields=[],tab="Autorizza",dirty={};const el=id=>document.getElementById(id);
 const escapeHtml=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -524,6 +533,95 @@ function syncLevelTabs(){
 }
 setupHierarchy();
 
+/* Archivio generale Norme tecniche vigenti, indipendente dall'installatore selezionato.
+   La norma vigente oggi non viene automaticamente assegnata a pratiche storiche. */
+let technicalStandards=[],editingStandardId="";
+function setupTechnicalStandards(){
+ const panel=document.createElement("details");panel.id="technicalStandardsPanel";
+ panel.className="canonical-panel admin-only";
+ panel.innerHTML='<summary>Norme tecniche vigenti — archivio generale</summary>'+
+ '<div class="standards-body"><p class="plant-note">Catalogo condiviso delle norme e relative edizioni. '+
+ 'La vigenza è riferita alla data della verifica ufficiale; per le pratiche precedenti occorre scegliere l’edizione applicabile.</p>'+
+ '<div id="technicalStandardsList" class="standards-list"></div>'+
+ '<form id="technicalStandardForm" class="standard-editor"><h5 id="technicalStandardFormTitle">Nuova norma</h5>'+
+ '<div class="standard-fields">'+
+ '<label>Codice norma<input name="code" required maxlength="90" placeholder="CEI 0-21"></label>'+
+ '<label>Edizione / versione<input name="edition" required maxlength="100" placeholder="2026-07"></label>'+
+ '<label>Titolo<input name="title" required maxlength="350"></label>'+
+ '<label>Campo di applicazione<input name="scope" maxlength="300"></label>'+
+ '<label>Decorrenza (AAAA-MM)<input name="effectiveFromMonth" type="month"></label>'+
+ '<label>Stato<select name="status"><option value="to_verify">Da verificare</option><option value="current">Vigente</option><option value="superseded">Superata</option></select></label>'+
+ '<label>Fonte ufficiale HTTPS<input name="officialSourceUrl" type="url" placeholder="https://…" maxlength="1800"></label>'+
+ '<label>Fonte verificata il<input name="sourceCheckedOn" type="date"></label>'+
+ '<label style="grid-column:1/-1">Note<textarea name="notes" rows="2" maxlength="2500"></textarea></label>'+
+ '</div><div class="standard-actions"><button type="submit" id="technicalStandardSave">Salva norma</button>'+
+ '<button type="button" id="technicalStandardNew">Nuova norma</button>'+
+ '<span id="technicalStandardStatus" role="status"></span></div></form></div>';
+ el("level-installer").append(panel);
+ panel.addEventListener("toggle",()=>{if(panel.open)loadTechnicalStandards().catch(e=>el("technicalStandardStatus").textContent=e.message);});
+ el("technicalStandardNew").onclick=()=>standardEdit();
+ el("technicalStandardForm").onsubmit=standardSave;
+ el("technicalStandardsList").onclick=e=>{
+  const button=e.target.closest("button[data-standard]");
+  if(button)standardEdit(button.dataset.standard);
+ };
+}
+function standardEdit(id=""){
+ const form=el("technicalStandardForm");
+ editingStandardId=id;
+ const x=technicalStandards.find(s=>s.standardId===id);
+ el("technicalStandardFormTitle").textContent=id?"Modifica norma / edizione":"Nuova norma";
+ for(const k of ["code","edition","title","scope","effectiveFromMonth","status","officialSourceUrl","sourceCheckedOn","notes"]){
+  form.elements[k].value=x?.[k]??(k==="status"?"to_verify":"");
+ }
+ el("technicalStandardStatus").textContent="";
+}
+function renderTechnicalStandards(){
+ const container=el("technicalStandardsList");container.replaceChildren();
+ for(const x of technicalStandards){
+  const row=document.createElement("div");row.className="standard-record";
+  const content=document.createElement("div");
+  const head=document.createElement("strong");head.textContent=x.code+" · "+x.edition;
+  const note=document.createElement("p");note.textContent=x.title;
+  const meta=document.createElement("small");
+  meta.textContent=[x.scope,x.effectiveFromMonth?"Da "+x.effectiveFromMonth:"",
+   x.status==="current"?"Vigente":x.status==="superseded"?"Superata":"Da verificare",
+   x.sourceCheckedOn?"Fonte verificata "+x.sourceCheckedOn:""].filter(Boolean).join(" · ");
+  content.append(head,note,meta);
+  if(x.officialSourceUrl&&/^https:\/\//i.test(x.officialSourceUrl)){
+   const p=document.createElement("p"),a=document.createElement("a");
+   a.href=x.officialSourceUrl;a.target="_blank";a.rel="noopener noreferrer";
+   a.textContent="Fonte CEI / riferimento ufficiale";p.append(a);content.append(p);
+  }
+  const b=document.createElement("button");b.type="button";b.textContent="Modifica";b.dataset.standard=x.standardId;
+  row.append(content,b);container.append(row);
+ }
+ if(!technicalStandards.length)container.textContent="Catalogo vuoto.";
+}
+async function loadTechnicalStandards(){
+ technicalStandards=await api("/api/v1/technical-standards");
+ renderTechnicalStandards();
+}
+async function standardSave(e){
+ e.preventDefault();
+ const form=e.currentTarget,status=el("technicalStandardStatus"),save=el("technicalStandardSave");
+ const data=Object.fromEntries(["code","edition","title","scope","effectiveFromMonth","status","officialSourceUrl","sourceCheckedOn","notes"]
+  .map(k=>[k,form.elements[k].value.trim()||null]));
+ if(!data.code||!data.edition||!data.title){status.textContent="Codice, edizione e titolo sono obbligatori.";return;}
+ save.disabled=true;status.textContent="Salvataggio…";
+ try{
+  const res=await api("/api/v1/technical-standards"+(editingStandardId?"/"+encodeURIComponent(editingStandardId):""),{
+   method:editingStandardId?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)
+  });
+  await loadTechnicalStandards();
+  standardEdit(res.standardId);
+  status.textContent="Norma salvata nell’archivio generale.";
+ }catch(error){status.textContent="Errore: "+error.message;}
+ finally{save.disabled=false;}
+}
+setupTechnicalStandards();
+
+
 /* Scheda Impianto (livello Pratica): seleziona modelli condivisi e salva solo
    quantità, matricola e firmware effettivi delle apparecchiature installate.
    Non usa i valori del mirror e non modifica i dati di targa del catalogo. */
@@ -877,12 +975,12 @@ el("site_Form").onsubmit=async e=>{
  finally{button.disabled=!el("cases").value;}
 };
 el("auth").onsubmit=async e=>{e.preventDefault();try{const r=await fetch(API+"/api/demo/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:el("pw").value})});el("pw").value="";if(!r.ok)throw Error("Accesso negato: HTTP "+r.status);token=(await r.json()).token;await clients();await loadInstallers();await loadCaseInstaller();await refreshAssignments();await initializeCanonical().catch(err=>{el("authmsg").textContent="Archivi canonici non disponibili: "+err.message;});el("login").hidden=true;el("workspace").hidden=false;}catch(err){el("authmsg").textContent=err.message;}};
-const installerKeys=[["businessName","Ragione sociale / nome"],["vatNumber","Partita IVA"],["taxCode","Codice fiscale"],["address","Indirizzo"],["city","Comune"],["province","Provincia"],["postalCode","CAP"],["email","Email"],["pec","PEC"],["phone","Telefono"],["chamberRegistration","Iscrizione CCIAA / abilitazioni"],["technicalManager","Responsabile tecnico"],["technicalManagerTaxCode","CF responsabile tecnico"],["notes","Note"]];const portalKeys=[["portalName","Portale"],["portalIdentifier","Identificativo sul portale (non password)"],["portalRole","Ruolo sul portale"],["authorizationStatus","Stato abilitazione"],["delegateName","Delegato / referente"],["validUntil","Scadenza abilitazione"],["notes","Note"]];let installersCache=[],portalCache=[],editingInstaller="",editingPortal="";
+const installerKeys=[["businessName","Ragione sociale / nome"],["vatNumber","Partita IVA"],["taxCode","Codice fiscale"],["address","Indirizzo"],["city","Comune"],["province","Provincia"],["postalCode","CAP"],["email","Email"],["pec","PEC"],["phone","Telefono"],["chamberRegistration","Iscrizione CCIAA / abilitazioni"],["technicalManager","Responsabile tecnico"],["technicalManagerTaxCode","CF responsabile tecnico"],["technicalManagerBirthProvince","Provincia nascita responsabile tecnico"],["notes","Note"]];const portalKeys=[["portalName","Portale"],["portalIdentifier","Identificativo sul portale (non password)"],["portalRole","Ruolo sul portale"],["authorizationStatus","Stato abilitazione"],["delegateName","Delegato / referente"],["validUntil","Scadenza abilitazione"],["notes","Note"]];let installersCache=[],portalCache=[],editingInstaller="",editingPortal="";
 function buildInstallerFields(target,keys,prefix){el(target).innerHTML=keys.map(([k,label])=>'<label style="display:inline-block;margin:5px;min-width:220px">'+escapeHtml(label)+'<input style="display:block;max-width:240px;width:100%" id="'+prefix+k+'" '+(k==="validUntil"?'type="date"':'maxlength="250"')+'></label>').join("");}
 function formData(keys,prefix){return Object.fromEntries(keys.map(([k])=>[k,el(prefix+k).value.trim()||null]));}
 function setForm(keys,prefix,data={}){keys.forEach(([k])=>el(prefix+k).value=data[k]??"");}
 async function loadInstallers(){installersCache=await api("/api/v1/installers");renderCaseInstallerOptions();options("installerSelect",installersCache,"installer_id","business_name");showInstaller();}
-function showInstaller(){const x=installersCache.find(x=>x.installer_id===el("installerSelect").value);loadDicoRegistration().catch(e=>el("dicoRegistrationMessage").textContent=e.message);editingInstaller=x?.installer_id??"";setForm(installerKeys,"inst_",x?{businessName:x.business_name,vatNumber:x.vat_number,taxCode:x.tax_code,address:x.address,city:x.city,province:x.province,postalCode:x.postal_code,email:x.email,pec:x.pec,phone:x.phone,chamberRegistration:x.chamber_registration,technicalManager:x.technical_manager,technicalManagerTaxCode:x.technical_manager_tax_code,notes:x.notes}:{});loadPortals().catch(e=>el("portalStatus").textContent=e.message);}
+function showInstaller(){const x=installersCache.find(x=>x.installer_id===el("installerSelect").value);loadDicoRegistration().catch(e=>el("dicoRegistrationMessage").textContent=e.message);editingInstaller=x?.installer_id??"";setForm(installerKeys,"inst_",x?{businessName:x.business_name,vatNumber:x.vat_number,taxCode:x.tax_code,address:x.address,city:x.city,province:x.province,postalCode:x.postal_code,email:x.email,pec:x.pec,phone:x.phone,chamberRegistration:x.chamber_registration,technicalManager:x.technical_manager,technicalManagerTaxCode:x.technical_manager_tax_code,technicalManagerBirthProvince:x.technical_manager_birth_province,notes:x.notes}:{});loadPortals().catch(e=>el("portalStatus").textContent=e.message);}
 async function loadPortals(){portalCache=editingInstaller?await api("/api/v1/installers/"+encodeURIComponent(editingInstaller)+"/portals"):[];options("portalProfileSelect",portalCache,"profile_id","portal_name");showPortal();}
 function showPortal(){const p=portalCache.find(p=>p.profile_id===el("portalProfileSelect").value);editingPortal=p?.profile_id??"";setForm(portalKeys,"portal_",p?{portalName:p.portal_name,portalIdentifier:p.portal_identifier,portalRole:p.portal_role,authorizationStatus:p.authorization_status,delegateName:p.delegate_name,validUntil:p.valid_until,notes:p.notes}:{portalName:"e-Distribuzione",authorizationStatus:"DA_VERIFICARE"});}
 buildInstallerFields("installerFields",installerKeys,"inst_");buildInstallerFields("portalFields",portalKeys,"portal_");setupDicoRegistration();
