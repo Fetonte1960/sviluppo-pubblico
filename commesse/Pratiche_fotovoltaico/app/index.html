@@ -943,7 +943,7 @@ el("refreshDb").onclick=async()=>{const pending=Object.keys(dirty).length+(clien
    clientsCache=clientRows;casesCache=caseRows;
    options("clients",clientRows,"client_id","display_name");el("clients").value=clientId;
    options("cases",caseRows,"case_id","title");el("cases").value=caseId;
-   options("procedures",procedureRows,"procedure_id","title");el("procedures").value=procedureId;
+   options("procedures",procedureRows,"procedure_id","title");for(const opt of el("procedures").options){const p=procedureRows.find(x=>x.procedure_id===opt.value);opt.dataset.modelId=p?.model_id??"";}el("procedures").value=procedureId;
    contextEpoch++;fields=refreshedFields;dirty={};dicoChecksDirty=false;dicoChecksCase="";dicoInterventionDirty=false;dicoInterventionCase="";dicoRegDirty=false;refreshProfiles(true);clearMacro();el("editor").hidden=!procedureId;remember();
    if(procedureId)draw();else el("fields").innerHTML="";
    status();
