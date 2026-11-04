@@ -24,6 +24,11 @@
 .plant-group h5{margin:0 0 9px;font-size:15px}.plant-row{display:grid;grid-template-columns:minmax(150px,2fr) 90px minmax(110px,1fr) minmax(100px,1fr) auto;gap:8px;align-items:end;padding:10px 0;border-top:1px solid #e5ebf2}
 .plant-row label,.plant-create label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:600}.plant-row input,.plant-row select,.plant-create input,.plant-create select{box-sizing:border-box;width:100%;padding:8px;font-size:13px;min-width:0}
 .plant-row button,.plant-create button{font-size:13px;padding:8px}.plant-row button[data-remove]{background:#a34040}.plant-note{font-size:12px;color:#52687c;margin:6px 0}
+.plant-materials-table{width:100%;border-collapse:collapse;font-size:13px;margin:7px 0 14px}
+.plant-materials-table th,.plant-materials-table td{border:1px solid #dae3ee;padding:8px;text-align:left;vertical-align:top}
+.plant-materials-table th{background:#f0f5fb}
+#plantAccessoryMaterials{overflow-x:auto;margin:16px 0}
+#plantAccessoryMaterials h5{font-size:15px;margin:0 0 8px}
 .plant-create{padding:12px;background:#f6f9fc;border:1px solid #d6e2ec;border-radius:8px;margin:15px 0}.plant-create-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:9px;align-items:end}
 @media(max-width:780px){.plant-row{grid-template-columns:1fr 1fr}.plant-row label:first-child{grid-column:1/-1}.plant-row .plant-actions{grid-column:1/-1}}
 
@@ -1222,7 +1227,7 @@ function plantRenderMaterials(){
  for(const m of plantMaterials){
   const row=document.createElement("tr");
   const cols=[m.description,m.manufacturer||"—",
-   m.quantity==null?"—":String(m.quantity)+(m.unit?" "+m.unit:" (unità non indicata)"),
+   m.quantity==null?"—":String(m.quantity)+(m.unit?" "+m.unit:(m.materialType==="CABLE"?" (unità da confermare)":"")),
    m.installationLocation||"—"];
   for(const value of cols){const td=document.createElement("td");td.textContent=value;row.append(td);}
   body.append(row);
