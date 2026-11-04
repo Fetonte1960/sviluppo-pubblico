@@ -860,7 +860,7 @@ function setupInverterArchive(){
     node=document.createElement("textarea");node.rows=3;node.maxLength=2000;
    }else{
     node=document.createElement("input");node.type=kind==="number"||kind==="integer"?"number":"text";
-    node.maxLength=kind==="text"?2000:undefined;
+    if(kind==="text")node.maxLength=2000;
     if(kind==="number")node.step="any";
     if(kind==="integer"){node.step="1";node.min="1";node.max=key==="grid_phases"?"3":"32";}
    }
