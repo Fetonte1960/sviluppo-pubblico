@@ -697,6 +697,131 @@ async function standardSave(e){
 setupTechnicalStandards();
 
 
+/* Archivio generale Batterie: editore di tutti i campi strutturati di targa.
+   Le matricole appartengono esclusivamente alle apparecchiature nella pratica. */
+const batteryArchiveSpecs=[
+ ["manufacturer","Marca","text"],["model","Modello","text"],
+ ["model_variant","Variante","text"],["product_name","Nome prodotto","text"],
+ ["designation_code","Codice designazione targa","text"],["chemistry","Chimica","text"],
+ ["rated_capacity_ah","Capacità nominale (Ah)","number"],
+ ["nominal_energy_kwh","Energia nominale (kWh)","number"],
+ ["usable_energy_kwh","Energia utilizzabile (kWh)","number"],
+ ["nominal_voltage_v","Tensione nominale (V)","number"],
+ ["min_voltage_v","Tensione minima (V)","number"],["max_voltage_v","Tensione massima (V)","number"],
+ ["max_charge_current_a","Corrente massima carica (A)","number"],
+ ["max_discharge_current_a","Corrente massima scarica (A)","number"],
+ ["short_circuit_current_a","Corrente cortocircuito (A)","number"],
+ ["short_circuit_duration_ms","Durata cortocircuito (ms)","number"],
+ ["rated_charge_power_kw","Potenza nominale carica (kW)","number"],
+ ["rated_discharge_power_kw","Potenza nominale scarica (kW)","number"],
+ ["max_charge_power_kw","Potenza massima carica (kW)","number"],
+ ["max_discharge_power_kw","Potenza massima uscita/scarica (kW)","number"],
+ ["charge_temp_min_c","Temperatura minima carica (°C)","number"],
+ ["charge_temp_max_c","Temperatura massima carica (°C)","number"],
+ ["discharge_temp_min_c","Temperatura minima scarica (°C)","number"],
+ ["discharge_temp_max_c","Temperatura massima scarica (°C)","number"],
+ ["weight_kg","Peso (kg)","number"],["ip_rating","Grado IP","text"],
+ ["protective_class","Classe di protezione","text"],
+ ["extinguishing_agents","Agenti estinguenti previsti","text"],
+ ["crucial_materials","Materiali indicati in targa","text"],
+ ["integrated_converter","Convertitore integrato","boolean"],
+ ["compliance_certificate_reference","Certificato di conformità","text"],
+ ["conformity_reference","Riferimenti di conformità","text"],
+ ["datasheet_reference","Riferimento scheda tecnica","text"],
+ ["source_document","Origine del dato (metadato)","text"],
+ ["verification_status","Stato verifica","status"],["notes","Note tecniche","text"]
+];
+let batteryArchiveRows=[];
+function setupBatteryArchive(){
+ const section=document.createElement("details");
+ section.id="batteryArchivePanel";section.className="canonical-panel admin-only";
+ section.innerHTML='<summary>Archivio batterie — modelli generali</summary>'+
+ '<div class="canonical-body"><p class="subtle">Schede di modello condivise tra le pratiche. '+
+ 'Qui si modificano tutti i dati di targa, non le matricole. '+
+ 'Per assegnare una quantità alla pratica usa 3 · Pratica → Scheda impianto.</p>'+
+ '<div class="canonical-controls"><select id="batteryArchiveSelect" aria-label="Modello batteria"></select>'+
+ '<button type="button" id="batteryArchiveNew">Nuovo modello</button>'+
+ '<button type="button" id="batteryArchiveReload">Aggiorna elenco</button></div>'+
+ '<form id="batteryArchiveForm"><div class="canonical-fields" id="batteryArchiveFields"></div>'+
+ '<div class="canonical-actions"><button type="submit">Salva modello batteria</button>'+
+ '<span id="batteryArchiveStatus" role="status"></span></div></form></div>';
+ el("level-installer").append(section);
+ const container=el("batteryArchiveFields");
+ for(const [key,name,kind] of batteryArchiveSpecs){
+  const lab=document.createElement("label");lab.className="canonical-field";lab.textContent=name;
+  let field;
+  if(kind==="boolean"||kind==="status"){
+   field=document.createElement("select");
+   const opts=kind==="boolean"?
+    [["","— Non documentato —"],["true","Sì"],["false","No"]]:
+    [["unknown","Non verificato"],["reported","Riportato da targhetta/documento"],["verified","Verificato"]];
+   for(const [v,label] of opts)field.add(new Option(label,v));
+  }else if(key==="notes"||key==="crucial_materials"){
+   field=document.createElement("textarea");field.rows=2;
+  }else{
+   field=document.createElement("input");field.type=kind==="number"?"number":"text";
+   if(kind==="number")field.step="any";
+   else field.maxLength=2000;
+  }
+  field.name=key;lab.append(field);container.append(lab);
+ }
+ const select=el("batteryArchiveSelect");
+ select.addEventListener("change",()=>batteryArchiveShow());
+ el("batteryArchiveNew").onclick=()=>{select.value="";batteryArchiveShow();};
+ el("batteryArchiveReload").onclick=()=>batteryArchiveLoad(select.value);
+ section.addEventListener("toggle",()=>{if(section.open)batteryArchiveLoad(select.value);});
+ el("batteryArchiveForm").addEventListener("submit",batteryArchiveSave);
+}
+function batteryArchiveShow(){
+ const id=el("batteryArchiveSelect").value;
+ const row=batteryArchiveRows.find(x=>x.battery_model_id===id)||{};
+ const form=el("batteryArchiveForm");
+ for(const [key,,kind] of batteryArchiveSpecs){
+  const field=form.elements.namedItem(key);if(!field)continue;
+  const value=row[key];
+  field.value=kind==="boolean"?(value==null?"":String(value)):
+    kind==="status"?(value||"unknown"):(value??"");
+ }
+ el("batteryArchiveStatus").textContent=id?
+  "Scheda modello caricata; le modifiche si applicano a tutte le pratiche che usano questo modello.":
+  "Nuovo modello; marca e modello obbligatori. Nessun numero di serie nell'archivio generale.";
+}
+async function batteryArchiveLoad(preferred){
+ const status=el("batteryArchiveStatus");status.textContent="Lettura archivio batterie…";
+ try{
+  const rows=await api("/api/v1/plant/batteries");
+  batteryArchiveRows=rows;
+  const select=el("batteryArchiveSelect");select.replaceChildren(new Option("— Nuovo modello —",""));
+  for(const row of rows)select.add(new Option(row.manufacturer+" "+row.model+
+   (row.model_variant?" "+row.model_variant:""),row.battery_model_id));
+  select.value=rows.some(x=>x.battery_model_id===preferred)?preferred:
+   (rows.length===1?rows[0].battery_model_id:"");
+  batteryArchiveShow();
+ }catch(err){status.textContent="Errore archivio batterie: "+err.message;}
+}
+async function batteryArchiveSave(e){
+ e.preventDefault();
+ const form=e.target,select=el("batteryArchiveSelect"),id=select.value,status=el("batteryArchiveStatus");
+ const body={};
+ for(const [key,,kind] of batteryArchiveSpecs){
+  const raw=form.elements.namedItem(key).value.trim();
+  body[key]=kind==="number"?(raw===""?null:Number(raw)):
+   kind==="boolean"?(raw===""?null:raw==="true"):
+   kind==="status"?(raw||"unknown"):
+   key==="model_variant"?raw:(raw||null);
+ }
+ if(!body.manufacturer||!body.model){status.textContent="Marca e modello obbligatori.";return;}
+ const button=form.querySelector('button[type="submit"]');button.disabled=true;
+ try{
+  const result=await api("/api/v1/plant/batteries"+(id?"/"+encodeURIComponent(id):""),{
+   method:id?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)
+  });
+  await batteryArchiveLoad(result.id);status.textContent="Modello salvato in Neon. Le matricole sono gestite nella Pratica.";
+  if(el("plantSheet")?.open)await plantLoad();
+ }catch(err){status.textContent="Errore salvataggio: "+err.message;}
+ finally{button.disabled=false;}
+}
+
 /* Scheda Impianto (livello Pratica): seleziona modelli condivisi e salva solo
    quantità, matricola e firmware effettivi delle apparecchiature installate.
    Non usa i valori del mirror e non modifica i dati di targa del catalogo. */
@@ -843,6 +968,7 @@ async function plantAddModel(e){
  finally{button.disabled=false;}
 }
 setupPlantSheet();
+setupBatteryArchive();
 
 /* Canonical panels initialize after successful authentication. */
 function canLeave(){return (!Object.keys(dirty).length&&!clientProfileDirty&&!siteProfileDirty&&!dicoChecksDirty&&!dicoInterventionDirty&&!dicoRegDirty)||confirm("Ci sono modifiche non salvate. Abbandonarle?");}
