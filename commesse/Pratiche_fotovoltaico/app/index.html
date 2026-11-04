@@ -58,7 +58,7 @@ let activeLevel="installer",archiveGroups=null;
 const levelIds=["components","installer","client","case","procedure"];
 const levelLabels={components:"Archivio componenti",installer:"Installatori",client:"Cliente",case:"Pratica",procedure:"Procedimento"};
 const clientKeys=[["displayName","Nome cliente"],["taxCode","Codice fiscale"],["vatNumber","Partita IVA"],["address","Via / sede"],["streetNumber","Civico"],["city","Comune"],["province","Provincia"],["postalCode","CAP"],["phone","Telefono"],["email","Email"],["pec","PEC"],["notes","Note"]];
-const siteKeys=[["siteAddress","Via dell'impianto"],["siteStreetNumber","Civico"],["siteCity","Comune impianto"],["siteProvince","Provincia"],["sitePostalCode","CAP"],["siteStaircase","Scala"],["siteFloor","Piano"],["siteUnit","Interno"],["propertyOwnerName","Proprietario immobile"],["siteUse","Destinazione d'uso"]];
+const siteKeys=[["pod","POD dell’impianto"],["siteAddress","Via dell'impianto"],["siteStreetNumber","Civico"],["siteCity","Comune impianto"],["siteProvince","Provincia"],["sitePostalCode","CAP"],["siteStaircase","Scala"],["siteFloor","Piano"],["siteUnit","Interno"],["propertyOwnerName","Proprietario immobile"],["siteUse","Destinazione d'uso"]];
 let clientsCache=[],casesCache=[],clientFormId="",siteFormId="",clientProfileDirty=false,siteProfileDirty=false;
 function profileNode(prefix,keys,title){
  const form=document.createElement("form");form.id=prefix+"Form";form.className="profile-form admin-only";
@@ -491,7 +491,10 @@ function setupHierarchy(){
   const slot=document.createElement("div");slot.id="archiveSlot-"+id;panel.append(slot);root.append(panel);
  }
  el("level-client").insertBefore(profileNode("cl_",clientKeys,"Anagrafica cliente"),el("archiveSlot-client"));
- el("level-case").insertBefore(profileNode("site_",siteKeys,"Immobile e ubicazione dell’impianto"),el("archiveSlot-case"));
+ el("level-case").insertBefore(profileNode("site_",siteKeys,"Impianto — POD e ubicazione"),el("archiveSlot-case"));
+ const plantNote=document.createElement("p");plantNote.className="subtle";
+ plantNote.textContent="POD e ubicazione sono dati dell’impianto collegato alla pratica. Un cliente può avere più impianti con POD differenti. La residenza del cliente si modifica soltanto nella scheda Cliente.";
+ el("site_Form").insertBefore(plantNote,el("site_Form").querySelector(".profile-grid"));
  setupDicoIntervention();
  el("level-installer").append(installer);
  installer.querySelector("details").open=true;
@@ -1258,6 +1261,8 @@ el("previewMacro").onclick=()=>{
   for(const op of doc.operazioni){
    if(!op||typeof op.campo_id!=="string"||typeof op.valore!=="string"||op.valore.length>10000)throw Error("Operazione non valida: usare campo_id e valore testuale");
    if(seen.has(op.campo_id))throw Error("Campo ripetuto: "+op.campo_id);
+    if(op.campo_id==="F2-016-E-01"||op.campo_id==="F2-IM-DT-POD")
+     throw Error("Campo canonico: modifica l’anagrafica Cliente o il POD nella scheda Impianto.");
    seen.add(op.campo_id);const f=known.get(op.campo_id);if(!f)throw Error("Campo inesistente nel modello: "+op.campo_id);
    entries.push({campo_id:op.campo_id,valore:op.valore,label:f.label,precedente:Object.prototype.hasOwnProperty.call(dirty,op.campo_id)?dirty[op.campo_id]:(f.captured_value??"")});
   }
@@ -1283,9 +1288,9 @@ document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{tab=b.dataset.
 const selected=fields.filter(f=>groupOf(f)===tab),filtered=selected.filter(f=>[f.field_id,f.label,f.section].some(s=>(s||"").toLowerCase().includes(q)));
 el("title").textContent=tab+" — "+filtered.length+" campi";
 const sections={};filtered.forEach(f=>(sections[f.section]??=[]).push(f));
-el("fields").innerHTML=Object.entries(sections).map(([name,items])=>'<details class="fieldset" open><summary>'+escapeHtml(name)+' — '+items.length+' campi</summary>'+items.map(f=>'<div class="field"><label>'+escapeHtml(f.label)+'<small>'+escapeHtml(f.field_id)+'</small></label><input data-field="'+escapeHtml(f.field_id)+'" value="'+escapeHtml(Object.prototype.hasOwnProperty.call(dirty,f.field_id)?dirty[f.field_id]:f.captured_value??"")+'"><button type="button" data-copy="'+escapeHtml(f.field_id)+'" title="Copia negli appunti il valore di questo campo">Copia</button></div>').join("")+'</details>').join("")||"<p>Nessun campo in questa scheda.</p>";
+el("fields").innerHTML=Object.entries(sections).map(([name,items])=>'<details class="fieldset" open><summary>'+escapeHtml(name)+' — '+items.length+' campi</summary>'+items.map(f=>'<div class="field"><label>'+escapeHtml(f.label)+'<small>'+escapeHtml(f.field_id)+'</small></label><input data-field="'+escapeHtml(f.field_id)+'" value="'+escapeHtml(Object.prototype.hasOwnProperty.call(dirty,f.field_id)?dirty[f.field_id]:f.captured_value??"")+'"'+(f.canonical_read_only?' readonly title="Dato canonico: modifica Cliente o POD impianto"':'')+'><button type="button" data-copy="'+escapeHtml(f.field_id)+'" title="Copia negli appunti il valore di questo campo">Copia</button></div>').join("")+'</details>').join("")||"<p>Nessun campo in questa scheda.</p>";
 document.querySelectorAll("[data-copy]").forEach(btn=>btn.onclick=async()=>{const input=[...document.querySelectorAll("[data-field]")].find(x=>x.dataset.field===btn.dataset.copy);if(!input)return;try{await navigator.clipboard.writeText(input.value);btn.textContent="Copiato ✓";setTimeout(()=>{if(btn.isConnected)btn.textContent="Copia";},1800);}catch(e){btn.textContent="Errore copia";setTimeout(()=>{if(btn.isConnected)btn.textContent="Copia";},1800);}});
-document.querySelectorAll("[data-field]").forEach(input=>input.oninput=()=>{const f=fields.find(x=>x.field_id===input.dataset.field);if(!f)return;if(input.value===(f.captured_value??""))delete dirty[f.field_id];else dirty[f.field_id]=input.value;status();});
+document.querySelectorAll("[data-field]").forEach(input=>input.oninput=()=>{const f=fields.find(x=>x.field_id===input.dataset.field);if(!f||f.canonical_read_only)return;if(input.value===(f.captured_value??""))delete dirty[f.field_id];else dirty[f.field_id]=input.value;status();});
 }
 let createScope="";
 const createDialog=el("createDialog"),createMode=el("createMode");
@@ -1391,7 +1396,12 @@ el("refreshDb").onclick=async()=>{const pending=Object.keys(dirty).length+(clien
 el("saveAll").onclick=async()=>{const values=Object.entries(dirty).map(([fieldId,value])=>({fieldId,value}));if(!values.length)return;const btn=el("saveAll");btn.disabled=true;el("saveStatus").textContent="Salvataggio in corso…";try{const id=el("procedures").value;await api("/api/v1/values/"+encodeURIComponent(id),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({values})});for(const v of values){const f=fields.find(x=>x.field_id===v.fieldId);if(f)f.captured_value=v.value;delete dirty[v.fieldId];}status();el("saveStatus").textContent=values.length+" campi salvati nel database";}catch(e){status();el("saveStatus").textContent="Errore: nessuna modifica salvata. "+e.message;}};
 window.addEventListener("beforeunload",e=>{if(Object.keys(dirty).length||clientProfileDirty||siteProfileDirty||dicoChecksDirty||dicoInterventionDirty||dicoRegDirty){e.preventDefault();e.returnValue="";}});
 
-function profilePayload(prefix,keys){return Object.fromEntries(keys.map(([key])=>[key,el(prefix+key).value.trim()||null]));}
+function profilePayload(prefix,keys){
+ const values=Object.fromEntries(keys.map(([key])=>[key,el(prefix+key).value.trim()||null]));
+ // Stringa vuota = rimozione esplicita POD; null significherebbe non modificarlo.
+ if(prefix==="site_")values.pod=el("site_pod").value.trim().toUpperCase();
+ return values;
+}
 el("cl_Form").onsubmit=async e=>{
  e.preventDefault();const id=el("clients").value;if(!id||id!==clientFormId)return;
  const button=el("cl_Form").querySelector('button[type="submit"]');button.disabled=true;el("cl_Status").textContent="Salvataggio…";
@@ -1411,7 +1421,7 @@ el("site_Form").onsubmit=async e=>{
   await api("/api/v1/cases/"+encodeURIComponent(id)+"/site",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(profilePayload("site_",siteKeys))});
   casesCache=await api("/api/v1/cases/"+encodeURIComponent(el("clients").value));
   siteProfileDirty=false;profileValue("site_",siteKeys,casesCache.find(x=>x.case_id===id));
-  el("site_Status").textContent="Dati immobile salvati.";
+  el("site_Status").textContent="Dati impianto e POD salvati; il POD non appartiene all’anagrafica Cliente.";
  }catch(error){el("site_Status").textContent="Errore: "+error.message;}
  finally{button.disabled=!el("cases").value;}
 };
