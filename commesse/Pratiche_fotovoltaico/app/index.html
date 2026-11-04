@@ -1124,7 +1124,7 @@ const plantKinds=[
  {type:"INVERTER",title:"Inverter",unit:"kW",rating:"Potenza nominale AC (kW)"},
  {type:"BATTERY",title:"Batterie",unit:"kWh",rating:"Capacità nominale della batteria (kWh)"}
 ];
-let plantCatalogs={},plantItems=[],plantCaseId="",plantRequest=0;
+let plantCatalogs={},plantItems=[],plantMaterials=[],plantCaseId="",plantRequest=0;
 function setupPlantSheet(){
  const panel=document.createElement("details");
  panel.id="plantSheet";panel.className="canonical-panel admin-only";
@@ -1139,7 +1139,7 @@ function setupPlantSheet(){
  '<option value="AC">AC</option><option value="DC+AC">DC e AC</option></select></label> '+
  '<button type="submit">Salva collegamento accumulo</button> '+
  '<span id="plantStorageConnectionStatus" role="status"></span></form>'+
- '<div id="plantSheetContent"></div><p id="plantSheetStatus" role="status"></p>'+
+ '<div id="plantSheetContent"></div><section id="plantAccessoryMaterials" aria-label="Materiali accessori installati"></section><p id="plantSheetStatus" role="status"></p>'+
  '<form id="plantCatalogCreate" class="plant-create"><h5>Nuovo modello nell’archivio generale</h5>'+
  '<p class="plant-note">Usa questo comando solo se il modello non è già in catalogo. Potrai completarne la scheda tecnica successivamente.</p>'+
  '<div class="plant-create-fields"><label>Categoria<select name="type" required></select></label>'+
@@ -1169,6 +1169,7 @@ function plantOptions(kind,selected){
 }
 function plantRow(item,kind){
  const isExisting=!!item,selected=item?.modelId||"";
+ const location=isExisting&&item?.installationLocation?item.installationLocation:"";
  const desc=isExisting&&item.modelId==null
   ?'<p class="plant-note">Storico senza collegamento al catalogo: '+
    plantHtml([item.manufacturer,item.model].filter(Boolean).join(" ")||"modello non indicato")+
@@ -1182,7 +1183,8 @@ function plantRow(item,kind){
   '<label>Firmware installato (opzionale)<input name="firmwareVersion" maxlength="150" value="'+plantHtml(item?.firmwareVersion||"")+'"></label>'+
   '<div class="plant-actions"><button type="submit">'+(isExisting?"Aggiorna":"Aggiungi")+'</button>'+
   (isExisting?' <button type="button" data-remove="'+plantHtml(item.equipmentId)+'">Elimina</button>':"")+'</div>'+
-  (desc?'<div style="grid-column:1/-1">'+desc+'</div>':"")+'</form>';
+  (desc?'<div style="grid-column:1/-1">'+desc+'</div>':"")+
+   (location?'<p class="plant-note" style="grid-column:1/-1">Ubicazione: '+plantHtml(location)+'</p>':"")+'</form>';
 }
 function plantRender(){
  const parent=el("plantSheetContent");parent.replaceChildren();
@@ -1200,11 +1202,39 @@ function plantRender(){
   parent.append(group);
  }
 }
+function plantRenderMaterials(){
+ const root=el("plantAccessoryMaterials");root.replaceChildren();
+ const heading=document.createElement("h5");heading.textContent="Altri materiali installati";
+ root.append(heading);
+ if(!plantMaterials.length){
+  const empty=document.createElement("p");empty.className="plant-note";
+  empty.textContent="Nessun materiale accessorio censito in Neon.";
+  root.append(empty);return;
+ }
+ const note=document.createElement("p");note.className="plant-note";
+ note.textContent="Dati strutturati della pratica. Le quantità dei cavi conservano il numero della relazione; l’unità di misura non è indicata.";
+ root.append(note);
+ const table=document.createElement("table");table.className="plant-materials-table";
+ const thead=document.createElement("thead");
+ thead.innerHTML="<tr><th>Materiale</th><th>Marca</th><th>Quantità</th><th>Posizione</th></tr>";
+ table.append(thead);
+ const body=document.createElement("tbody");
+ for(const m of plantMaterials){
+  const row=document.createElement("tr");
+  const cols=[m.description,m.manufacturer||"—",
+   m.quantity==null?"—":String(m.quantity)+(m.unit?" "+m.unit:" (unità non indicata)"),
+   m.installationLocation||"—"];
+  for(const value of cols){const td=document.createElement("td");td.textContent=value;row.append(td);}
+  body.append(row);
+ }
+ table.append(body);root.append(table);
+}
+
 async function plantLoad(){
  const caseId=el("cases").value,seq=++plantRequest;
  const status=el("plantSheetStatus");
  if(!caseId){
-  plantItems=[];plantRender();status.textContent="Seleziona una pratica.";
+  plantItems=[];plantMaterials=[];plantRender();plantRenderMaterials();status.textContent="Seleziona una pratica.";
   plantCaseId="";
   el("plantStorageConnectionSide").value="";
   el("plantStorageConnectionSide").disabled=true;
@@ -1213,14 +1243,15 @@ async function plantLoad(){
   return;
  }
  status.textContent="Caricamento scheda impianto…";
- const [catalogs,items,sideInfo]=await Promise.all([
+ const [catalogs,items,sideInfo,materials]=await Promise.all([
   api("/api/v1/plant/catalogs"),
   api("/api/v1/plant/cases/"+encodeURIComponent(caseId)),
   api("/api/v1/plant/cases/"+encodeURIComponent(caseId)+"/storage-connection")
-    .catch(error=>({error:error.message}))
+    .catch(error=>({error:error.message})),
+  api("/api/v1/plant/cases/"+encodeURIComponent(caseId)+"/materials")
  ]);
  if(seq!==plantRequest||caseId!==el("cases").value)return;
- plantCatalogs=catalogs;plantItems=items;plantCaseId=caseId;plantRender();
+ plantCatalogs=catalogs;plantItems=items;plantMaterials=materials;plantCaseId=caseId;plantRender();plantRenderMaterials();
  const sideSelect=el("plantStorageConnectionSide");
  sideSelect.value=sideInfo.error?"":sideInfo.storageConnectionSide||"";
  sideSelect.disabled=!!sideInfo.error;
