@@ -1,6 +1,6 @@
 <!doctype html><html lang="it"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pratiche fotovoltaiche | Gestione pratiche</title><style>
 :root{font:16px system-ui;color:#16283f;background:#f0f4f8}body{margin:0}header{padding:16px 4%;background:#12466d;color:white}main{max-width:1150px;margin:20px auto;padding:0 14px}.panel{background:white;border:1px solid #d2dde6;border-radius:10px;padding:18px;margin:12px 0}select,input,button{font:inherit;padding:10px;border-radius:7px;border:1px solid #b8c8da}button{background:#125787;color:white;cursor:pointer}button:disabled{opacity:.5}.field{display:grid;grid-template-columns:1fr 1.5fr auto;gap:12px;align-items:center;padding:11px 0;border-top:1px solid #eef1f5}.field small{display:block;color:#52687c;font-size:12px}.field input{width:100%;box-sizing:border-box}.msg{color:#a1431d}.nav{display:flex;flex-wrap:wrap;gap:7px;margin:18px 0 12px}.nav button{background:#fff;color:#164b75;border-color:#c4d1df}.nav button.active{background:#125787;color:white}.fieldset{border:1px solid #dce5ed;border-radius:8px;margin:12px 0;overflow:hidden}.fieldset summary{padding:12px;background:#f3f7fa;cursor:pointer;font-weight:650}.fieldset .field{padding:12px}.count{font-size:12px;color:#64758a}.field button{white-space:nowrap}#editor[hidden],#workspace[hidden]{display:none}body.portal-mode .admin-only{display:none}body.portal-mode header{padding:7px 2%}body.portal-mode header h2{font-size:16px;margin:0}body.portal-mode main{margin:6px auto;max-width:none;padding:0 7px}body.portal-mode .panel{padding:10px;margin:6px 0}body.portal-mode .field{grid-template-columns:minmax(110px,1fr) minmax(120px,1.5fr) auto;gap:6px;padding:5px 0}body.portal-mode .fieldset .field{padding:6px}body.portal-mode .nav{margin:7px 0;gap:4px}body.portal-mode .nav button{padding:6px;font-size:12px}body.portal-mode .field input{padding:6px}body.portal-mode .field button{padding:6px}body.portal-mode .fieldset summary{padding:7px}body.portal-mode #search{padding:6px;width:100%;box-sizing:border-box}@media(max-width:700px){.field{grid-template-columns:1fr}.field button{width:100%}}
-.hierarchy-panel{padding:18px}.hierarchy-panel>h3{margin:0 0 10px}.level-tabs{display:flex;gap:5px;flex-wrap:wrap;border-bottom:2px solid #d9e5ef;margin:16px 0 0}.level-tabs button{border-radius:8px 8px 0 0;background:#eaf1f7;color:#174a70;border:1px solid #c8d8e5;border-bottom:0;font-weight:650}.level-tabs button[aria-selected="true"]{background:#125787;color:#fff}.level-tabs button:disabled{opacity:.42;cursor:not-allowed}.level-tabs button:focus-visible{outline:3px solid #f2ae47;outline-offset:2px}.level-trail{background:#f3f7fb;color:#435b72;padding:10px;border-radius:6px;font-size:13px;overflow-wrap:anywhere}.level-panel[hidden]{display:none!important}.level-panel h4{font-size:18px;margin:14px 0}.level-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin:12px 0}.level-controls label{display:flex;flex-direction:column;gap:6px;min-width:min(100%,290px);flex:1}.level-controls select{width:100%;box-sizing:border-box}.level-controls button{white-space:normal}.hierarchy-panel #editor{margin:12px 0}.hierarchy-panel #installerPanel{margin:12px 0}.hierarchy-panel .archive-panel{margin:14px 0}.archive-panel details>summary{cursor:pointer;padding:12px;background:#f3f7fa;font-weight:650}.archive-panel details>div{padding:12px}.archive-panel #archiveScope{display:none}.archive-panel label:has(> #archiveScope){display:none}body.portal-mode #levelTab-installer{display:none}body.portal-mode .level-tabs{margin:6px 0 0}body.portal-mode .level-tabs button{padding:6px 10px;font-size:13px}@media(max-width:700px){.level-tabs button{flex:1;padding:9px 6px}.level-controls label{min-width:100%}}
+.hierarchy-panel{padding:18px}.hierarchy-panel>h3{margin:0 0 10px}.level-tabs{display:flex;gap:5px;flex-wrap:wrap;border-bottom:2px solid #d9e5ef;margin:16px 0 0}.level-tabs button{border-radius:8px 8px 0 0;background:#eaf1f7;color:#174a70;border:1px solid #c8d8e5;border-bottom:0;font-weight:650}.level-tabs button[aria-selected="true"]{background:#125787;color:#fff}.level-tabs button:disabled{opacity:.42;cursor:not-allowed}.level-tabs button:focus-visible{outline:3px solid #f2ae47;outline-offset:2px}.level-trail{background:#f3f7fb;color:#435b72;padding:10px;border-radius:6px;font-size:13px;overflow-wrap:anywhere}.level-panel[hidden]{display:none!important}.level-panel h4{font-size:18px;margin:14px 0}.level-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin:12px 0}.level-controls label{display:flex;flex-direction:column;gap:6px;min-width:min(100%,290px);flex:1}.level-controls select{width:100%;box-sizing:border-box}.level-controls button{white-space:normal}.hierarchy-panel #editor{margin:12px 0}.hierarchy-panel #installerPanel{margin:12px 0}.hierarchy-panel .archive-panel{margin:14px 0}.archive-panel details>summary{cursor:pointer;padding:12px;background:#f3f7fa;font-weight:650}.archive-panel details>div{padding:12px}.archive-panel #archiveScope{display:none}.archive-panel label:has(> #archiveScope){display:none}body.portal-mode #levelTab-installer,body.portal-mode #levelTab-components{display:none}body.portal-mode .level-tabs{margin:6px 0 0}body.portal-mode .level-tabs button{padding:6px 10px;font-size:13px}@media(max-width:700px){.level-tabs button{flex:1;padding:9px 6px}.level-controls label{min-width:100%}}
 .profile-form{border:1px solid #dce5ed;background:#f8fbfe;padding:12px;border-radius:8px;margin:12px 0}.profile-form h5{margin:0 0 12px;font-size:15px}.profile-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.profile-grid label{font-size:13px;font-weight:600;display:flex;flex-direction:column;gap:6px}.profile-grid label[hidden]{display:none!important}.profile-grid input,.profile-grid select{width:100%;box-sizing:border-box}.profile-actions{margin-top:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 
 .dico-checks-panel{border:1px solid #d9e4ef;border-radius:8px;margin:14px 0}
@@ -35,6 +35,17 @@
 .standard-fields label{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:600}
 .standard-fields input,.standard-fields select,.standard-fields textarea{box-sizing:border-box;width:100%;font:inherit;padding:8px}
 .standard-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.component-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 0;border-bottom:2px solid #d9e5ef}
+.component-tabs button{border:1px solid #c8d8e5;border-bottom:0;border-radius:8px 8px 0 0;background:#eaf1f7;color:#174a70;font-weight:650}
+.component-tabs button[aria-selected="true"]{background:#125787;color:#fff}
+.component-subpanel{padding:12px;border:1px solid #d9e5ef;border-top:0;border-radius:0 0 8px 8px}
+.component-subpanel[hidden]{display:none!important}
+.component-list{padding-left:22px;line-height:1.65}
+.component-form{border:1px solid #dce5ed;padding:12px;margin-top:12px;border-radius:8px}
+.component-form .component-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.component-form label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600}
+.component-form input{width:100%;box-sizing:border-box}
+.component-form button{margin-top:10px}
 </style></head><body><header><h2>Pratiche fotovoltaiche — Gestione pratiche <small style="font-size:12px;opacity:.85">V4.4 · Genera asseverazione A4</small></h2></header><main><section class="panel" id="login"><h3>Accesso riservato</h3><form id="auth"><input type="password" id="pw" required placeholder="Segreto Render" autocomplete="current-password"><button>Accedi</button></form><p class="msg" id="authmsg"></p></section>
 <section id="workspace" hidden><section class="panel admin-only" id="installerPanel"><details><summary><strong>Anagrafica e profili portale</strong></summary><p>Registro condiviso tra pratiche. Non inserire password, OTP o credenziali.</p><label>Installatore <select id="installerSelect"></select></label> <button type="button" id="installerReload">Aggiorna installatori</button> <button type="button" id="installerNew">Nuovo installatore</button><form id="installerForm" style="margin-top:12px"><div id="installerFields"></div><button type="submit">Salva anagrafica</button> <span id="installerStatus" role="status"></span></form><hr><h4>Profili portale</h4><label>Profilo <select id="portalProfileSelect"></select></label> <button type="button" id="portalNew">Nuovo profilo</button><form id="portalProfileForm"><div id="portalFields"></div><button type="submit">Salva profilo portale</button> <span id="portalStatus" role="status"></span></form><hr><h4>Collegamento alla pratica selezionata</h4><label>Ruolo <select id="installerAssignmentRole"><option value="INSTALLATORE">Installatore</option><option value="FIRMATARIO_DICO">Firmatario Di.Co.</option><option value="FIRMATARIO_AUTOTEST">Firmatario asseverazione post-autotest</option></select></label> <button type="button" id="installerAssign">Associa alla pratica</button><p id="installerAssigned"></p></details></section><div style="display:flex;gap:8px;align-items:center;padding:5px 0"><button id="copyHelp" type="button" style="background:#276b3c;font-weight:700">📋 Copia help per AI</button><span id="helpStatus" role="status"></span> <button id="portalMode" type="button" aria-pressed="false">Compilazione portale</button><span id="modeStatus" role="status"></span></div><div class="panel"><h3>Archivio pratiche fotovoltaiche</h3><div style="margin:10px 0"><button id="refreshDb" type="button">Aggiorna da DB</button> <span id="refreshStatus" role="status"></span></div><label>Cliente <select id="clients"></select></label> <button class="admin-only" id="newclient">Nuovo cliente</button> <button class="admin-only" type="button" id="delclient" style="background:#9e3131">Elimina</button> <label>Pratica fotovoltaica <select id="cases"></select></label> <label class="admin-only">Installatore della pratica <select id="caseInstaller"><option value="">Non assegnato</option></select></label> <button type="button" class="admin-only" id="saveCaseInstaller">Salva installatore</button> <span id="caseInstallerStatus"></span> <button class="admin-only" id="newcase">Nuova pratica fotovoltaica</button> <button class="admin-only" type="button" id="delcase" style="background:#9e3131">Elimina</button> <label>Procedimento <select id="procedures"></select></label> <button class="admin-only" id="newprocedure">Nuovo procedimento</button> <button class="admin-only" type="button" id="delprocedure" style="background:#9e3131">Elimina</button></div><section class="panel admin-only"><h3>Archivio testuale / OCR</h3><p style="color:#52687c">Testi OCR, targhe e note consultabili ai tre livelli. Puoi aggiungere un documento manualmente.</p><form id="newArchive" class="fieldset" style="padding:12px"><h4>Nuovo documento testuale</h4><label>Livello <select id="archiveScope"><option value="client">Cliente</option><option value="case">Pratica</option><option value="procedure">Procedimento</option></select></label> <label>Tipo <select id="archiveKind"><option>OCR</option><option>TRASCRIZIONE</option><option>TARGA</option><option>NOTA</option><option>ALTRO</option></select></label><p><label>Titolo <input id="archiveTitle" required maxlength="250" style="width:100%;box-sizing:border-box"></label></p><p><label>Fonte / provenienza <input id="archiveSource" maxlength="1000" style="width:100%;box-sizing:border-box"></label></p><p><label>Testo del documento <textarea id="archiveBody" required maxlength="200000" rows="9" style="display:block;width:100%;box-sizing:border-box;font:inherit"></textarea></label></p><button id="archiveSubmit" type="submit">Salva nuovo documento</button> <span id="archiveMessage" role="status"></span></form><div id="archives" role="region" aria-live="polite">Seleziona un cliente per visualizzare gli archivi.</div></section><section id="editor" class="panel" hidden><h3 id="title">Procedimento</h3><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><button id="saveAll" type="button" disabled>Salva modifiche</button><button id="dicoPrint" type="button" title="Genera la Di.Co. dai soli dati strutturati canonici">Stampa Di.Co.</button><button id="assevPrint" type="button" title="Genera asseverazione tecnica Fase 2 dai dati canonici">Genera asseverazione</button><label>Committente (titolare pratica, sola lettura): <output id="dicoCustomerName"></output></label><span id="dicoStatus" role="status" style="font-size:13px;color:#52687c"></span><span id="assevStatus" role="status" style="font-size:13px;color:#52687c"></span><span id="saveStatus" role="status">Nessuna modifica</span></div><details class="fieldset admin-only" id="macroPanel"><summary>Importa macro campi PV-MACRO-1</summary><div style="padding:12px"><p>Incolla il JSON prodotto da GPT. L'anteprima non salva nulla: «Applica ai campi» prepara le modifiche, poi premi «Salva modifiche».</p><button type="button" id="copyCatalog">Copia catalogo campi del procedimento</button><p><textarea id="macroText" rows="8" spellcheck="false" placeholder='{"formato":"PV-MACRO-1","procedimento_id":"...","operazioni":[{"campo_id":"F2-001","valore":"..."}]}' style="display:block;box-sizing:border-box;width:100%;font:13px monospace"></textarea></p><button type="button" id="previewMacro">Verifica e mostra anteprima</button> <button type="button" id="applyMacro" disabled>Applica ai campi</button><p id="macroMessage" role="status"></p><div id="macroPreview"></div></div></details><nav id="tabs" class="nav" aria-label="Schede procedimento"></nav><input id="search" type="search" placeholder="Cerca campo, sezione o ID"><div id="fields"></div></section></section><dialog id="createDialog" style="border:1px solid #b8c8da;border-radius:10px;width:min(600px,94vw);box-sizing:border-box"><form id="createForm"><h3 id="createHeading">Nuovo</h3><label>Modalità <select id="createMode"><option value="empty">Crea vuoto</option><option value="clone">Clona da esistente</option></select></label><p><label id="createNameLabel">Nome / titolo <input id="createName" required maxlength="250" style="width:100%;box-sizing:border-box"></label></p><div id="cloneSettings" hidden><p><label>Origine <select id="cloneSource" style="max-width:100%"></select></label></p><p><label><input type="checkbox" id="cloneChildren" checked> Includi elementi collegati (pratiche o procedimenti)</label></p><p><label><input type="checkbox" id="cloneValues" checked> Copia valori dei campi dei procedimenti</label></p><p><label><input type="checkbox" id="cloneArchives" checked> Copia documenti testuali/OCR ai livelli inclusi</label></p><p style="font-size:13px;color:#52687c">I numeri ufficiali delle pratiche non vengono copiati. Tutti i dati clonati sono da verificare prima dell'uso.</p></div><p id="createFeedback" role="status"></p><div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" id="createCancel">Annulla</button><button type="submit" id="createSubmit">Crea</button></div></form></dialog></main><script>
 const API="https://pratiche-fotovoltaico-demo-api.onrender.com";let token="",fields=[],tab="Autorizza",dirty={};const el=id=>document.getElementById(id);
@@ -44,8 +55,8 @@ function options(id,items,key,label){el(id).innerHTML=items.map(x=>'<option valu
 
 /* La gerarchia a tre schede riutilizza i controlli esistenti, senza duplicare i dati. */
 let activeLevel="installer",archiveGroups=null;
-const levelIds=["installer","client","case","procedure"];
-const levelLabels={installer:"Installatori",client:"Cliente",case:"Pratica",procedure:"Procedimento"};
+const levelIds=["components","installer","client","case","procedure"];
+const levelLabels={components:"Archivio componenti",installer:"Installatori",client:"Cliente",case:"Pratica",procedure:"Procedimento"};
 const clientKeys=[["displayName","Nome cliente"],["taxCode","Codice fiscale"],["vatNumber","Partita IVA"],["address","Via / sede"],["streetNumber","Civico"],["city","Comune"],["province","Provincia"],["postalCode","CAP"],["phone","Telefono"],["email","Email"],["pec","PEC"],["notes","Note"]];
 const siteKeys=[["siteAddress","Via dell'impianto"],["siteStreetNumber","Civico"],["siteCity","Comune impianto"],["siteProvince","Provincia"],["sitePostalCode","CAP"],["siteStaircase","Scala"],["siteFloor","Piano"],["siteUnit","Interno"],["propertyOwnerName","Proprietario immobile"],["siteUse","Destinazione d'uso"]];
 let clientsCache=[],casesCache=[],clientFormId="",siteFormId="",clientProfileDirty=false,siteProfileDirty=false;
@@ -460,6 +471,7 @@ function setupHierarchy(){
  const root=el("clients").closest(".panel"),installer=el("installerPanel"),archive=el("newArchive").closest("section"),editor=el("editor");
  const head=root.querySelector("h3"),refresh=el("refreshDb").parentElement;
  const controls={
+  components:[],
   installer:[],
   client:[el("clients").closest("label"),el("newclient"),el("delclient")],
   case:[el("cases").closest("label"),el("newcase"),el("delcase"),el("caseInstaller").closest("label"),el("saveCaseInstaller"),el("caseInstallerStatus")],
@@ -468,7 +480,7 @@ function setupHierarchy(){
  root.replaceChildren(head,refresh);root.classList.add("hierarchy-panel");
  const nav=document.createElement("nav");nav.id="levelTabs";nav.className="level-tabs";nav.setAttribute("role","tablist");nav.setAttribute("aria-label","Livelli archivio");
  for(const id of levelIds){
-  const button=document.createElement("button");button.type="button";button.id="levelTab-"+id;button.textContent=(levelIds.indexOf(id)+1)+" · "+levelLabels[id];button.setAttribute("role","tab");button.setAttribute("aria-controls","level-"+id);button.onclick=()=>showLevel(id);nav.append(button);
+  const button=document.createElement("button");button.type="button";button.id="levelTab-"+id;button.textContent=id==="components"?levelLabels[id]:levelIds.indexOf(id)+" · "+levelLabels[id];button.setAttribute("role","tab");button.setAttribute("aria-controls","level-"+id);button.onclick=()=>showLevel(id);nav.append(button);
  }
  root.append(nav);
  const trail=document.createElement("p");trail.id="levelTrail";trail.className="level-trail";trail.setAttribute("aria-live","polite");root.append(trail);
@@ -501,7 +513,7 @@ function setupHierarchy(){
 }
 function selectedLevelName(id){return el(id).value?(el(id).selectedOptions[0]?.textContent||"Selezionato"):"—";}
 function renderLevelArchive(){
- if(activeLevel==="installer")return;
+ if(activeLevel==="installer"||activeLevel==="components")return;
  const target=el("archives");
  if(!archiveGroups){target.textContent="Seleziona un elemento per consultare i documenti.";return;}
  const group=archiveGroups.find(g=>g.scope===activeLevel);
@@ -510,7 +522,7 @@ function renderLevelArchive(){
 }
 function showLevel(level){
  if(!levelIds.includes(level))return;
- if(level==="installer"&&document.body.classList.contains("portal-mode"))return;
+ if((level==="installer"||level==="components")&&document.body.classList.contains("portal-mode"))return;
  if(level==="case"&&!el("clients").value)return;
  if(level==="procedure"&&!el("cases").value)return;
  activeLevel=level;
@@ -520,7 +532,8 @@ function showLevel(level){
   btn.setAttribute("aria-selected",String(selected));btn.tabIndex=selected?0:-1;
   el("level-"+id).hidden=!selected;
  }
- if(level!=="installer"){
+ if(level==="components")showComponentTab(activeComponent);
+ if(level!=="installer"&&level!=="components"){
   el("archiveScope").value=level;el("archiveLevelLabel").textContent=levelLabels[level];
   el("archiveSlot-"+level).append(el("newArchive").closest("section"));renderLevelArchive();
  }
@@ -697,6 +710,113 @@ async function standardSave(e){
 setupTechnicalStandards();
 
 
+/* Primo livello: Archivio componenti, indipendente da ogni installatore,
+   cliente e pratica. Le singole installazioni conservano solo FK e quantità. */
+const componentKinds=[
+ {id:"panels",type:"PV_MODULE",label:"Pannelli",unit:"Wp",rating:"Potenza nominale pannello (Wp)"},
+ {id:"inverters",type:"INVERTER",label:"Inverter",unit:"kW",rating:"Potenza nominale inverter (kW)"},
+ {id:"batteries",type:"BATTERY",label:"Batterie"}
+];
+let activeComponent="batteries";
+function setupComponentTabs(){
+ const host=el("level-components");
+ const intro=document.createElement("p");intro.className="subtle";
+ intro.textContent="Modelli di catalogo condivisi da tutte le pratiche. Quantità e matricole si assegnano in 3 · Pratica → Scheda impianto.";
+ host.append(intro);
+ const tabs=document.createElement("nav");tabs.className="component-tabs";
+ tabs.setAttribute("role","tablist");tabs.setAttribute("aria-label","Archivi generali dei componenti");
+ host.append(tabs);
+ for(const kind of componentKinds){
+  const tab=document.createElement("button");tab.type="button";
+  tab.id="componentTab-"+kind.id;tab.textContent=kind.label;
+  tab.setAttribute("role","tab");tab.setAttribute("aria-controls","componentPanel-"+kind.id);
+  tab.onclick=()=>showComponentTab(kind.id);tabs.append(tab);
+  const panel=document.createElement("section");panel.className="component-subpanel";
+  panel.id="componentPanel-"+kind.id;panel.setAttribute("role","tabpanel");
+  panel.setAttribute("aria-labelledby",tab.id);
+  if(kind.id==="batteries"){
+   const slot=document.createElement("div");slot.id="componentSlot-batteries";panel.append(slot);
+  }else{
+   const info=document.createElement("p");info.className="subtle";
+   info.textContent="Archivio generale: consulta e registra modelli base. Ulteriori caratteristiche di targa saranno disponibili nelle prossime estensioni.";
+   panel.append(info);
+   const list=document.createElement("ul");list.id="componentList-"+kind.id;list.className="component-list";panel.append(list);
+   const form=document.createElement("form");form.className="component-form";
+   form.id="componentForm-"+kind.id;
+   const grid=document.createElement("div");grid.className="component-grid";
+   for(const [key,caption] of [["manufacturer","Marca"],["model","Modello"],["nominalRating",kind.rating]]){
+    const label=document.createElement("label");label.textContent=caption;
+    const input=document.createElement("input");input.name=key;
+    input.type=key==="nominalRating"?"number":"text";input.required=key!=="nominalRating";
+    if(input.type==="number"){input.min="0.000001";input.step="any";}else input.maxLength=200;
+    label.append(input);grid.append(label);
+   }
+   form.append(grid);
+   const save=document.createElement("button");save.type="submit";save.textContent="Registra modello generale";
+   form.append(save);
+   const status=document.createElement("p");status.id="componentStatus-"+kind.id;status.setAttribute("role","status");form.append(status);
+   form.addEventListener("submit",e=>saveComponentBase(e,kind));
+   panel.append(form);
+  }
+  host.append(panel);
+ }
+ showComponentTab(activeComponent);
+}
+function showComponentTab(kindId){
+ if(!componentKinds.some(k=>k.id===kindId))return;
+ activeComponent=kindId;
+ for(const kind of componentKinds){
+  const selected=kind.id===kindId;
+  const tab=el("componentTab-"+kind.id);
+  tab.setAttribute("aria-selected",String(selected));tab.tabIndex=selected?0:-1;
+  el("componentPanel-"+kind.id).hidden=!selected;
+ }
+ if(kindId==="batteries"){
+  const details=el("batteryArchivePanel");
+  if(details&&!details.open)details.open=true;
+ }else if(token)loadComponentBase(kindId);
+}
+async function loadComponentBase(id){
+ const kind=componentKinds.find(k=>k.id===id);
+ if(!kind||kind.id==="batteries")return;
+ const target=el("componentList-"+id),status=el("componentStatus-"+id);
+ target.replaceChildren();status.textContent="Caricamento catalogo…";
+ try{
+  const catalogs=await api("/api/v1/plant/catalogs");
+  const entries=catalogs[kind.type]||[];
+  for(const x of entries){
+   const li=document.createElement("li");
+   li.textContent=[x.manufacturer,x.model,x.variant].filter(Boolean).join(" ")+
+    (x.nominalRating==null?"":" — "+x.nominalRating+" "+kind.unit);
+   target.append(li);
+  }
+  if(!entries.length){
+   const li=document.createElement("li");li.textContent="Nessun modello registrato";target.append(li);
+  }
+  status.textContent=entries.length+" modelli nell'archivio generale.";
+ }catch(e){status.textContent="Lettura fallita: "+e.message;}
+}
+async function saveComponentBase(e,kind){
+ e.preventDefault();
+ const form=e.target,status=el("componentStatus-"+kind.id);
+ const button=form.querySelector('button[type="submit"]');
+ const manufacturer=form.elements.namedItem("manufacturer").value.trim();
+ const model=form.elements.namedItem("model").value.trim();
+ const input=form.elements.namedItem("nominalRating").value.trim();
+ const nominalRating=input===""?null:Number(input);
+ if(!manufacturer||!model||(nominalRating!==null&&(!Number.isFinite(nominalRating)||nominalRating<=0))){
+  status.textContent="Marca, modello e potenza da correggere.";return;
+ }
+ button.disabled=true;
+ try{
+  await api("/api/v1/plant/catalogs/"+kind.type,{method:"POST",
+   headers:{"Content-Type":"application/json"},body:JSON.stringify({manufacturer,model,nominalRating})});
+  form.reset();await loadComponentBase(kind.id);
+  status.textContent+=" Modello registrato.";
+ }catch(error){status.textContent="Salvataggio non riuscito: "+error.message;}
+ finally{button.disabled=false;}
+}
+
 /* Archivio generale Batterie: editore di tutti i campi strutturati di targa.
    Le matricole appartengono esclusivamente alle apparecchiature nella pratica. */
 const batteryArchiveSpecs=[
@@ -745,7 +865,7 @@ function setupBatteryArchive(){
  '<form id="batteryArchiveForm"><div class="canonical-fields" id="batteryArchiveFields"></div>'+
  '<div class="canonical-actions"><button type="submit">Salva modello batteria</button>'+
  '<span id="batteryArchiveStatus" role="status"></span></div></form></div>';
- el("level-installer").append(section);
+ el("componentSlot-batteries").append(section);
  const container=el("batteryArchiveFields");
  for(const [key,name,kind] of batteryArchiveSpecs){
   const lab=document.createElement("label");lab.className="canonical-field";lab.textContent=name;
@@ -968,6 +1088,7 @@ async function plantAddModel(e){
  finally{button.disabled=false;}
 }
 setupPlantSheet();
+setupComponentTabs();
 setupBatteryArchive();
 
 /* Canonical panels initialize after successful authentication. */
