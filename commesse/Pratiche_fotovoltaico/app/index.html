@@ -526,6 +526,9 @@ function showLevel(level){
  if(level==="case"&&!el("clients").value)return;
  if(level==="procedure"&&!el("cases").value)return;
  activeLevel=level;
+ el("levelTrail").textContent=level==="components"
+  ?"Archivio unico generale — indipendente da installatori, clienti e pratiche."
+  :"Cliente: "+selectedLevelName("clients")+"  ›  Pratica: "+selectedLevelName("cases")+"  ›  Procedimento: "+selectedLevelName("procedures");
  for(const id of levelIds){
   const btn=el("levelTab-"+id),selected=id===level;
   btn.disabled=(id==="case"&&!el("clients").value)||(id==="procedure"&&!el("cases").value);
