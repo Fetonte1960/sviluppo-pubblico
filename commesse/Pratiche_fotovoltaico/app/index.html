@@ -720,7 +720,7 @@ const componentKinds=[
  {id:"inverters",type:"INVERTER",label:"Inverter",unit:"kW",rating:"Potenza nominale inverter (kW)"},
  {id:"batteries",type:"BATTERY",label:"Batterie"}
 ];
-let activeComponent="batteries";
+let activeComponent="inverters";
 function setupComponentTabs(){
  const host=el("level-components");
  const intro=document.createElement("p");intro.className="subtle";
@@ -737,8 +737,8 @@ function setupComponentTabs(){
   const panel=document.createElement("section");panel.className="component-subpanel";
   panel.id="componentPanel-"+kind.id;panel.setAttribute("role","tabpanel");
   panel.setAttribute("aria-labelledby",tab.id);
-  if(kind.id==="batteries"){
-   const slot=document.createElement("div");slot.id="componentSlot-batteries";panel.append(slot);
+  if(kind.id==="batteries"||kind.id==="inverters"){
+   const slot=document.createElement("div");slot.id="componentSlot-"+kind.id;panel.append(slot);
   }else{
    const info=document.createElement("p");info.className="subtle";
    info.textContent="Archivio generale: consulta e registra modelli base. Ulteriori caratteristiche di targa saranno disponibili nelle prossime estensioni.";
@@ -774,14 +774,14 @@ function showComponentTab(kindId){
   tab.setAttribute("aria-selected",String(selected));tab.tabIndex=selected?0:-1;
   el("componentPanel-"+kind.id).hidden=!selected;
  }
- if(kindId==="batteries"){
-  const details=el("batteryArchivePanel");
+ if(kindId==="batteries"||kindId==="inverters"){
+  const details=el(kindId==="batteries"?"batteryArchivePanel":"inverterArchivePanel");
   if(details&&!details.open)details.open=true;
  }else if(token)loadComponentBase(kindId);
 }
 async function loadComponentBase(id){
  const kind=componentKinds.find(k=>k.id===id);
- if(!kind||kind.id==="batteries")return;
+ if(!kind||kind.id!=="panels")return;
  const target=el("componentList-"+id),status=el("componentStatus-"+id);
  target.replaceChildren();status.textContent="Caricamento catalogo…";
  try{
@@ -816,6 +816,116 @@ async function saveComponentBase(e,kind){
    headers:{"Content-Type":"application/json"},body:JSON.stringify({manufacturer,model,nominalRating})});
   form.reset();await loadComponentBase(kind.id);
   status.textContent+=" Modello registrato.";
+ }catch(error){status.textContent="Salvataggio non riuscito: "+error.message;}
+ finally{button.disabled=false;}
+}
+
+/* Archivio generale inverter: valori di targa del modello, mai seriali o
+   firmware installato. L'inverter in pratica conserva FK, quantità e matricola. */
+const inverterArchiveGroups=[["Identificazione",[["manufacturer","Marca","text"],["model","Modello","text"],["model_variant","Variante","text"],["product_name","Nome prodotto","text"],["inverter_type","Tipologia","text"]]],["Potenza e dati generali",[["rated_ac_power_kw","Potenza nominale attiva AC (kW)","number"],["maximum_ac_power_kw","Potenza massima attiva AC (kW)","number"],["rated_dc_input_power_kw","Potenza nominale ingresso FV (kW)","number"],["grid_phases","Numero fasi rete","integer"]]],["Ingresso fotovoltaico",[["max_dc_input_voltage_v","Tensione FV massima (V)","number"],["mppt_min_voltage_v","MPPT minimo (V)","number"],["mppt_max_voltage_v","MPPT massimo (V)","number"],["mppt_count","Numero MPPT","integer"],["max_dc_input_current_a","Corrente DC massima totale (A) se dichiarata","number"],["pv_max_current_per_input_a","Corrente massima per MPPT (A, ad es. 16/16)","text"],["pv_short_circuit_current_per_input_a","Corrente cortocircuito per MPPT (A, ad es. 23/23)","text"]]],["Porta batteria",[["battery_min_voltage_v","Tensione batteria minima (V)","number"],["battery_max_voltage_v","Tensione batteria massima (V)","number"],["battery_max_charge_current_a","Corrente massima carica (A)","number"],["battery_max_discharge_current_a","Corrente massima scarica (A)","number"]]],["Collegamento alla rete",[["nominal_grid_voltage_v","Tensione nominale singola (V), se indicata","number"],["nominal_frequency_hz","Frequenza nominale singola (Hz), se indicata","number"],["grid_voltage_options_v","Valori tensione rete possibili (V)","text"],["grid_frequency_options_hz","Frequenze rete possibili (Hz)","text"],["grid_max_export_current_a","Corrente massima verso rete (A)","number"],["grid_rated_export_apparent_power_kva","Potenza apparente nominale verso rete (kVA)","number"],["grid_max_export_apparent_power_kva","Potenza apparente massima verso rete (kVA)","number"],["grid_max_import_current_a","Corrente massima da rete (A)","number"],["grid_rated_import_apparent_power_kva","Potenza apparente nominale da rete (kVA)","number"],["grid_max_import_apparent_power_kva","Potenza apparente massima da rete (kVA)","number"]]],["Uscita backup",[["backup_voltage_options_v","Tensioni previste backup (V)","text"],["backup_frequency_options_hz","Frequenze previste backup (Hz)","text"],["backup_max_current_a","Corrente massima backup (A)","number"],["backup_rated_apparent_power_kva","Potenza apparente nominale backup (kVA)","number"],["backup_max_apparent_power_kva","Potenza apparente massima backup (kVA)","number"]]],["Altri dati di targa",[["regional_apparent_power_derating_note","Limitazioni di potenza per norme locali","text"],["power_factor_label","Fattore di potenza (testo targhetta)","text"],["reactive_power_at_idle_kvar","Reattiva a vuoto (kvar)","number"],["capacitor_power_kvar","Potenza condensatore (kvar)","number"],["operating_temp_min_c","Temperatura esercizio minima (°C)","number"],["operating_temp_max_c","Temperatura esercizio massima (°C)","number"],["isolation_type","Tipo isolamento","text"],["ip_rating","Grado IP","text"],["protective_class","Classe protezione","text"],["ovc_dc_category","Categoria sovratensione DC","text"],["ovc_ac_category","Categoria sovratensione AC","text"]]],["Certificazioni e gestione modello",[["spi_integrated","SPI integrato","boolean"],["ddi_integrated","DDI integrato","boolean"],["cei021_certificate_reference","Certificato CEI 0-21","text"],["frt_ovrt_certificate_reference","Certificato FRT/OVRT","text"],["certified_firmware_reference","Firmware certificato del modello","text"],["datasheet_reference","Scheda tecnica di riferimento","text"],["conformity_reference","Riferimento conformità","text"],["source_document","Fonte dati e documenti","text"],["verification_status","Stato verifica del modello","status"],["enabled","Modello disponibile per le pratiche","requiredBoolean"],["notes","Note tecniche","text"]]]];
+const inverterArchiveSpecs=inverterArchiveGroups.flatMap(group=>group[1]);
+let inverterArchiveRows=[];
+function setupInverterArchive(){
+ const box=document.createElement("details");box.id="inverterArchivePanel";
+ box.className="canonical-panel admin-only";
+ box.innerHTML='<summary>Archivio inverter — schede tecniche generali</summary>'+
+  '<div class="canonical-body"><p class="subtle">Dati condivisi tra tutte le pratiche. '+
+  'Non inserire matricola o firmware installato in questo archivio. '+
+  'Attenzione: i valori in <strong>kW</strong> e <strong>kVA</strong> sono distinti, '+
+  'le correnti per MPPT non si sommano e i campi non documentati restano vuoti.</p>'+
+  '<div class="canonical-controls"><select id="inverterArchiveSelect" aria-label="Seleziona modello inverter"></select>'+
+  '<button type="button" id="inverterArchiveNew">Nuovo modello</button>'+
+  '<button type="button" id="inverterArchiveReload">Aggiorna elenco</button></div>'+
+  '<form id="inverterArchiveForm"><div id="inverterArchiveGroups"></div>'+
+  '<div class="canonical-actions"><button type="submit">Salva modello inverter</button>'+
+  '<span id="inverterArchiveStatus" role="status"></span></div></form></div>';
+ el("componentSlot-inverters").append(box);
+ const root=el("inverterArchiveGroups");
+ for(const [groupName,fields] of inverterArchiveGroups){
+  const section=document.createElement("section");section.className="profile-form";
+  const heading=document.createElement("h5");heading.textContent=groupName;section.append(heading);
+  const grid=document.createElement("div");grid.className="canonical-fields";
+  for(const [key,label,kind] of fields){
+   const holder=document.createElement("label");holder.className="canonical-field";
+   holder.textContent=label;
+   let node;
+   if(kind==="boolean"||kind==="requiredBoolean"||kind==="status"){
+    node=document.createElement("select");
+    const choices=kind==="status"?
+     [["unknown","Non verificato"],["reported","Riportato da targhetta/documento"],["verified","Verificato"]]:
+     kind==="requiredBoolean"?[["true","Sì"],["false","No"]]:
+     [["","— Non specificato —"],["true","Sì"],["false","No"]];
+    for(const [value,text] of choices)node.add(new Option(text,value));
+   }else if(["notes","source_document"].includes(key)){
+    node=document.createElement("textarea");node.rows=3;node.maxLength=2000;
+   }else{
+    node=document.createElement("input");node.type=kind==="number"||kind==="integer"?"number":"text";
+    node.maxLength=kind==="text"?2000:undefined;
+    if(kind==="number")node.step="any";
+    if(kind==="integer"){node.step="1";node.min="1";node.max=key==="grid_phases"?"3":"32";}
+   }
+   node.name=key;holder.append(node);grid.append(holder);
+  }
+  section.append(grid);root.append(section);
+ }
+ const dropdown=el("inverterArchiveSelect");
+ dropdown.addEventListener("change",inverterArchiveShow);
+ el("inverterArchiveNew").onclick=()=>{dropdown.value="";inverterArchiveShow();};
+ el("inverterArchiveReload").onclick=()=>inverterArchiveLoad(dropdown.value);
+ box.addEventListener("toggle",()=>{if(box.open)inverterArchiveLoad(dropdown.value);});
+ el("inverterArchiveForm").addEventListener("submit",inverterArchiveSave);
+}
+function inverterArchiveShow(){
+ const id=el("inverterArchiveSelect").value;
+ const row=inverterArchiveRows.find(r=>r.inverter_model_id===id)||{};
+ const form=el("inverterArchiveForm");
+ for(const [key,,kind] of inverterArchiveSpecs){
+  const node=form.elements.namedItem(key);if(!node)continue;
+  const value=row[key];
+  node.value=kind==="requiredBoolean"?String(value??true):
+   kind==="boolean"?(value==null?"":String(value)):
+   kind==="status"?(value||"unknown"):(value??"");
+ }
+ el("inverterArchiveStatus").textContent=id?
+  "Modello generale selezionato. Le modifiche tecniche sono condivise da tutte le pratiche che lo utilizzano.":
+  "Nuovo modello. Nessun numero di serie: le matricole appartengono alla pratica.";
+}
+async function inverterArchiveLoad(preferred){
+ const status=el("inverterArchiveStatus");status.textContent="Lettura archivio inverter…";
+ try{
+  const records=await api("/api/v1/plant/inverters");
+  inverterArchiveRows=records;
+  const dropdown=el("inverterArchiveSelect");
+  dropdown.replaceChildren(new Option("— Nuovo modello —",""));
+  for(const record of records)dropdown.add(new Option(
+   record.manufacturer+" "+record.model+(record.model_variant?" "+record.model_variant:""),
+   record.inverter_model_id));
+  dropdown.value=records.some(r=>r.inverter_model_id===preferred)?preferred:
+   (records.length?records[0].inverter_model_id:"");
+  inverterArchiveShow();
+ }catch(error){status.textContent="Errore lettura archivio inverter: "+error.message;}
+}
+async function inverterArchiveSave(event){
+ event.preventDefault();
+ const form=event.target,dropdown=el("inverterArchiveSelect"),id=dropdown.value;
+ const status=el("inverterArchiveStatus"),data={};
+ for(const [key,,kind] of inverterArchiveSpecs){
+  const raw=form.elements.namedItem(key).value.trim();
+  data[key]=kind==="number"||kind==="integer"?(raw===""?null:Number(raw)):
+   kind==="boolean"?(raw===""?null:raw==="true"):
+   kind==="requiredBoolean"?raw==="true":
+   kind==="status"?(raw||"unknown"):
+   key==="model_variant"?raw:(raw||null);
+ }
+ if(!data.manufacturer||!data.model){status.textContent="Marca e modello sono obbligatori.";return;}
+ const button=form.querySelector('button[type="submit"]');button.disabled=true;
+ try{
+  const result=await api("/api/v1/plant/inverters"+(id?"/"+encodeURIComponent(id):""),{
+   method:id?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)
+  });
+  await inverterArchiveLoad(result.id);
+  status.textContent="Modello inverter salvato in Neon. Quantità e matricola della pratica non sono state modificate.";
+  if(el("plantSheet")?.open)await plantLoad();
  }catch(error){status.textContent="Salvataggio non riuscito: "+error.message;}
  finally{button.disabled=false;}
 }
@@ -1093,6 +1203,7 @@ async function plantAddModel(e){
 setupPlantSheet();
 setupComponentTabs();
 setupBatteryArchive();
+setupInverterArchive();
 
 /* Canonical panels initialize after successful authentication. */
 function canLeave(){return (!Object.keys(dirty).length&&!clientProfileDirty&&!siteProfileDirty&&!dicoChecksDirty&&!dicoInterventionDirty&&!dicoRegDirty)||confirm("Ci sono modifiche non salvate. Abbandonarle?");}
