@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>FastPharma — Contatti V0</title>
+  <link rel="stylesheet" href="./style.css">
+  <script defer src="./config.js"></script>
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brandmark">F</span><div><strong>FastPharma</strong><small>Gestione contatti commerciali · V0 laboratorio</small></div></div>
+    <span class="pill">DATI DEMO · NON PRODUTTIVO</span>
+  </header>
+  <main class="app">
+    <aside class="sidebar">
+      <div class="sectionlabel">GESTIONALE</div>
+      <div class="navitem active">▦ &nbsp; Contatti</div>
+      <div class="navitem muted">▤ &nbsp; Aziende <small>prossima versione</small></div>
+      <div class="navitem muted">◎ &nbsp; Opportunità <small>prossima versione</small></div>
+      <div class="sidefoot">Il software è in collaudo tecnico. Non inserire dati di persone reali.</div>
+    </aside>
+    <section class="workspace">
+      <div class="intro">
+        <div><p class="eyebrow">AREA COMMERCIALE / RUBRICA</p><h1>Contatti</h1><p class="subtitle">Prima versione per verificare interfaccia, API ASP.NET e database PostgreSQL.</p></div>
+        <span id="apiStatus" class="status">Verifica collegamento…</span>
+      </div>
+      <section class="connection panel">
+        <div><strong>Archivio di collaudo</strong><p id="connectionInfo" class="mutedtext">In modalità pubblica sono visibili esclusivamente esempi inventati.</p></div>
+        <form id="connectForm" class="connectfields"><label for="key">Chiave di collaudo (mai salvata)</label><input type="password" id="key" autocomplete="off" placeholder="Chiave rilasciata per il test"><button type="submit">Apri archivio</button></form>
+      </section>
+      <div class="contentgrid">
+        <section class="panel listpanel">
+          <div class="paneltop"><div><h2 id="listTitle">Contatti dimostrativi</h2><span id="count" class="hint"></span></div><label class="sr-only" for="search">Cerca</label><input id="search" class="search" placeholder="Cerca nome, azienda…" type="search"></div>
+          <div class="tablewrap"><table><thead><tr><th>Nominativo</th><th>Azienda</th><th>Email</th><th>Telefono</th></tr></thead><tbody id="rows"><tr><td colspan="4">Caricamento…</td></tr></tbody></table></div>
+          <p id="message" class="hint"></p>
+        </section>
+        <section class="panel editorpanel">
+          <h2>Nuovo contatto di prova</h2><p class="hint">Disponibile solo con database collegato e chiave autorizzata.</p>
+          <form id="contactForm">
+            <label>Nome <input name="firstName" maxlength="120" required disabled></label>
+            <label>Cognome <input name="lastName" maxlength="120" required disabled></label>
+            <label>Azienda <input name="company" maxlength="180" disabled></label>
+            <label>Email <input name="email" type="email" maxlength="254" disabled></label>
+            <label>Telefono <input name="phone" maxlength="80" disabled></label>
+            <label>Note <textarea name="notes" maxlength="2000" rows="2" disabled></textarea></label>
+            <button id="save" type="submit" disabled>Salva contatto di prova</button>
+          </form>
+        </section>
+      </div>
+      <footer>FastPharma S.r.l. · Prototipo tecnico V0 · Non utilizzare per anagrafiche reali</footer>
+    </section>
+  </main>
+</body>
+</html>
