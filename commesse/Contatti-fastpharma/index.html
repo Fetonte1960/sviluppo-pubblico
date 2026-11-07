@@ -30,6 +30,15 @@
         <div><strong>Archivio di collaudo</strong><p id="connectionInfo" class="mutedtext">In modalità pubblica sono visibili esclusivamente esempi inventati.</p></div>
         <form id="connectForm" class="connectfields"><label for="key">Chiave di collaudo (mai salvata)</label><input type="password" id="key" autocomplete="off" placeholder="Chiave rilasciata per il test"><button type="submit">Apri archivio</button></form>
       </section>
+      <section class="panel backup-panel">
+        <div>
+          <strong>Backup archivio Contatti (Neon TEST)</strong>
+          <p class="hint">Esporta struttura e dati del solo schema <code>contatti</code> in formato PostgreSQL Custom (.backup).
+          Il file può contenere dati personali: conservalo in un luogo riservato. Ripristino non disponibile.</p>
+          <p id="backupMessage" class="hint" role="status" aria-live="polite"></p>
+        </div>
+        <button id="backupContatti" type="button" disabled>Scarica backup contatti</button>
+      </section>
       <div class="contentgrid">
         <section class="panel listpanel">
           <div class="paneltop"><div><h2 id="listTitle">Contatti dimostrativi</h2><span id="count" class="hint"></span></div><label class="sr-only" for="search">Cerca</label><input id="search" class="search" placeholder="Cerca nome, azienda…" type="search"></div>
