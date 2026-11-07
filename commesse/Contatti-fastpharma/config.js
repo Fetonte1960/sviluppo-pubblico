@@ -1,2 +1,2 @@
-// Configurazione pubblica per il build locale. Sovrascrivere SOLO l'URL API nel frontend pubblico.
-window.CONTATTI_CONFIG = { apiBase: "" };
+// Solo configurazione pubblica dell’API, nessun segreto.
+window.CONTATTI_CONFIG = { apiBase: "https://contatti-fastpharma-api.onrender.com" };
