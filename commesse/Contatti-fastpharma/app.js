@@ -7,6 +7,8 @@ const message = document.querySelector("#message");
 const count = document.querySelector("#count");
 const form = document.querySelector("#contactForm");
 const connectionInfo = document.querySelector("#connectionInfo");
+const backupButton = document.querySelector("#backupContatti");
+const backupMessage = document.querySelector("#backupMessage");
 let key = "";
 let records = [];
 let authenticated = false;
@@ -33,7 +35,7 @@ function render() {
  count.textContent=filtered.length+" contatti";
 }
 function mode(connected, notice) {
- authenticated=connected;listTitle.textContent=connected?"Archivio PostgreSQL di collaudo":"Contatti dimostrativi";
+ authenticated=connected;backupButton.disabled=!connected;listTitle.textContent=connected?"Archivio PostgreSQL di collaudo":"Contatti dimostrativi";
  status.textContent=connected?"Archivio collegato":"Modalità dimostrativa";
  status.classList.toggle("connected",connected);
  form.querySelectorAll("input,textarea,button").forEach(el=>el.disabled=!connected);
@@ -74,6 +76,29 @@ form.addEventListener("submit",async event=>{
  const entry=Object.fromEntries(new FormData(form).entries());
  try {await callApi("/api/contacts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(entry)});form.reset();await refresh();message.textContent="Contatto di prova salvato nel database.";}
  catch(e){message.textContent=e.message;}
+});
+// The same in-memory V0 key already used for CRUD also authorizes export.
+// No token, backup content or credentials are stored in localStorage or the URL.
+backupButton.addEventListener("click", async () => {
+ if(!authenticated || !key || !api)return;
+ backupButton.disabled=true;
+ backupMessage.textContent="Preparazione archivio PostgreSQL in corso…";
+ try {
+  const response=await fetch(api+"/api/admin/backup/contatti",{
+   method:"POST",headers:{"X-Demo-Key":key},cache:"no-store",signal:AbortSignal.timeout(100000)
+  });
+  if(!response.ok)throw new Error("Esportazione non riuscita (HTTP "+response.status+")");
+  const backup=await response.blob();
+  if(!backup.size)throw new Error("Il server ha restituito un file vuoto");
+  const name="fastpharma_contatti_"+new Date().toISOString().replace(/[-:]/g,"").slice(0,15).replace("T","_")+".backup";
+  const objectUrl=URL.createObjectURL(backup);
+  const a=document.createElement("a");a.href=objectUrl;a.download=name;
+  document.body.append(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(objectUrl),60000);
+  backupMessage.textContent="Download avviato: conserva il file .backup in una cartella protetta. Nessun ripristino eseguito.";
+ }catch(error){
+  backupMessage.textContent=error.name==="TimeoutError"?"L'esportazione ha superato il tempo massimo.":error.message;
+ }finally{backupButton.disabled=!authenticated;}
 });
 document.querySelector("#search").addEventListener("input",render);
 showDemo();
