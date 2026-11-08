@@ -4,3 +4,17 @@
 .archives-frame{display:block;width:100%;height:730px;max-height:none;overflow:auto;border:0;background:transparent;border-radius:12px}
 #archivesNav{font-size:12px;white-space:normal;line-height:1.4}
 @media(max-width:720px){.archives-frame{height:850px}#archivesNav{max-width:100%}}
+
+/* V1.0.1 — release sempre riconoscibile e stato di accesso leggibile. */
+.release-version{display:inline-flex;border:1px solid #78a6b4;background:#29546a;color:#fff;
+ border-radius:7px;padding:6px 9px;font-size:12px;font-weight:800;letter-spacing:.02em;white-space:nowrap}
+.access form{flex-wrap:wrap;justify-content:flex-end;max-width:480px}
+.login-feedback{flex-basis:100%;text-align:right;font-size:12px;font-weight:600;
+ color:#3a7782;margin:4px 0 0;line-height:1.4}
+.login-feedback.error{color:#b63a39}
+.access input{width:220px}
+@media(max-width:720px){
+ .login-feedback{text-align:left}
+ .access form{justify-content:flex-start}
+ .release-version{padding:5px;font-size:11px}
+}
