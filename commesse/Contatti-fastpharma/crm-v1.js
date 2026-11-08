@@ -58,6 +58,40 @@
   const upcoming=data.activities.filter(x=>!["Completata","Annullata"].includes(x.status)).sort((a,b)=>(a.due_at||"9999").localeCompare(b.due_at||"9999")).slice(0,6);
   $("#upcoming").innerHTML=upcoming.length?upcoming.map(r=>`<div class="upcoming-row"><div><b>${esc(r.subject)}</b><small>${esc(r.type||"Attività")} · ${esc(name("contacts",r.contact_id)||"Nessun referente")}</small></div><span>${esc(fmt(r.due_at)||"Da pianificare")}</span></div>`).join(""):'<p class="muted">Nessuna attività aperta.</p>';
  }
+ const archivesFrame=$("#archivesFrame");
+ let archivesInitialized=false;
+ function shareArchiveSession(){
+  if(!archivesInitialized || !archivesFrame.contentWindow)return;
+  archivesFrame.contentWindow.postMessage({
+   type:"fastpharma-archive-session",
+   key:authenticated?key:"",
+   importKey:desktop?(window.CONTATTI_DESKTOP?.importKey||""):""
+  },window.location.origin);
+ }
+ window.addEventListener("message",event=>{
+  if(event.origin!==window.location.origin || event.source!==archivesFrame.contentWindow)return;
+  if(event.data?.type==="fastpharma-archive-ready"){
+   shareArchiveSession();
+  }else if(event.data?.type==="fastpharma-archive-data-changed" && authenticated){
+   // Il ripristino modifica il database: aggiorna le cache del CRM in memoria.
+   const kinds=Object.keys(models);
+   Promise.all(kinds.map(kind=>get("/api/v1/"+kind)))
+     .then(incoming=>{
+       data=Object.fromEntries(kinds.map((kind,i)=>[kind,incoming[i]]));
+       showNotice("Archivio ripristinato: elenchi CRM aggiornati.");
+       render();
+     })
+     .catch(error=>showNotice("Ripristino completato, ma aggiornamento liste non riuscito: "+error.message,true));
+  }
+ });
+ function openArchives(){
+  module="archives";screen="archives";activeId=null;
+  render();
+  if(!archivesInitialized){
+   archivesInitialized=true;
+   archivesFrame.src="./laboratorio.html";
+  }else shareArchiveSession();
+ }
  function openModule(next){
   if(next!=="dashboard"&&!models[next])return;
   module=next;screen=next==="dashboard"?"dashboard":"list";activeId=null;sortBy="";desc=false;
@@ -65,11 +99,16 @@
  }
  function render(){
   $$(".navlink").forEach(b=>b.classList.toggle("is-active",b.dataset.module===module));
-  $("#dashboard").hidden=screen!=="dashboard";$("#recordsScreen").hidden=screen!=="list";$("#detailScreen").hidden=screen!=="detail";
+  $("#dashboard").hidden=screen!=="dashboard";
+  $("#recordsScreen").hidden=screen!=="list";
+  $("#detailScreen").hidden=screen!=="detail";
+  $("#archivesScreen").hidden=screen!=="archives";
+  $("#accessSection").hidden=screen==="archives";
+  $("#archivesNav").classList.toggle("is-active",screen==="archives");
   const m=models[module];
-  $("#breadcrumb").textContent=m?`CRM / ${m.group} / ${m.title}`:"CRM / Panoramica";
-  $("#pageTitle").textContent=m?m.title:"Dashboard";
-  $("#pageSubtitle").textContent=m?m.desc:"Un unico punto per contatti, aziende e attività commerciali.";
+  $("#breadcrumb").textContent=screen==="archives"?"CRM / Amministrazione / Archivi":m?`CRM / ${m.group} / ${m.title}`:"CRM / Panoramica";
+  $("#pageTitle").textContent=screen==="archives"?"Salvataggio e ripristino archivi":m?m.title:"Dashboard";
+  $("#pageSubtitle").textContent=screen==="archives"?"Backup e ripristino guidato dei soli dati Contatti.":m?m.desc:"Un unico punto per contatti, aziende e attività commerciali.";
   $("#newRecord").hidden=!m;$("#newRecord").disabled=!authenticated;
   $("#newRecord").textContent=m?"+ Aggiungi "+m.single:"+ Aggiungi";
   dashboard();
@@ -159,8 +198,8 @@
    $("#accessSection").classList.add("connected");
    $("#accessMessage").textContent="Archivio PostgreSQL TEST collegato. Non inserire dati personali reali.";
    $("#connectionBadge").textContent="Archivio TEST collegato";$("#connectionBadge").classList.add("connected");
-   $("#demoKey").value="";showNotice("Connessione riuscita. Le modifiche sono salvate nel database TEST.");render();
-  }catch(e){key="";authenticated=false;data=structuredClone(demo);render();throw e}
+   $("#demoKey").value="";showNotice("Connessione riuscita. Le modifiche sono salvate nel database TEST.");shareArchiveSession();render();
+  }catch(e){key="";authenticated=false;data=structuredClone(demo);shareArchiveSession();render();throw e}
  }
  async function save(event){
   event.preventDefault();if(!authenticated)return;
@@ -182,7 +221,8 @@
    showNotice(models[module].single+(editId?" aggiornato":" creato")+" nell'archivio TEST.");render();
   }catch(e){$("#dialogError").textContent=e.message}finally{$("#submitRecord").disabled=false}
  }
- $$(".navlink").forEach(b=>b.addEventListener("click",()=>openModule(b.dataset.module)));
+ $(".navlink[data-module]").forEach(b=>b.addEventListener("click",()=>openModule(b.dataset.module)));
+ $("#archivesNav").addEventListener("click",openArchives);
  $$("[data-jump]").forEach(b=>b.addEventListener("click",()=>openModule(b.dataset.jump)));
  $("#newRecord").addEventListener("click",()=>showForm());
  $("#backToList").addEventListener("click",()=>{screen="list";activeId=null;render()});
