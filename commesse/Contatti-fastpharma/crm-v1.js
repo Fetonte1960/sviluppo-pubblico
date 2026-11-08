@@ -4,7 +4,8 @@
 (() => {
  const cfg=window.CONTATTI_CONFIG||{},base=String(cfg.apiBase||"").replace(/\/$/,"");
  const desktop=cfg.desktop===true&&!!window.CONTATTI_DESKTOP?.key;
- const hasApi=!!base||cfg.local===true||desktop;
+ // API in same-origin sul backend Render/Windows; su Pages config.js imposta apiBase.
+ const hasApi=true;
  const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
  const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
  const fmt=v=>{if(!v)return "";let d=new Date(v);return Number.isFinite(d.getTime())?d.toLocaleString("it-IT",{dateStyle:"short",timeStyle:"short"}):String(v)};
@@ -48,6 +49,7 @@
   if(field==="value"&&value!==null&&value!==undefined)return Number(value).toLocaleString("it-IT",{style:"currency",currency:"EUR"});
   return value??"";
  };
+ function display(field,r){return field==="company"&&r.organization_id ? (name("organizations",r.organization_id)||r.company||"") : val(field,r[field]);}
  function showNotice(text,error=false){$("#notice").textContent=text;$("#notice").classList.toggle("error",error)}
  function dashboard(){
   $("#metricContacts").textContent=data.contacts.length;$("#metricOrganizations").textContent=data.organizations.length;
@@ -86,7 +88,7 @@
   $("#listTitle").textContent=m.title+" · List View";
   $("#recordCount").textContent=filtered.length+" record · "+(authenticated?"Archivio PostgreSQL TEST":"Esempi inventati");
   $("#recordsHead").innerHTML="<tr>"+m.cols.map(([field,label])=>`<th><button type="button" data-sort="${field}">${esc(label)} ${sortBy===field?(desc?"↓":"↑"):""}</button></th>`).join("")+"</tr>";
-  $("#recordsBody").innerHTML=filtered.length?filtered.map(r=>`<tr tabindex="0" data-id="${esc(r.id)}">`+m.cols.map(([field],i)=>`<td class="${i===0?"primary-cell":""}">${esc(val(field,r[field])||"—")}</td>`).join("")+"</tr>").join(""):`<tr><td colspan="${m.cols.length}" class="empty-row">Nessun record trovato.</td></tr>`;
+  $("#recordsBody").innerHTML=filtered.length?filtered.map(r=>`<tr tabindex="0" data-id="${esc(r.id)}">`+m.cols.map(([field],i)=>`<td class="${i===0?"primary-cell":""}">${esc(display(field,r)||"—")}</td>`).join("")+"</tr>").join(""):`<tr><td colspan="${m.cols.length}" class="empty-row">Nessun record trovato.</td></tr>`;
  }
  function openRecord(id){if(!getRecord(module,id))return;activeId=id;tab="summary";screen="detail";render()}
  function detail(){
@@ -98,7 +100,7 @@
   $$(".tab").forEach(b=>{let on=b.dataset.tab===tab;b.classList.toggle("is-active",on);b.setAttribute("aria-selected",on?"true":"false")});
   if(tab==="oneview"){related(r);return}
   const fields=tab==="summary"?m.fields.slice(0,5):m.fields;
-  $("#detailContent").innerHTML='<div class="fieldgrid">'+fields.map(([field,label])=>`<div class="fieldpair"><span>${esc(label)}</span><strong>${esc(val(field,r[field])||"—")}</strong></div>`).join("")+"</div>";
+  $("#detailContent").innerHTML='<div class="fieldgrid">'+fields.map(([field,label])=>`<div class="fieldpair"><span>${esc(label)}</span><strong>${esc(display(field,r)||"—")}</strong></div>`).join("")+"</div>";
  }
  function related(r){
   const linked={};
