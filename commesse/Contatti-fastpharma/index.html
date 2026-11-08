@@ -3,18 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>FastPharma CRM — V1.0.1 TEST</title>
-  <link rel="stylesheet" href="./crm-v1.css?v=1.0.1">
-  <script defer src="./config.js?v=1.0.1"></script>
-  <script defer src="./version.js?v=1.0.1"></script>
-  <script defer src="./crm-v1.js?v=1.0.1"></script>
+  <title>FastPharma CRM — V1.0.2 TEST</title>
+  <link rel="stylesheet" href="./crm-v1.css?v=1.0.2">
+  <script defer src="./config.js?v=1.0.2"></script>
+  <script defer src="./version.js?v=1.0.2"></script>
+  <script defer src="./crm-v1.js?v=1.0.2"></script>
 </head>
 <body>
   <header class="appbar">
-    <div class="logo"><span class="logo-icon">F</span><div><strong>FastPharma CRM</strong><small>CRM simil-Vtiger · <strong id="appVersion">V1.0.1</strong></small></div></div>
+    <div class="logo"><span class="logo-icon">F</span><div><strong>FastPharma CRM</strong><small>CRM simil-Vtiger · <strong id="appVersion">V1.0.2</strong></small></div></div>
     <div class="top-actions">
       <span class="testflag">AMBIENTE TEST · NON USARE DATI REALI</span>
-      <span id="releaseVersion" class="release-version">V1.0.1</span>
+      <span id="releaseVersion" class="release-version">V1.0.2</span>
       <span id="connectionBadge" class="connection-badge">Demo dimostrativa</span>
     </div>
   </header>
@@ -81,7 +81,14 @@
         </div>
       </section>
       <section id="detailScreen" class="screen" hidden>
-        <div class="detail-actions"><button id="backToList" type="button" class="secondary">← Torna alla lista</button><button id="editRecord" class="primary" type="button" disabled>Modifica</button></div>
+        <div class="detail-actions">
+          <button id="backToList" type="button" class="secondary">← Torna alla lista</button>
+          <div class="detail-action-buttons">
+            <button id="logCall" class="secondary" type="button" hidden disabled>+ Registra telefonata</button>
+            <button id="planFollowup" class="secondary" type="button" hidden disabled>+ Programma richiamo</button>
+            <button id="editRecord" class="primary" type="button" disabled>Modifica</button>
+          </div>
+        </div>
         <div class="detail-hero surface"><p id="detailCaption" class="eyebrow"></p><h2 id="detailTitle"></h2><p id="detailSubtitle"></p></div>
         <div class="tabs" role="tablist" aria-label="Viste scheda">
           <button class="tab is-active" type="button" data-tab="summary" role="tab" aria-selected="true">Summary</button>
@@ -90,7 +97,7 @@
         </div>
         <div class="surface detail-content" id="detailContent"></div>
       </section>
-      <footer>Contatti FastPharma V1 · TEST con dati sintetici · Sviluppo cloud / Windows con codice condiviso</footer>
+      <footer>Contatti FastPharma V1.0.2 · TEST con dati sintetici · Sviluppo cloud / Windows con codice condiviso</footer>
     </main>
   </div>
   <dialog id="recordDialog" class="record-dialog">
