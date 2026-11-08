@@ -3,85 +3,68 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>FastPharma — Contatti V0</title>
-  <link rel="stylesheet" href="./style.css">
+  <title>FastPharma — Salvataggio e ripristino archivi</title>
+  <link rel="stylesheet" href="./archivi.css">
   <script defer src="./config.js"></script>
-  <script defer src="./app.js"></script>
+  <script defer src="./archivi.js"></script>
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand"><span class="brandmark">F</span><div><strong>FastPharma</strong><small>Gestione contatti commerciali · V0 laboratorio</small></div></div>
-    <span class="pill">DATI DEMO · NON PRODUTTIVO</span>
-  </header>
-  <main class="app">
-    <aside class="sidebar">
-      <div class="sectionlabel">GESTIONALE</div>
-      <div class="navitem active">▦ &nbsp; Contatti</div>
-      <div class="navitem muted">▤ &nbsp; Aziende <small>prossima versione</small></div>
-      <div class="navitem muted">◎ &nbsp; Opportunità <small>prossima versione</small></div>
-      <div class="sidefoot">Il software è in collaudo tecnico. Non inserire dati di persone reali.</div>
-    </aside>
-    <section class="workspace">
-      <div class="intro">
-        <div><p class="eyebrow">AREA COMMERCIALE / RUBRICA</p><h1>Contatti</h1><p class="subtitle">Prima versione per verificare interfaccia, API ASP.NET e database PostgreSQL.</p></div>
-        <span id="apiStatus" class="status">Verifica collegamento…</span>
-      </div>
-      <section class="connection panel">
-        <div><strong>Archivio di collaudo</strong><p id="connectionInfo" class="mutedtext">In modalità pubblica sono visibili esclusivamente esempi inventati.</p></div>
-        <form id="connectForm" class="connectfields"><label for="key">Chiave di collaudo (mai salvata)</label><input type="password" id="key" autocomplete="off" placeholder="Chiave rilasciata per il test"><button type="submit">Apri archivio</button></form>
-      </section>
-      <section class="panel backup-panel">
-        <div>
-          <strong>Backup archivio Contatti (Neon TEST)</strong>
-          <p class="hint">Esporta struttura e dati del solo schema <code>contatti</code> in formato PostgreSQL Custom (.backup).
-          Il file può contenere dati personali: conservalo in un luogo riservato. Ripristino non disponibile.</p>
-          <p id="backupMessage" class="hint" role="status" aria-live="polite"></p>
+  <main class="archive-page">
+    <section id="accessBox" class="archive-access" hidden>
+      <p>Per salvare o ripristinare l'archivio di collaudo, apri prima il CRM con la chiave TEST.
+      Se hai aperto direttamente questa pagina, inserisci la chiave qui.</p>
+      <form id="accessForm" autocomplete="off">
+        <label for="accessKey">Chiave archivio TEST</label>
+        <div class="inline-fields">
+          <input type="password" id="accessKey" autocomplete="off" placeholder="Chiave di collaudo">
+          <button type="submit" id="accessButton">Accedi</button>
         </div>
-        <button id="backupContatti" type="button" disabled>Scarica backup contatti</button>
-      </section>
-      <section id="importPanel" class="panel import-panel" hidden>
-        <div>
-          <strong>Importa contatti nel PostgreSQL locale</strong>
-          <p class="hint">Sostituisce lo schema <code>contatti</code> locale con una copia cloud, senza toccare Neon, Arredi o SOS. Esegue una verifica preliminare e conserva un backup locale prima del cambio.</p>
-        </div>
-        <label class="import-label">Chiave amministrativa locale
-          <input type="password" id="importKey" autocomplete="off" placeholder="Chiave import del PC" />
+      </form>
+    </section>
+
+    <section class="archive-card">
+      <div class="card-heading"><span class="card-number">1</span><div>
+        <h2>Salvataggio (backup)</h2>
+        <p>Scarica sul computer una copia completa dello schema Contatti nel formato PostgreSQL <code>.backup</code>.</p>
+      </div></div>
+      <button id="backupButton" class="primary" type="button" disabled>Scarica backup archivi</button>
+      <p class="help">Il file può contenere informazioni riservate. Conservalo in un luogo protetto.</p>
+      <p id="backupStatus" class="operation-status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="archive-card">
+      <div class="card-heading"><span class="card-number">2</span><div>
+        <h2>Ripristino (restore)</h2>
+        <p>Verifica un backup prima di applicarlo. Il ripristino sostituisce i dati dello schema Contatti.</p>
+      </div></div>
+
+      <div id="restoreLocal" hidden>
+        <label class="field" id="adminKeyLabel" for="adminKey">Chiave amministrativa locale per il ripristino
+          <input id="adminKey" type="password" autocomplete="off" placeholder="Chiave amministrativa del PC">
         </label>
-        <div class="import-actions">
-          <button type="button" id="importNeon" disabled>Prepara importazione da Neon</button>
-          <label class="import-label">Oppure scegli un backup già scaricato
-            <input id="importFile" type="file" accept=".backup,.dump,application/octet-stream" disabled />
+        <label class="field" for="restoreFile">Seleziona un file .backup
+          <input id="restoreFile" type="file" accept=".backup,.dump,application/octet-stream">
+        </label>
+        <div class="button-row">
+          <button id="prepareFile" class="secondary" type="button" disabled>Verifica backup selezionato</button>
+          <button id="prepareCloud" class="secondary" type="button" disabled>Recupera copia da Neon TEST</button>
+        </div>
+        <div id="restorePreview" class="preview" hidden>
+          <h3>Anteprima del ripristino</h3>
+          <p id="restoreComparison"></p>
+          <label class="confirm">
+            <input id="restoreConsent" type="checkbox">
+            <span>Confermo di voler sostituire l'archivio Contatti locale dopo la creazione del backup di sicurezza.</span>
           </label>
-          <button type="button" id="importUploaded" disabled>Verifica file .backup</button>
+          <button id="confirmRestore" class="danger" type="button" disabled>Conferma il ripristino</button>
         </div>
-        <div id="importPreview" class="import-preview" hidden>
-          <strong>Anteprima della sostituzione</strong>
-          <p id="importComparison" class="hint"></p>
-          <label class="import-confirm"><input type="checkbox" id="importConsent"/> Confermo che i contatti locali verranno sostituiti. Voglio creare prima un backup di sicurezza locale.</label>
-          <button type="button" id="importConfirm" disabled>Conferma e importa</button>
-        </div>
-        <p id="importStatus" class="hint" role="status" aria-live="polite"></p>
-      </section>
-      <div class="contentgrid">
-        <section class="panel listpanel">
-          <div class="paneltop"><div><h2 id="listTitle">Contatti dimostrativi</h2><span id="count" class="hint"></span></div><label class="sr-only" for="search">Cerca</label><input id="search" class="search" placeholder="Cerca nome, azienda…" type="search"></div>
-          <div class="tablewrap"><table><thead><tr><th>Nominativo</th><th>Azienda</th><th>Email</th><th>Telefono</th></tr></thead><tbody id="rows"><tr><td colspan="4">Caricamento…</td></tr></tbody></table></div>
-          <p id="message" class="hint"></p>
-        </section>
-        <section class="panel editorpanel">
-          <h2>Nuovo contatto di prova</h2><p class="hint">Disponibile solo con database collegato e chiave autorizzata.</p>
-          <form id="contactForm">
-            <label>Nome <input name="firstName" maxlength="120" required disabled></label>
-            <label>Cognome <input name="lastName" maxlength="120" required disabled></label>
-            <label>Azienda <input name="company" maxlength="180" disabled></label>
-            <label>Email <input name="email" type="email" maxlength="254" disabled></label>
-            <label>Telefono <input name="phone" maxlength="80" disabled></label>
-            <label>Note <textarea name="notes" maxlength="2000" rows="2" disabled></textarea></label>
-            <button id="save" type="submit" disabled>Salva contatto di prova</button>
-          </form>
-        </section>
       </div>
-      <footer>FastPharma S.r.l. · Prototipo tecnico V0 · Non utilizzare per anagrafiche reali</footer>
+
+      <p id="restoreCloudUnavailable" class="help" hidden>
+        Il ripristino automatico è disponibile soltanto nell'installazione locale.
+        Nell'ambiente cloud TEST puoi effettuare il backup; non è abilitata la sostituzione del database Neon.
+      </p>
+      <p id="restoreStatus" class="operation-status" role="status" aria-live="polite"></p>
     </section>
   </main>
 </body>
