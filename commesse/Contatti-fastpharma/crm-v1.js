@@ -40,6 +40,7 @@
  };
  let data=structuredClone(demo),key=desktop?window.CONTATTI_DESKTOP.key:"",authenticated=false;
  let module="dashboard",screen="dashboard",activeId=null,tab="summary",editId=null,sortBy="",desc=false;
+ let formModule="contacts",formContext=null;
  const getRecord=(kind,id)=>(data[kind]||[]).find(r=>String(r.id)===String(id));
  const name=(kind,id)=>{const r=getRecord(kind,id);return r?models[kind].titleOf(r):""};
  const val=(field,value)=>{
@@ -95,7 +96,7 @@
   render();
   if(!archivesInitialized){
    archivesInitialized=true;
-   archivesFrame.src="./laboratorio.html?v=1.0.1";
+   archivesFrame.src="./laboratorio.html?v=1.0.2";
   }else shareArchiveSession();
  }
  function openModule(next){
@@ -142,11 +143,46 @@
   $("#detailCaption").textContent=m.single+" · "+(authenticated?"Archivio TEST":"Esempio inventato");
   $("#detailTitle").textContent=m.titleOf(r);$("#detailSubtitle").textContent=m.subtitle(r);
   $("#editRecord").disabled=!authenticated;
+  const canAddActivity=module==="contacts"||module==="organizations";
+  for(const action of ["#logCall","#planFollowup"]){
+   $(action).hidden=!canAddActivity;
+   $(action).disabled=!authenticated;
+  }
   $$(".tab").forEach(b=>{let on=b.dataset.tab===tab;b.classList.toggle("is-active",on);b.setAttribute("aria-selected",on?"true":"false")});
   if(tab==="oneview"){related(r);return}
   const fields=tab==="summary"?m.fields.slice(0,5):m.fields;
-  $("#detailContent").innerHTML='<div class="fieldgrid">'+fields.map(([field,label])=>`<div class="fieldpair"><span>${esc(label)}</span><strong>${esc(display(field,r)||"—")}</strong></div>`).join("")+"</div>";
+  $("#detailContent").innerHTML='<div class="fieldgrid">'+fields.map(([field,label])=>`<div class="fieldpair"><span>${esc(label)}</span><strong>${esc(display(field,r)||"—")}</strong></div>`).join("")+"</div>"+
+   (tab==="summary"&&(module==="contacts"||module==="organizations")?activityTimeline(module,r.id):"");
  }
+ function activityTimeline(kind,recordId){
+  const history=data.activities.filter(activity=>
+   kind==="contacts"?activity.contact_id===recordId:activity.organization_id===recordId
+  ).sort((a,b)=>String(b.due_at||b.created_at||"").localeCompare(String(a.due_at||a.created_at||"")));
+  return '<section class="activity-history">'+
+   '<div class="history-title"><h3>Storico attività ('+history.length+')</h3>'+
+   '<span>Telefonate, richiami e appuntamenti collegati</span></div>'+
+   (history.length?history.map(a=>
+      '<button type="button" class="history-item" data-kind="activities" data-id="'+esc(a.id)+'">'+
+      '<span><strong>'+esc(a.subject)+'</strong><small>'+esc(a.type||"Attività")+
+      (a.contact_id?" · "+esc(name("contacts",a.contact_id)):"")+'</small>'+
+      (a.notes?'<small>'+esc(a.notes)+'</small>':"")+'</span>'+
+      '<span class="history-meta"><b>'+esc(a.status||"Da fare")+'</b><small>'+
+      esc(fmt(a.due_at||a.created_at)||"Senza data")+'</small></span></button>'
+   ).join(""):'<p class="muted">Nessuna attività registrata per questa scheda.</p>')+
+   '</section>';
+ }
+ function startActivityFromSheet(type){
+  if(!authenticated || screen!=="detail" || !["contacts","organizations"].includes(module))return;
+  const source=getRecord(module,activeId);
+  if(!source)return;
+  const context={module,id:activeId,
+   organizationId:module==="organizations"?source.id:source.organization_id||"",
+   contactId:module==="contacts"?source.id:"",
+   defaults:{type:type==="Richiamo"?"Richiamo":"Telefonata",
+      status:type==="Richiamo"?"Da fare":"Completata"}};
+  showForm(null,{target:"activities",context});
+ }
+
  function related(r){
   const linked={};
   for(const kind of Object.keys(models)){
@@ -161,34 +197,86 @@
   }
   $("#detailContent").innerHTML='<div class="related-grid">'+Object.entries(linked).map(([kind,items])=>`<div class="related-block"><h3>${esc(models[kind].title)} (${items.length})</h3>`+(items.length?items.slice(0,20).map(x=>`<button type="button" class="related-link" data-kind="${kind}" data-id="${esc(x.id)}">${esc(models[kind].titleOf(x))}</button>`).join(""):'<p class="muted">Nessun record collegato.</p>')+"</div>").join("")+"</div>";
  }
- function optionHtml(type,selected){
+
+ function optionHtml(type,selected,organizationId=""){
   if(type==="org"||type==="contact"){
    const kind=type==="org"?"organizations":"contacts";
-   return '<option value="">Nessuno</option>'+data[kind].map(x=>`<option value="${esc(x.id)}" ${x.id===selected?"selected":""}>${esc(models[kind].titleOf(x))}</option>`).join("");
+   const records=kind==="contacts"&&organizationId
+     ? data.contacts.filter(c=>c.organization_id===organizationId)
+     : data[kind];
+   return '<option value="">Nessuno</option>'+records.map(x=>
+    '<option value="'+esc(x.id)+'" '+(x.id===selected?"selected":"")+'>'+
+    esc(models[kind].titleOf(x))+'</option>').join("");
   }
-  return (opts[type]||[]).map(v=>`<option value="${esc(v)}" ${v===selected?"selected":""}>${esc(v)}</option>`).join("");
+  return (opts[type]||[]).map(v=>
+   '<option value="'+esc(v)+'" '+(v===selected?"selected":"")+'>'+esc(v)+'</option>').join("");
  }
  function localDate(value){
   if(!value)return "";
   const d=new Date(value);if(!Number.isFinite(d.getTime()))return "";
   return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
  }
- function showForm(id=null){
+ function showForm(id=null,settings={}){
   if(!authenticated){showNotice("Collega l'archivio TEST per modificare.",true);return}
-  editId=id;const m=models[module],r=id?getRecord(module,id):null;
-  $("#dialogHeading").textContent=(id?"Modifica ":"Nuovo ")+m.single;
+  formModule=settings.target||module;
+  formContext=settings.context||null;
+  editId=id;
+  const m=models[formModule],r=id?getRecord(formModule,id):null;
+  if(!m)return;
+  const context=formContext;
+  const home=context?getRecord(context.module,context.id):null;
+  const defaults=context?{
+   contact_id:context.contactId||"",organization_id:context.organizationId||"",
+   ...context.defaults,
+   subject:(context.defaults.type==="Richiamo"?"Richiamare: ":"Telefonata: ")+
+     (home?models[context.module].titleOf(home):"")
+  }:{};
+  const selectedOrg=r?.organization_id??defaults.organization_id??"";
+  $("#dialogHeading").textContent=(id?"Modifica ":(["activities","organizations","deals"].includes(formModule)?"Nuova ":"Nuovo "))+m.single;
   $("#dialogError").textContent="";
   $("#formFields").innerHTML=m.fields.map(([field,label,type,required])=>{
-   const value=r?.[field]??"", attr=`name="${field}" id="f_${field}" ${required?"required":""}`;
+   const value=r?.[field]??defaults[field]??"";
+   const attr=`name="${field}" id="f_${field}" ${required?"required":""}`;
    let input;
    if(type==="textarea")input=`<textarea ${attr} maxlength="2000" rows="3">${esc(value)}</textarea>`;
-   else if(type==="org"||type==="contact"||opts[type])input=`<select ${attr}>${optionHtml(type,value)}</select>`;
+   else if(type==="org"||type==="contact"||opts[type])
+    input=`<select ${attr}>${optionHtml(type,value,type==="contact"?selectedOrg:"")}</select>`;
    else if(type==="datetime-local")input=`<input type="datetime-local" ${attr} value="${esc(localDate(value))}">`;
    else if(type==="number")input=`<input type="number" min="0" step="0.01" ${attr} value="${esc(value||0)}">`;
    else input=`<input type="${type==="email"?"email":type==="tel"?"tel":"text"}" ${attr} maxlength="${field==="email"?254:field==="name"||field==="subject"?200:field==="company"?180:120}" value="${esc(value)}">`;
    return `<label class="${type==="textarea"?"wide":""}" for="f_${field}">${esc(label)}${required?" *":""}${input}</label>`;
   }).join("");
+  if(formModule==="activities"){
+   if(context?.module==="contacts"){
+    $("#f_contact_id").disabled=true;
+    $("#f_organization_id").disabled=true;
+   }else if(context?.module==="organizations"){
+    $("#f_organization_id").disabled=true;
+   }
+  }
   $("#recordDialog").showModal();
+ }
+ function syncActivityLinks(event){
+  if(formModule!=="activities")return;
+  const org=$("#f_organization_id"),contact=$("#f_contact_id");
+  if(!org||!contact)return;
+  if(event.target===contact){
+   const person=getRecord("contacts",contact.value);
+   if(person?.organization_id){
+    org.value=person.organization_id;
+    // Dopo la selezione del referente, mostra soltanto i colleghi della stessa azienda.
+    contact.innerHTML=optionHtml("contact",person.id,org.value);
+    contact.value=person.id;
+   }
+  }else if(event.target===org){
+   const old=contact.value;
+   contact.innerHTML=optionHtml("contact",old,org.value);
+   const valid=contact.querySelector('option[value="'+old+'"]');
+   if(!valid || !old)contact.value="";
+   if(old && !valid)$("#dialogError").textContent=
+    "Referente azzerato: non appartiene all'organizzazione selezionata.";
+   else $("#dialogError").textContent="";
+  }
  }
  async function get(path){
   const r=await fetch(base+path,{headers:{"X-Demo-Key":key},cache:"no-store",signal:AbortSignal.timeout(20000)});
@@ -221,21 +309,34 @@
  async function save(event){
   event.preventDefault();if(!authenticated)return;
   const payload={};
-  for(const [field,,type] of models[module].fields){
+  const target=formModule;
+  for(const [field,,type] of models[target].fields){
    let value=$("#f_"+field)?.value.trim()||"";
    if(type==="datetime-local"&&value)value=new Date(value).toISOString();
    if(field==="value"&&!value)value="0";
    payload[field]=value||null;
   }
-  const url="/api/v1/"+module+(editId?"/"+encodeURIComponent(editId):"");
+  const url="/api/v1/"+target+(editId?"/"+encodeURIComponent(editId):"");
   $("#submitRecord").disabled=true;$("#dialogError").textContent="";
   try{
    const res=await fetch(base+url,{method:editId?"PUT":"POST",headers:{"X-Demo-Key":key,"Content-Type":"application/json"},body:JSON.stringify(payload),signal:AbortSignal.timeout(20000)});
    if(!res.ok){const problem=await res.json().catch(()=>({}));throw new Error(problem.error||"Salvataggio non riuscito (HTTP "+res.status+")")}
    const result=await res.json();
-   data[module]=await get("/api/v1/"+module);
-   $("#recordDialog").close();activeId=result.id;screen="detail";tab="summary";
-   showNotice(models[module].single+(editId?" aggiornato":" creato")+" nell'archivio TEST.");render();
+   data[target]=await get("/api/v1/"+target);
+   $("#recordDialog").close();
+   const originalContext=formContext;
+   formContext=null;
+   if(originalContext){
+    module=originalContext.module;
+    activeId=originalContext.id;
+   }else{
+    module=target;
+    activeId=result.id;
+   }
+   screen="detail";tab="summary";
+   showNotice(models[target].single+(editId?" aggiornata":" creata")+
+    (originalContext?" e aggiunta allo storico della scheda.":" nell'archivio TEST."));
+   render();
   }catch(e){$("#dialogError").textContent=e.message}finally{$("#submitRecord").disabled=false}
  }
  $$(".navlink[data-module]").forEach(b=>b.addEventListener("click",()=>openModule(b.dataset.module)));
@@ -244,13 +345,19 @@
  $("#newRecord").addEventListener("click",()=>showForm());
  $("#backToList").addEventListener("click",()=>{screen="list";activeId=null;render()});
  $("#editRecord").addEventListener("click",()=>showForm(activeId));
+ $("#logCall").addEventListener("click",()=>startActivityFromSheet("Telefonata"));
+ $("#planFollowup").addEventListener("click",()=>startActivityFromSheet("Richiamo"));
+ $("#formFields").addEventListener("change",syncActivityLinks);
  $("#recordSearch").addEventListener("input",list);
  $("#recordFilter").addEventListener("change",list);
  $("#recordsHead").addEventListener("click",e=>{const f=e.target.closest("[data-sort]")?.dataset.sort;if(!f)return;desc=sortBy===f?!desc:false;sortBy=f;list()});
  $("#recordsBody").addEventListener("click",e=>{const id=e.target.closest("tr[data-id]")?.dataset.id;if(id)openRecord(id)});
  $("#recordsBody").addEventListener("keydown",e=>{if(e.key==="Enter"){const id=e.target.closest("tr[data-id]")?.dataset.id;if(id)openRecord(id)}});
  $$(".tab").forEach(b=>b.addEventListener("click",()=>{tab=b.dataset.tab;detail()}));
- $("#detailContent").addEventListener("click",e=>{const b=e.target.closest("button[data-kind]");if(!b)return;module=b.dataset.kind;activeId=b.dataset.id;screen="detail";tab="summary";render()});
+ $("#detailContent").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-kind]");if(!b)return;
+  module=b.dataset.kind;activeId=b.dataset.id;screen="detail";tab="summary";render();
+ });
  $("#recordForm").addEventListener("submit",save);
  $("#closeDialog").addEventListener("click",()=>$("#recordDialog").close());
  $("#cancelDialog").addEventListener("click",()=>$("#recordDialog").close());
