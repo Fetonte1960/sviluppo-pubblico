@@ -3,63 +3,96 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>FastPharma — Contatti V0</title>
-  <link rel="stylesheet" href="./style.css">
+  <title>FastPharma CRM — V1 One Pilot style</title>
+  <link rel="stylesheet" href="./crm-v1.css">
   <script defer src="./config.js"></script>
-  <script defer src="./app.js"></script>
+  <script defer src="./crm-v1.js"></script>
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand"><span class="brandmark">F</span><div><strong>FastPharma</strong><small>Gestione contatti commerciali · V0 laboratorio</small></div></div>
-    <span class="pill">DATI DEMO · NON PRODUTTIVO</span>
+  <header class="appbar">
+    <div class="logo"><span class="logo-icon">F</span><div><strong>FastPharma CRM</strong><small>Versione 1 · laboratorio simil-Vtiger</small></div></div>
+    <div class="top-actions">
+      <span class="testflag">AMBIENTE TEST · NON USARE DATI REALI</span>
+      <span id="connectionBadge" class="connection-badge">Demo dimostrativa</span>
+    </div>
   </header>
-  <main class="app">
-    <aside class="sidebar">
-      <div class="sectionlabel">GESTIONALE</div>
-      <div class="navitem active">▦ &nbsp; Contatti</div>
-      <div class="navitem muted">▤ &nbsp; Aziende <small>prossima versione</small></div>
-      <div class="navitem muted">◎ &nbsp; Opportunità <small>prossima versione</small></div>
-      <div class="sidefoot">Il software è in collaudo tecnico. Non inserire dati di persone reali.</div>
+  <div class="layout">
+    <aside class="sidenav" aria-label="Navigazione CRM">
+      <div class="navgroup">PANORAMICA</div>
+      <button class="navlink is-active" data-module="dashboard" type="button"><span>▦</span> Dashboard</button>
+      <div class="navgroup">ANAGRAFICHE</div>
+      <button class="navlink" data-module="contacts" type="button"><span>♙</span> Contatti</button>
+      <button class="navlink" data-module="organizations" type="button"><span>▤</span> Organizzazioni</button>
+      <div class="navgroup">COMMERCIALE</div>
+      <button class="navlink" data-module="activities" type="button"><span>◷</span> Attività</button>
+      <button class="navlink" data-module="deals" type="button"><span>◇</span> Trattative</button>
+      <div class="navbottom"><a href="./laboratorio.html">Strumenti laboratorio V0 (backup / import)</a><p>Funzioni ispirate a One Pilot, personalizzabili su richiesta di Antonella.</p></div>
     </aside>
-    <section class="workspace">
-      <div class="intro">
-        <div><p class="eyebrow">AREA COMMERCIALE / RUBRICA</p><h1>Contatti</h1><p class="subtitle">Prima versione per verificare interfaccia, API ASP.NET e database PostgreSQL.</p></div>
-        <span id="apiStatus" class="status">Verifica collegamento…</span>
+    <main class="main">
+      <div class="pagetop">
+        <div><p class="eyebrow" id="breadcrumb">CRM / Panoramica</p><h1 id="pageTitle">Dashboard</h1><p class="subtitle" id="pageSubtitle">Un unico punto per contatti, aziende e attività commerciali.</p></div>
+        <button id="newRecord" type="button" class="primary" hidden disabled>+ Aggiungi</button>
       </div>
-      <section class="connection panel">
-        <div><strong>Archivio di collaudo</strong><p id="connectionInfo" class="mutedtext">In modalità pubblica sono visibili esclusivamente esempi inventati.</p></div>
-        <form id="connectForm" class="connectfields"><label for="key">Chiave di collaudo (mai salvata)</label><input type="password" id="key" autocomplete="off" placeholder="Chiave rilasciata per il test"><button type="submit">Apri archivio</button></form>
+      <section class="access" id="accessSection">
+        <div><strong>Archivio di collaudo</strong><p id="accessMessage">Sono visualizzati esempi inventati. Per salvare sul database TEST serve la chiave già utilizzata nella V0.</p></div>
+        <form id="loginForm" autocomplete="off"><label class="sr-only" for="demoKey">Chiave TEST</label><input id="demoKey" type="password" placeholder="Chiave di collaudo" autocomplete="off"><button type="submit" class="secondary">Apri archivio</button></form>
       </section>
-      <section class="panel backup-panel">
-        <div>
-          <strong>Backup archivio Contatti (Neon TEST)</strong>
-          <p class="hint">Esporta struttura e dati del solo schema <code>contatti</code> in formato PostgreSQL Custom (.backup).
-          Il file può contenere dati personali: conservalo in un luogo riservato. Ripristino non disponibile.</p>
-          <p id="backupMessage" class="hint" role="status" aria-live="polite"></p>
+      <p id="notice" class="notice" role="status" aria-live="polite"></p>
+      <section id="dashboard" class="screen">
+        <div class="kpis">
+          <button class="kpi" type="button" data-jump="contacts"><span>Contatti</span><strong id="metricContacts">0</strong><small>Persone in rubrica</small></button>
+          <button class="kpi" type="button" data-jump="organizations"><span>Organizzazioni</span><strong id="metricOrganizations">0</strong><small>Aziende / farmacie</small></button>
+          <button class="kpi" type="button" data-jump="activities"><span>Attività aperte</span><strong id="metricActivities">0</strong><small>Da fare o in corso</small></button>
+          <button class="kpi" type="button" data-jump="deals"><span>Trattative</span><strong id="metricDeals">0</strong><small>Opportunità commerciali</small></button>
         </div>
-        <button id="backupContatti" type="button" disabled>Scarica backup contatti</button>
+        <div class="dashgrid">
+          <section class="surface">
+            <div class="surface-head"><h2>Prossime attività</h2><button class="text-button" data-jump="activities" type="button">Apri tutte</button></div>
+            <div id="upcoming" class="upcoming"></div>
+          </section>
+          <section class="surface">
+            <div class="surface-head"><h2>Benvenuta nella V1</h2></div>
+            <div class="welcome">
+              <p>La navigazione riprende i concetti di <b>List View</b>, <b>Summary</b>, <b>Details</b> e <b>One View</b> di Vtiger One Pilot.</p>
+              <p>Questa base sarà adattata con le osservazioni di Antonella: non contiene tutte le funzioni di Vtiger.</p>
+              <button class="secondary" data-jump="contacts" type="button">Vai alla lista contatti</button>
+            </div>
+          </section>
+        </div>
       </section>
-      <div class="contentgrid">
-        <section class="panel listpanel">
-          <div class="paneltop"><div><h2 id="listTitle">Contatti dimostrativi</h2><span id="count" class="hint"></span></div><label class="sr-only" for="search">Cerca</label><input id="search" class="search" placeholder="Cerca nome, azienda…" type="search"></div>
-          <div class="tablewrap"><table><thead><tr><th>Nominativo</th><th>Azienda</th><th>Email</th><th>Telefono</th></tr></thead><tbody id="rows"><tr><td colspan="4">Caricamento…</td></tr></tbody></table></div>
-          <p id="message" class="hint"></p>
-        </section>
-        <section class="panel editorpanel">
-          <h2>Nuovo contatto di prova</h2><p class="hint">Disponibile solo con database collegato e chiave autorizzata.</p>
-          <form id="contactForm">
-            <label>Nome <input name="firstName" maxlength="120" required disabled></label>
-            <label>Cognome <input name="lastName" maxlength="120" required disabled></label>
-            <label>Azienda <input name="company" maxlength="180" disabled></label>
-            <label>Email <input name="email" type="email" maxlength="254" disabled></label>
-            <label>Telefono <input name="phone" maxlength="80" disabled></label>
-            <label>Note <textarea name="notes" maxlength="2000" rows="2" disabled></textarea></label>
-            <button id="save" type="submit" disabled>Salva contatto di prova</button>
-          </form>
-        </section>
-      </div>
-      <footer>FastPharma S.r.l. · Prototipo tecnico V0 · Non utilizzare per anagrafiche reali</footer>
-    </section>
-  </main>
+      <section id="recordsScreen" class="screen" hidden>
+        <div class="surface records">
+          <div class="records-head">
+            <div><h2 id="listTitle">List View</h2><p id="recordCount" class="hint"></p></div>
+            <div class="filters">
+              <label class="sr-only" for="recordSearch">Cerca</label><input id="recordSearch" type="search" placeholder="Cerca nella lista…">
+              <label class="sr-only" for="recordFilter">Filtra per stato</label><select id="recordFilter"><option value="">Tutti gli stati</option></select>
+            </div>
+          </div>
+          <div class="table-scroll"><table><thead id="recordsHead"></thead><tbody id="recordsBody"></tbody></table></div>
+          <div class="tablefoot"><span id="sortHint">Clicca una colonna per ordinare. Apri un record per la scheda.</span></div>
+        </div>
+      </section>
+      <section id="detailScreen" class="screen" hidden>
+        <div class="detail-actions"><button id="backToList" type="button" class="secondary">← Torna alla lista</button><button id="editRecord" class="primary" type="button" disabled>Modifica</button></div>
+        <div class="detail-hero surface"><p id="detailCaption" class="eyebrow"></p><h2 id="detailTitle"></h2><p id="detailSubtitle"></p></div>
+        <div class="tabs" role="tablist" aria-label="Viste scheda">
+          <button class="tab is-active" type="button" data-tab="summary" role="tab" aria-selected="true">Summary</button>
+          <button class="tab" type="button" data-tab="details" role="tab" aria-selected="false">Details</button>
+          <button class="tab" type="button" data-tab="oneview" role="tab" aria-selected="false">One View</button>
+        </div>
+        <div class="surface detail-content" id="detailContent"></div>
+      </section>
+      <footer>Contatti FastPharma V1 · TEST con dati sintetici · Sviluppo cloud / Windows con codice condiviso</footer>
+    </main>
+  </div>
+  <dialog id="recordDialog" class="record-dialog">
+    <form id="recordForm">
+      <div class="dialog-title"><div><p class="eyebrow">FASTPHARMA CRM</p><h2 id="dialogHeading">Nuovo record</h2></div><button type="button" class="iconbutton" id="closeDialog" aria-label="Chiudi">×</button></div>
+      <div id="formFields" class="form-fields"></div>
+      <p id="dialogError" class="dialog-error" role="alert"></p>
+      <div class="dialog-actions"><button type="button" class="secondary" id="cancelDialog">Annulla</button><button class="primary" type="submit" id="submitRecord">Salva</button></div>
+    </form>
+  </dialog>
 </body>
 </html>
