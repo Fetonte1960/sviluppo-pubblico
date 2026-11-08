@@ -1,5 +1,19 @@
 "use strict";
 const api = String(window.CONTATTI_CONFIG?.apiBase || "").replace(/\/$/, "");
+const localMode = window.CONTATTI_CONFIG?.local === true;
+const desktopMode = window.CONTATTI_CONFIG?.desktop === true && Boolean(window.CONTATTI_DESKTOP?.key);
+const hasApi = localMode || Boolean(api);
+const importPanel = document.querySelector("#importPanel");
+const importNeon = document.querySelector("#importNeon");
+const importFile = document.querySelector("#importFile");
+const importUploaded = document.querySelector("#importUploaded");
+const importKeyInput = document.querySelector("#importKey");
+const importStatus = document.querySelector("#importStatus");
+const importPreview = document.querySelector("#importPreview");
+const importComparison = document.querySelector("#importComparison");
+const importConsent = document.querySelector("#importConsent");
+const importConfirm = document.querySelector("#importConfirm");
+let pendingImportToken = "";
 const rows = document.querySelector("#rows");
 const status = document.querySelector("#apiStatus");
 const listTitle = document.querySelector("#listTitle");
@@ -35,16 +49,35 @@ function render() {
  count.textContent=filtered.length+" contatti";
 }
 function mode(connected, notice) {
- authenticated=connected;backupButton.disabled=!connected;listTitle.textContent=connected?"Archivio PostgreSQL di collaudo":"Contatti dimostrativi";
+ authenticated=connected;backupButton.disabled=!connected;
+ importPanel.hidden=!(localMode && connected);
+ importNeon.disabled=!connected;importFile.disabled=!connected;importUploaded.disabled=!connected;
+ if(!connected){pendingImportToken="";importPreview.hidden=true;importConsent.checked=false;importKeyInput.value="";}
+ listTitle.textContent=connected?"Archivio PostgreSQL di collaudo":"Contatti dimostrativi";
  status.textContent=connected?"Archivio collegato":"Modalità dimostrativa";
  status.classList.toggle("connected",connected);
  form.querySelectorAll("input,textarea,button").forEach(el=>el.disabled=!connected);
  connectionInfo.textContent=notice;
 }
 async function showDemo() {
- key="";records=synthetic;mode(false,api?"La API è configurata. Inserisci la chiave per aprire l'archivio di prova.":"Frontend pubblicato; backend non ancora configurato. Sono visibili esclusivamente due esempi inventati.");
+ if(desktopMode) {
+  key = window.CONTATTI_DESKTOP.key;
+  records = [];
+  mode(false,"Connessione automatica all'archivio PostgreSQL locale…");
+  render();
+  try {
+   await refresh();
+   mode(true,"Archivio PostgreSQL Windows collegato, accesso desktop automatico.");
+   message.textContent="Archivio locale connesso.";
+  } catch(e) {
+   message.textContent="Avvio PostgreSQL o migrazioni in corso; nuovo tentativo automatico…";
+   setTimeout(showDemo,3000);
+  }
+  return;
+ }
+ key="";records=synthetic;mode(false,hasApi?"La API è configurata. Inserisci la chiave per aprire l'archivio di prova.":"Frontend pubblicato; backend non ancora configurato. Sono visibili esclusivamente due esempi inventati.");
  render();
- if(!api)return;
+ if(!hasApi)return;
  try {
   const resp=await fetch(api+"/health",{signal:AbortSignal.timeout(12000)});
   const info=await resp.json();
@@ -52,7 +85,7 @@ async function showDemo() {
  } catch {message.textContent="Backend non raggiungibile; rimane disponibile la dimostrazione statica.";}
 }
 async function callApi(path,opts={}) {
- if(!api)throw new Error("Indirizzo API non ancora configurato");
+ if(!hasApi)throw new Error("Indirizzo API non ancora configurato");
  const headers={"X-Demo-Key":key,...(opts.headers||{})};
  const r=await fetch(api+path,{...opts,headers,signal:AbortSignal.timeout(15000)});
  if(!r.ok)throw new Error("Richiesta non riuscita (HTTP "+r.status+")");
@@ -80,7 +113,7 @@ form.addEventListener("submit",async event=>{
 // The same in-memory V0 key already used for CRUD also authorizes export.
 // No token, backup content or credentials are stored in localStorage or the URL.
 backupButton.addEventListener("click", async () => {
- if(!authenticated || !key || !api)return;
+ if(!authenticated || !key || !hasApi)return;
  backupButton.disabled=true;
  backupMessage.textContent="Preparazione archivio PostgreSQL in corso…";
  try {
@@ -100,5 +133,91 @@ backupButton.addEventListener("click", async () => {
   backupMessage.textContent=error.name==="TimeoutError"?"L'esportazione ha superato il tempo massimo.":error.message;
  }finally{backupButton.disabled=!authenticated;}
 });
+// Solo frontend LOCALE: due fasi obbligatorie di importazione.
+// La chiave amministrativa del PC non e' quella cloud e non viene salvata nel browser.
+function importHeaders(extra={}) {
+ const admin=desktopMode ? window.CONTATTI_DESKTOP.importKey : importKeyInput.value.trim();
+ if(!admin)throw new Error("Inserisci la chiave amministrativa locale.");
+ return {"X-Demo-Key":key,"X-Import-Key":admin,...extra};
+}
+async function importRequest(path,options={}) {
+ const response=await fetch(api+path,{
+  ...options,
+  headers:importHeaders(options.headers || {}),
+  cache:"no-store",
+  signal:AbortSignal.timeout(185000)
+ });
+ if(!response.ok){
+  if(response.status===401)throw new Error("Chiave amministrativa locale non valida.");
+  if(response.status===409)throw new Error("Importazione già in corso o anteprima scaduta.");
+  throw new Error("Operazione non riuscita (HTTP "+response.status+").");
+ }
+ return await response.json();
+}
+function importBusy(busy) {
+ importNeon.disabled=busy || !authenticated;
+ importUploaded.disabled=busy || !authenticated;
+ importFile.disabled=busy || !authenticated;
+ importConfirm.disabled=busy || !importConsent.checked || !pendingImportToken;
+}
+function displayImportPreview(result) {
+ pendingImportToken=result.token;
+ importConsent.checked=false;
+ importPreview.hidden=false;
+ importComparison.textContent=
+  "Contatti attuali sul PC: "+result.currentCount+
+  " · Contatti nel backup: "+result.incomingCount+
+  " · Migrazioni nel backup: "+result.incomingMigrations+
+  ". Dopo la conferma i dati locali saranno SOSTITUITI.";
+ importConfirm.disabled=true;
+ importStatus.textContent="Archivio verificato su database di prova isolato. Nessuna modifica ai contatti locali.";
+}
+if(desktopMode) {
+ document.querySelector("#connectForm").style.display="none";
+ importKeyInput.closest("label").style.display="none";
+ importNeon.style.display="none"; // Non distribuire mai la chiave TEST cloud nell'installer.
+}
+if(localMode) {
+ importNeon.addEventListener("click",async()=>{
+  if(!authenticated)return;
+  pendingImportToken="";importPreview.hidden=true;importBusy(true);
+  importStatus.textContent="Scaricamento protetto da Neon e verifica del backup in corso…";
+  try{
+   const result=await importRequest("/api/admin/import/contatti/prepare-cloud",{method:"POST"});
+   displayImportPreview(result);
+  }catch(e){importStatus.textContent=e.message;}
+  finally{importBusy(false);}
+ });
+ importUploaded.addEventListener("click",async()=>{
+  if(!authenticated)return;
+  const file=importFile.files?.[0];
+  if(!file){importStatus.textContent="Seleziona un archivio .backup.";return;}
+  pendingImportToken="";importPreview.hidden=true;importBusy(true);
+  importStatus.textContent="Verifica del file su database di prova in corso…";
+  try{
+   const result=await importRequest("/api/admin/import/contatti/prepare-file",{
+    method:"POST",headers:{"Content-Type":"application/octet-stream"},body:file
+   });
+   displayImportPreview(result);
+  }catch(e){importStatus.textContent=e.message;}
+  finally{importBusy(false);}
+ });
+ importConsent.addEventListener("change",()=>{importConfirm.disabled=!importConsent.checked || !pendingImportToken;});
+ importConfirm.addEventListener("click",async()=>{
+  if(!authenticated || !pendingImportToken || !importConsent.checked)return;
+  importBusy(true);importStatus.textContent="Backup locale preventivo e sostituzione in corso. Non chiudere la pagina…";
+  try{
+   const result=await importRequest("/api/admin/import/contatti/confirm",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({token:pendingImportToken,confirmed:true})
+   });
+   importStatus.textContent="Importazione completata: "+result.importedContacts+
+     " contatti. Backup locale conservato in "+result.backup+".";
+   pendingImportToken="";importPreview.hidden=true;importConsent.checked=false;
+   await refresh();
+  }catch(e){importStatus.textContent=e.message;}
+  finally{importBusy(false);}
+ });
+}
 document.querySelector("#search").addEventListener("input",render);
 showDemo();
