@@ -3,16 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>FastPharma CRM — V1 One Pilot style</title>
-  <link rel="stylesheet" href="./crm-v1.css">
-  <script defer src="./config.js"></script>
-  <script defer src="./crm-v1.js"></script>
+  <title>FastPharma CRM — V1.0.1 TEST</title>
+  <link rel="stylesheet" href="./crm-v1.css?v=1.0.1">
+  <script defer src="./config.js?v=1.0.1"></script>
+  <script defer src="./version.js?v=1.0.1"></script>
+  <script defer src="./crm-v1.js?v=1.0.1"></script>
 </head>
 <body>
   <header class="appbar">
-    <div class="logo"><span class="logo-icon">F</span><div><strong>FastPharma CRM</strong><small>Versione 1 · laboratorio simil-Vtiger</small></div></div>
+    <div class="logo"><span class="logo-icon">F</span><div><strong>FastPharma CRM</strong><small>CRM simil-Vtiger · <strong id="appVersion">V1.0.1</strong></small></div></div>
     <div class="top-actions">
       <span class="testflag">AMBIENTE TEST · NON USARE DATI REALI</span>
+      <span id="releaseVersion" class="release-version">V1.0.1</span>
       <span id="connectionBadge" class="connection-badge">Demo dimostrativa</span>
     </div>
   </header>
@@ -37,7 +39,7 @@
       </div>
       <section class="access" id="accessSection">
         <div><strong>Archivio di collaudo</strong><p id="accessMessage">Sono visualizzati esempi inventati. Per salvare sul database TEST serve la chiave già utilizzata nella V0.</p></div>
-        <form id="loginForm" autocomplete="off"><label class="sr-only" for="demoKey">Chiave TEST</label><input id="demoKey" type="password" placeholder="Chiave di collaudo" autocomplete="off"><button type="submit" class="secondary">Apri archivio</button></form>
+        <form id="loginForm" autocomplete="off"><label class="sr-only" for="demoKey">Chiave TEST</label><input id="demoKey" type="password" placeholder="Chiave di collaudo" autocomplete="off" aria-describedby="loginFeedback"><button id="connectButton" type="submit" class="primary">Verifica e apri</button><p id="loginFeedback" class="login-feedback" role="status" aria-live="polite">Incolla la chiave e premi «Verifica e apri».</p></form>
       </section>
       <p id="notice" class="notice" role="status" aria-live="polite"></p>
       <section id="dashboard" class="screen">
@@ -63,7 +65,7 @@
         </div>
       </section>
       <section id="archivesScreen" class="screen" hidden>
-        <iframe id="archivesFrame" title="Salvataggio e ripristino archivi" class="archives-frame" loading="lazy"></iframe>
+        <iframe id="archivesFrame" title="Salvataggio e ripristino archivi" class="archives-frame" loading="eager"></iframe>
       </section>
       <section id="recordsScreen" class="screen" hidden>
         <div class="surface records">
