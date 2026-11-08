@@ -26,7 +26,9 @@
       <div class="navgroup">COMMERCIALE</div>
       <button class="navlink" data-module="activities" type="button"><span>◷</span> Attività</button>
       <button class="navlink" data-module="deals" type="button"><span>◇</span> Trattative</button>
-      <div class="navbottom"><a href="./laboratorio.html">Strumenti laboratorio V0 (backup / import)</a><p>Funzioni ispirate a One Pilot, personalizzabili su richiesta di Antonella.</p></div>
+      <div class="navgroup">AMMINISTRAZIONE</div>
+      <button class="navlink" id="archivesNav" type="button"><span>⤓</span> Salvataggio e ripristino archivi</button>
+      <div class="navbottom"><p>Ambiente di collaudo. Non utilizzare dati personali reali.</p></div>
     </aside>
     <main class="main">
       <div class="pagetop">
@@ -59,6 +61,9 @@
             </div>
           </section>
         </div>
+      </section>
+      <section id="archivesScreen" class="screen" hidden>
+        <iframe id="archivesFrame" title="Salvataggio e ripristino archivi" class="archives-frame" loading="lazy"></iframe>
       </section>
       <section id="recordsScreen" class="screen" hidden>
         <div class="surface records">
