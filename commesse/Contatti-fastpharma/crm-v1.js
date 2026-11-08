@@ -51,6 +51,12 @@
  };
  function display(field,r){return field==="company"&&r.organization_id ? (name("organizations",r.organization_id)||r.company||"") : val(field,r[field]);}
  function showNotice(text,error=false){$("#notice").textContent=text;$("#notice").classList.toggle("error",error)}
+ function loginStatus(text,error=false){
+  const element=$("#loginFeedback");
+  if(!element)return;
+  element.textContent=text;
+  element.classList.toggle("error",error);
+ }
  function dashboard(){
   $("#metricContacts").textContent=data.contacts.length;$("#metricOrganizations").textContent=data.organizations.length;
   $("#metricActivities").textContent=data.activities.filter(x=>!["Completata","Annullata"].includes(x.status)).length;
@@ -89,7 +95,7 @@
   render();
   if(!archivesInitialized){
    archivesInitialized=true;
-   archivesFrame.src="./laboratorio.html";
+   archivesFrame.src="./laboratorio.html?v=1.0.1";
   }else shareArchiveSession();
  }
  function openModule(next){
@@ -186,7 +192,9 @@
  }
  async function get(path){
   const r=await fetch(base+path,{headers:{"X-Demo-Key":key},cache:"no-store",signal:AbortSignal.timeout(20000)});
-  if(!r.ok)throw new Error("Errore HTTP "+r.status+" nel caricamento");
+  if(r.status===401)throw new Error("Chiave TEST non riconosciuta. Verifica la chiave e riprova.");
+  if(r.status===503)throw new Error("Server o database TEST non ancora disponibile. Riprova.");
+  if(!r.ok)throw new Error("Archivio non disponibile (HTTP "+r.status+").");
   return await r.json();
  }
  async function connect(candidate){
@@ -198,8 +206,17 @@
    $("#accessSection").classList.add("connected");
    $("#accessMessage").textContent="Archivio PostgreSQL TEST collegato. Non inserire dati personali reali.";
    $("#connectionBadge").textContent="Archivio TEST collegato";$("#connectionBadge").classList.add("connected");
-   $("#demoKey").value="";showNotice("Connessione riuscita. Le modifiche sono salvate nel database TEST.");shareArchiveSession();render();
-  }catch(e){key="";authenticated=false;data=structuredClone(demo);shareArchiveSession();render();throw e}
+   $("#demoKey").value="";
+   loginStatus("Accesso riuscito: archivio TEST collegato.");
+   showNotice("Accesso riuscito: ora visualizzi i dati del database TEST.",false);
+   shareArchiveSession();render();
+  }catch(e){
+   key="";authenticated=false;data=structuredClone(demo);
+   $("#accessSection").classList.remove("connected");
+   $("#connectionBadge").textContent="Archivio non collegato";
+   $("#connectionBadge").classList.remove("connected");
+   shareArchiveSession();render();throw e;
+  }
  }
  async function save(event){
   event.preventDefault();if(!authenticated)return;
@@ -221,7 +238,7 @@
    showNotice(models[module].single+(editId?" aggiornato":" creato")+" nell'archivio TEST.");render();
   }catch(e){$("#dialogError").textContent=e.message}finally{$("#submitRecord").disabled=false}
  }
- $(".navlink[data-module]").forEach(b=>b.addEventListener("click",()=>openModule(b.dataset.module)));
+ $$(".navlink[data-module]").forEach(b=>b.addEventListener("click",()=>openModule(b.dataset.module)));
  $("#archivesNav").addEventListener("click",openArchives);
  $$("[data-jump]").forEach(b=>b.addEventListener("click",()=>openModule(b.dataset.jump)));
  $("#newRecord").addEventListener("click",()=>showForm());
@@ -239,10 +256,25 @@
  $("#cancelDialog").addEventListener("click",()=>$("#recordDialog").close());
  $("#loginForm").addEventListener("submit",async e=>{
   e.preventDefault();const candidate=$("#demoKey").value.trim();if(!candidate){showNotice("Inserisci la chiave di collaudo.",true);return}
-  const b=$("#loginForm button");b.disabled=true;showNotice("Caricamento archivi TEST…");
-  try{await connect(candidate)}catch(error){showNotice("Accesso non riuscito: "+error.message,true)}finally{b.disabled=false}
+  const b=$("#connectButton");
+  b.disabled=true;
+  b.textContent="Verifica in corso…";
+  loginStatus("Connessione al server TEST e verifica della chiave…");
+  showNotice("Verifica accesso in corso…");
+  try{
+   await connect(candidate);
+  }catch(error){
+   const message=error?.name==="TimeoutError"?"Timeout del server TEST: riprova fra poco.":
+     error instanceof TypeError?"Server non raggiungibile o comunicazione bloccata dal browser. Riprova su Render TEST.":error.message;
+   loginStatus(message,true);
+   showNotice("Accesso non riuscito: "+message,true);
+  }finally{
+   b.disabled=false;
+   b.textContent="Verifica e apri";
+  }
  });
  render();
+ window.__FASTPHARMA_CRM_READY__=true;
  if(desktop){
   $("#loginForm").hidden=true;showNotice("Collegamento al database Windows in corso…");
   connect(key).catch(e=>showNotice("Archivio Windows non pronto: "+e.message,true));
