@@ -1,5 +1,7 @@
 {
-  "frontVersion": "0.1.0",
+  "frontVersion": "0.2.0",
   "buildDate": "2026-11-09",
-  "serverVersionSource": "/health"
+  "serverVersionSource": "/health",
+  "expectedServerVersion": "1.2.0",
+  "defaultBackend": "https://mcp-postgree.onrender.com"
 }

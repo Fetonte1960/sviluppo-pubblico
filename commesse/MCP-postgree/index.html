@@ -6,17 +6,17 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https: http://localhost:* http://127.0.0.1:*; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="description" content="MCP-postgree: laboratorio di test token per gestionale, risveglio Render Free e bootstrap ChatGPT">
-  <title>MCP-postgree · Laboratorio v0.1.0</title>
-  <link rel="stylesheet" href="./styles.css?v=0.1.0">
-  <script defer src="./app.js?v=0.1.0"></script>
+  <title>MCP-postgree · Laboratorio v0.2.0</title>
+  <link rel="stylesheet" href="./styles.css?v=0.2.0">
+  <script defer src="./app.js?v=0.2.0"></script>
 </head>
 <body>
   <header class="topbar">
     <div class="topinner">
       <div class="identity"><span class="mark">M</span><div><strong>MCP-postgree</strong><small>Laboratorio MCP · PostgreSQL</small></div></div>
       <div class="versions" aria-label="Versioni e stato">
-        <span class="version"><span>Frontend</span><strong id="frontVersion">V0.1.0</strong></span>
-        <span class="version"><span>Server</span><strong id="serverVersion">V1.1.0 attesa</strong></span>
+        <span class="version"><span>Frontend</span><strong id="frontVersion">V0.2.0</strong></span>
+        <span class="version"><span>Server</span><strong id="serverVersion">V1.2.0 attesa</strong></span>
         <span id="connectionStatus" class="status" data-state="idle">Non configurato</span>
       </div>
     </div>
@@ -41,10 +41,10 @@
           <div class="panel-head"><span class="ordinal">01</span><div><h2 id="serverTitle">Server Render Free</h2><p>Controllo di disponibilità e lettura versione.</p></div></div>
           <label for="serverUrl">Indirizzo HTTPS del backend MCP-postgree</label>
           <div class="field-with-action">
-            <input id="serverUrl" type="url" inputmode="url" autocomplete="url" spellcheck="false" placeholder="https://nome-servizio.onrender.com" aria-describedby="serverHelp">
+            <input id="serverUrl" type="url" inputmode="url" autocomplete="url" spellcheck="false" value="https://mcp-postgree.onrender.com" placeholder="https://mcp-postgree.onrender.com" aria-describedby="serverHelp">
             <button id="wakeBtn" class="primary" type="button">Risveglia / verifica</button>
           </div>
-          <p id="serverHelp" class="hint">Il server Render Free può impiegare del tempo per risvegliarsi. Non è ancora stato creato un servizio Render per questa commessa.</p>
+          <p id="serverHelp" class="hint">Il servizio MCP-postgree è pubblicato su Render Free e può impiegare del tempo a risvegliarsi. Il controllo parte anche all'apertura della pagina.</p>
           <div class="wake-status"><div id="wakeActivity" class="activity"></div><span id="wakeFeedback" role="status" aria-live="polite">Inserisci l'indirizzo del server e premi «Risveglia / verifica».</span></div>
           <div class="progress-wrap"><progress id="wakeProgress" value="0" max="100" aria-label="Attesa risveglio"></progress><button id="cancelWakeBtn" class="text-btn" type="button" hidden>Interrompi</button></div>
           <div class="facts">
@@ -65,7 +65,7 @@
           <input id="schemaNames" value="schema_test" maxlength="250" spellcheck="false" aria-describedby="tokenHelp">
           <p id="tokenHelp" class="hint">Queste sono richieste di configurazione, non permessi concessi. Schemi, tabelle e colonne saranno autorizzati dall'amministratore nel secret store del backend.</p>
           <div class="button-line">
-            <button id="generateTokenBtn" class="primary" type="button">Genera nuovo token</button>
+            <button id="generateTokenBtn" class="primary" type="button">Genera token e attiva demo</button>
             <span id="tokenStatus" class="inline-status" role="status">Nessun token generato</span>
           </div>
           <div id="tokenResults" class="token-results" hidden>
@@ -75,8 +75,8 @@
             <div class="secret-row"><input id="hashValue" type="text" readonly autocomplete="off"><button id="copyHashBtn" class="secondary" type="button">Copia hash</button></div>
             <label for="policyDraft">Bozza dati per il registro server</label>
             <textarea id="policyDraft" rows="10" readonly spellcheck="false"></textarea>
-            <div class="button-line"><button id="copyPolicyBtn" class="secondary" type="button">Copia bozza</button><button id="clearTokenBtn" class="text-btn" type="button">Elimina dalla pagina</button></div>
-            <div class="notice warning"><strong>Token non ancora attivo.</strong> La generazione non registra automaticamente il token sul server. La policy va completata con tabelle/colonne e approvata dall'amministratore. Non incollare il token nella chat AI.</div>
+            <div class="button-line"><button id="registerDemoBtn" class="primary" type="button">Attiva token nel laboratorio</button><button id="copyPolicyBtn" class="secondary" type="button">Copia bozza</button><button id="clearTokenBtn" class="text-btn" type="button">Elimina dalla pagina</button></div>
+            <div class="notice warning"><strong>Token non ancora attivo.</strong> L'attivazione demo, se riuscita, concede ESCLUSIVAMENTE READ_ONLY a laboratorio_a e laboratorio_b su Neon di prova, per 60 minuti. Per qualsiasi schema aziendale serve un provisioning amministrativo separato. Non incollare il token nella chat AI.</div>
           </div>
         </section>
       </div>
@@ -88,7 +88,7 @@
           <label for="testToken">Token registrato da verificare</label>
           <input id="testToken" type="password" autocomplete="off" placeholder="Incolla qui il token abilitato">
           <div class="button-line"><button id="testMcpBtn" class="primary" type="button">Testa connessione MCP / Init</button><button id="clearTestTokenBtn" class="text-btn" type="button">Svuota token</button></div>
-          <p id="mcpFeedback" class="hint" role="status" aria-live="polite">Il test richiede un backend configurato e raggiungibile.</p>
+          <p id="mcpFeedback" class="hint" role="status" aria-live="polite">Il test usa il token demo attivato oppure un token aziendale già registrato. Non modifica record.</p>
           <pre id="mcpOutput" class="output" aria-label="Risultati del test" tabindex="0">Nessun test eseguito.</pre>
           <p class="hint">Per la prova dal browser, il backend deve autorizzare l'origine GitHub Pages con CORS. Il test non concede permessi e non modifica record.</p>
         </section>
@@ -102,13 +102,13 @@
             <button id="openGptBtn" class="primary" type="button">Apri GPT con istruzioni</button>
             <button id="copyPromptBtn" class="secondary" type="button">Copia istruzione</button>
           </div>
-          <p id="gptFeedback" class="hint" role="status" aria-live="polite">Il collegamento MCP deve essere già configurato nel client GPT: aprire una chat non installa automaticamente un connettore.</p>
+          <p id="gptFeedback" class="hint" role="status" aria-live="polite">Per usare il connettore MCP in ChatGPT occorre configurarlo nel client con il token: aprire una chat non installa automaticamente un connettore.</p>
         </section>
       </div>
     </div>
 
     <footer>
-      <div><strong>MCP-postgree · Front Test V0.1.0</strong><span>Contratto: CommandToMCPPostgree(comando)</span></div>
+      <div><strong>MCP-postgree · Front Test V0.2.0</strong><span>Contratto: CommandToMCPPostgree(comando)</span></div>
       <div><a href="./ISTRUZIONI.md" target="_blank" rel="noopener noreferrer">Istruzioni</a><a href="https://github.com/Fetonte1960/sviluppo-pubblico/tree/main/commesse/MCP-postgree" target="_blank" rel="noopener noreferrer">Artefatti pubblici</a></div>
     </footer>
   </main>

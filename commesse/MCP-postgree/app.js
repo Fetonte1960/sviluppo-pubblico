@@ -1,8 +1,9 @@
 "use strict";
 
 // Front V0.1.0 — incrementare la versione a ogni pubblicazione.
-const FRONT_VERSION = "0.1.0";
-const EXPECTED_SERVER_VERSION = "1.1.0";
+const FRONT_VERSION = "0.2.0";
+const EXPECTED_SERVER_VERSION = "1.2.0";
+const DEFAULT_SERVER_URL = "https://mcp-postgree.onrender.com";
 const TOOL_NAME = "CommandToMCPPostgree";
 const PAGE_INSTRUCTIONS = "https://github.com/Fetonte1960/sviluppo-pubblico/blob/main/commesse/MCP-postgree/ISTRUZIONI.md";
 const DEFAULT_TIMEOUT_MS = 125_000;
@@ -198,10 +199,61 @@ async function generateToken() {
       schemas: info.schemas.map(name => ({name, tables: []}))
     };
     $("policyDraft").value = JSON.stringify(policy, null, 2);
-    feedback("tokenStatus", "Generato in questo browser · registrazione server necessaria");
+    feedback("tokenStatus", "Token generato. Attivazione dimostrativa in corso...");
+    if (state.baseUrl === DEFAULT_SERVER_URL) {
+      await registerDemoToken();
+    } else {
+      feedback("tokenStatus", "Token generato. L'attivazione automatica è disponibile soltanto sul server demo ufficiale.");
+    }
     // Non compilare automaticamente il campo di test: serve l'esplicita conferma di provisioning.
   } catch (error) {
     feedback("tokenStatus", formatError(error));
+  }
+}
+async function registerDemoToken() {
+  if (!state.activeToken || !state.tokenHash) {
+    feedback("tokenStatus", "Prima genera un token.");
+    return;
+  }
+  let base;
+  try {
+    base = saveBaseIfValid();
+    if (base !== DEFAULT_SERVER_URL)
+      throw new Error("L'attivazione pubblica è disponibile solo sul server demo ufficiale.");
+    $("registerDemoBtn").disabled = true;
+    feedback("tokenStatus", "Connessione al laboratorio demo...");
+    if ($("connectionStatus").dataset.state !== "online") {
+      const ready = await wakeServer();
+      if (!ready) throw new Error("Il server demo non è ancora raggiungibile.");
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 20000);
+    let response;
+    try {
+      response = await fetch(base + "/demo/register", {
+        method: "POST",
+        mode: "cors",
+        cache: "no-store",
+        signal: controller.signal,
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          tokenSha256: state.tokenHash,
+          clientId: $("clientId").value.trim()
+        })
+      });
+    } finally { clearTimeout(timer); }
+    const result = await response.json();
+    if (!response.ok || result?.ok !== true)
+      throw new Error(result?.error || "Registrazione demo non riuscita (HTTP " + response.status + ").");
+    // L'attivazione e' sempre limitata dal server a READ_ONLY sui soli due schemi di prova.
+    $("testToken").value = state.activeToken;
+    feedback("tokenStatus", "Token attivo READ_ONLY: laboratorio_a e laboratorio_b (60 minuti).");
+    feedback("mcpFeedback", "Token demo attivo. Premi «Testa connessione MCP / Init» oppure usa il connettore ChatGPT.");
+    await testMcp();
+  } catch (error) {
+    feedback("tokenStatus", "Token generato ma non attivato: " + formatError(error));
+  } finally {
+    $("registerDemoBtn").disabled = false;
   }
 }
 function clearGeneratedToken() {
@@ -310,6 +362,7 @@ function installHandlers() {
   $("wakeBtn").addEventListener("click", wakeServer);
   $("cancelWakeBtn").addEventListener("click", () => state.wakeController?.abort());
   $("generateTokenBtn").addEventListener("click", generateToken);
+  $("registerDemoBtn").addEventListener("click", registerDemoToken);
   $("clearTokenBtn").addEventListener("click", clearGeneratedToken);
   $("toggleTokenBtn").addEventListener("click", () => {
     const show = $("tokenValue").type === "password";
@@ -339,6 +392,11 @@ function installHandlers() {
       // Risveglio automatico senza scaricare segreti e senza bisogno di token.
       void wakeServer();
     } catch { localStorage.removeItem("mcp-postgree-test-url"); }
-  } else { renderPrompt(); }
+  } else {
+    state.baseUrl = DEFAULT_SERVER_URL;
+    $("serverUrl").value = DEFAULT_SERVER_URL;
+    resetServerUi(DEFAULT_SERVER_URL);
+    void wakeServer();
+  }
 }
 installHandlers();

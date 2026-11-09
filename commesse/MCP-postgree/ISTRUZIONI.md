@@ -1,6 +1,6 @@
 # MCP-postgree — Istruzione pubblica di avvio
 
-**Frontend test:** V0.1.0 (incrementare progressivamente a ogni release).
+**Frontend test:** V0.2.0 (incrementare progressivamente a ogni release).
 **Server:** leggere la versione effettiva da \`GET /health\`, senza supporre una versione in assenza di connessione.
 
 ## Scopo e contratto
@@ -15,9 +15,9 @@ Non eseguire SQL arbitrario, DDL, cancellazioni fisiche o comandi ADMIN. Le scri
 ## Token
 
 Ogni gestionale ha un token casuale generato localmente. Il token viene inviato al connettore MCP tramite \`Authorization: Bearer\`; **non va mai scritto nel prompt, in chat, nell'URL di lancio, in GitHub o in log**.
-Generare un token non conferisce accesso. L'amministratore registra la sua impronta SHA-256 nel secret store del backend con database/profilo, ruolo, schemi, tabelle e colonne esplicitamente autorizzati. La policy di default è deny.
+Generare un token non conferisce accesso agli archivi aziendali. L'amministratore registra la sua impronta SHA-256 nel secret store del backend con database/profilo, ruolo, schemi, tabelle e colonne esplicitamente autorizzati. La policy di default è deny.
 
-La pagina statica GitHub Pages è solo un banco prova; **non registra automaticamente token** e non amministrerà database aziendali.
+La pagina statica GitHub Pages registra automaticamente o su comando un token di prova a scadenza (60 minuti) sul **solo server demo Render Free**, associandolo a READ_ONLY sui due schemi fittizi laboratorio_a e laboratorio_b. L'identificativo gestionale e il ruolo richiesto nella pagina non possono elevare queste autorizzazioni. La registrazione avviene inviando solo SHA-256 del token via HTTPS, non il token segreto. Nessun token aziendale viene autoregistrato.
 
 ## Avvio GPT
 
