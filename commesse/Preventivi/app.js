@@ -16,6 +16,7 @@ if(!demoSession || !/^[0-9a-f-]{36}$/i.test(demoSession)){
 let companyId = "", quote = null, catalog = [], prices = [], batches = [], allQuotes = [], dossier = [];
 let companies = [], creatingIssuer = false, issuerFormBaseline = "";
 let recipients = [], recipientId = "", creatingRecipient = false, recipientFormBaseline = "";
+let pendingCrmImport = null, crmCandidates = [];
 let dossierProject = "farmacia-demo", lastImageUrl = null;
 const fmt = n => n == null ? "DA DEFINIRE" : Number(n).toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
 const value = n => n == null ? "" : n;
@@ -124,7 +125,14 @@ function renderRecipientOptions(){
     ? selectedRecipient().details.name+" — "+selectedRecipient().details.address
     : "Per creare un preventivo, registra e seleziona un destinatario.";
 }
+function clearCrmPending(){
+  pendingCrmImport=null;
+  $("crmImportNotice").hidden=true;
+  $("crmConfirmRow").hidden=true;
+  $("crmImportConfirm").checked=false;
+}
 function renderRecipientForm(){
+  clearCrmPending();
   const d=selectedRecipient()?.details||{name:"",address:"",taxId:"",contact:""};
   creatingRecipient=!selectedRecipient();
   $("recipientName").value=d.name||"";
@@ -137,6 +145,7 @@ function renderRecipientForm(){
   renderRecipientOptions();
 }
 function beginNewRecipient(){
+  clearCrmPending();
   recipientId="";
   creatingRecipient=true;
   for(const id of recipientFields)$(id).value="";
@@ -153,18 +162,77 @@ async function chooseRecipient(nextId){
   recipientId=recipients.some(r=>r.id===nextId)?nextId:"";
   renderRecipientForm();
 }
+
+async function openCrmImport(){
+  if(issuerIsDirty()||creatingIssuer)
+    throw Error("Salva prima l'anagrafica emittente");
+  if(recipientIsDirty()&&!confirm("Scartare le modifiche non salvate al destinatario?"))return;
+  $("contattiImportPanel").hidden=false;
+  await loadCrmCandidates();
+}
+async function loadCrmCandidates(){
+  const kind=$("crmImportKind").value, query=$("crmImportSearch").value.trim();
+  if(query.length>120)throw Error("Ricerca troppo lunga");
+  crmCandidates=await request("/api/recipients/contatti-candidates?companyId="+companyId+
+    "&kind="+encodeURIComponent(kind)+"&query="+encodeURIComponent(query));
+  $("crmImportResults").innerHTML=crmCandidates.map(c=>
+    '<button type="button" class="crm-import-result" data-crm-id="'+escapeHtml(c.sourceId)+'">'+
+    escapeHtml(c.name)+
+    '<span>'+escapeHtml(c.sourceKind==="organization"?"Organizzazione":"Contatto")+
+    ' · '+escapeHtml(c.city||"Indirizzo non disponibile")+
+    ' · DEMO</span></button>').join("")||
+    '<p class="hint">Nessun record dimostrativo corrisponde alla ricerca.</p>';
+}
+function chooseCrmCandidate(id){
+  const item=crmCandidates.find(c=>c.sourceId===id);
+  if(!item)throw Error("Selezione CRM non valida");
+  if(recipientIsDirty()&&!confirm("Scartare le modifiche non salvate al destinatario?"))return;
+  beginNewRecipient();
+  pendingCrmImport={sourceId:item.sourceId,sourceKind:item.sourceKind};
+  $("recipientName").value=item.name;
+  // CRM has a city for organizations, no street, and no tax ID. Never guess these values.
+  $("recipientAddress").value="";
+  $("recipientTaxId").value="";
+  $("recipientContact").value=[item.email,item.phone].filter(Boolean).join(" · ").slice(0,180);
+  $("crmImportNotice").textContent="Origine: Contatti FastPharma — "+
+    (item.sourceKind==="organization"?"Organizzazione":"Contatto")+
+    " DEMO. "+(item.city?"Città indicata nel CRM: "+item.city+". ":"")+
+    "Inserisci l'indirizzo completo e verifica i dati fiscali prima di salvare.";
+  $("crmImportNotice").hidden=false;
+  $("crmConfirmRow").hidden=false;
+  $("crmImportConfirm").checked=false;
+  $("recipientMode").textContent="Destinatario importato da Contatti (da completare)";
+  $("recipientSave").textContent="Conferma e importa destinatario";
+  $("recipientName").focus();
+}
+
 async function saveRecipient(){
   if(creatingIssuer||issuerIsDirty())
     throw Error("Salva prima l'anagrafica emittente.");
   const details=readRecipient();
   if(!details.name||!details.address)throw Error("Nome e indirizzo del destinatario sono obbligatori");
   const isNew=creatingRecipient||!recipientId;
-  const item=await request(isNew?"/api/recipients":"/api/recipients/"+recipientId,
-    json(isNew?"POST":"PUT",{companyId,details}));
+  let item, alreadyImported=false;
+  if(pendingCrmImport){
+    if(!$("crmImportConfirm").checked)
+      throw Error("Conferma la verifica della scheda importata prima di salvare");
+    const result=await request("/api/recipients/import-from-contatti",
+      json("POST",{companyId,sourceKind:pendingCrmImport.sourceKind,
+        sourceId:pendingCrmImport.sourceId,details,confirmed:true}));
+    item=result.recipient;
+    alreadyImported=result.alreadyImported;
+  }else{
+    item=await request(isNew?"/api/recipients":"/api/recipients/"+recipientId,
+      json(isNew?"POST":"PUT",{companyId,details}));
+  }
+  const fromCrm=Boolean(pendingCrmImport);
   recipientId=item.id;
   creatingRecipient=false;
+  clearCrmPending();
   await refresh();
-  status(isNew?"Destinatario creato nella demo.":"Destinatario aggiornato.");
+  status(fromCrm?(alreadyImported?"Scheda Contatti già importata: nessun duplicato creato.":
+    "Destinatario DEMO importato da Contatti."):
+    (isNew?"Destinatario creato nella demo.":"Destinatario aggiornato."));
 }
 function renderGeneralQuote(){
   const exists=Boolean(quote);
@@ -216,6 +284,8 @@ async function chooseIssuer(next){
   const changed=next!==companyId;
   companyId=next;quote=null;
   recipientId="";recipients=[];
+  clearCrmPending();
+  $("contattiImportPanel").hidden=true;
   renderIssuerForm();
   if(changed)await refresh();
 }
@@ -469,6 +539,13 @@ $("issuerNew").onclick=beginNewIssuer;
 $("issuerCancel").onclick=renderIssuerForm;
 $("issuerForm").onsubmit=e=>{e.preventDefault();guard(saveIssuer)};
 $("recipientSelect").onchange=()=>guard(()=>chooseRecipient($("recipientSelect").value));
+$("recipientImport").onclick=()=>guard(openCrmImport);
+$("crmImportKind").onchange=()=>guard(loadCrmCandidates);
+$("crmImportSearchButton").onclick=()=>guard(loadCrmCandidates);
+$("crmImportResults").onclick=e=>{
+  const button=e.target.closest("[data-crm-id]");
+  if(button)guard(()=>chooseCrmCandidate(button.dataset.crmId));
+};
 $("recipientNew").onclick=()=>guard(async()=>{
   if(recipientIsDirty()&&!confirm("Scartare le modifiche non salvate al destinatario?"))return;
   beginNewRecipient();

@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="it">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Preventivi V1.2 — Demo sintetica</title><link rel="stylesheet" href="styles.css"></head>
+<title>Preventivi V1.3 — Demo sintetica</title><link rel="stylesheet" href="styles.css"></head>
 <body>
-<header><h1>Preventivi <small>V1.2 · DEMO SINTETICA</small></h1><p>Frontend GitHub Pages, calcoli e preparazione preventivi nel servizio Render. Solo dati sintetici; modifiche temporanee per sessione, Neon non collegato.</p></header>
+<header><h1>Preventivi <small>V1.3 · DEMO SINTETICA</small></h1><p>Frontend GitHub Pages, calcoli e preparazione preventivi nel servizio Render. Solo dati sintetici; modifiche temporanee per sessione, Neon non collegato.</p></header>
 <main>
   <section class="toolbar">
     <span id="status" aria-live="polite">Connessione non inizializzata</span>
@@ -67,7 +67,25 @@
           <label for="recipientSelect">Destinatari dell'emittente selezionato</label>
           <select id="recipientSelect" aria-label="Elenco destinatari"></select>
           <p class="hint">Ogni emittente dispone di un archivio destinatari indipendente.</p>
-          <button id="recipientNew" type="button">+ Nuovo destinatario</button>
+          <div class="recipient-actions">
+            <button id="recipientNew" type="button">+ Nuovo destinatario</button>
+            <button id="recipientImport" type="button" class="button-secondary">Importa da Contatti</button>
+          </div>
+          <section id="contattiImportPanel" class="crm-import-panel" hidden>
+            <h3>Importa da Contatti FastPharma</h3>
+            <p class="hint">Questa demo utilizza esclusivamente schede CRM inventate. Non legge anagrafiche reali su Neon.</p>
+            <label>Tipo di anagrafica
+              <select id="crmImportKind">
+                <option value="organization">Organizzazioni</option>
+                <option value="contact">Contatti / persone</option>
+              </select>
+            </label>
+            <label>Cerca nel CRM dimostrativo
+              <input id="crmImportSearch" maxlength="120" placeholder="Nome o città DEMO">
+            </label>
+            <button id="crmImportSearchButton" type="button">Cerca</button>
+            <div id="crmImportResults" aria-live="polite"></div>
+          </section>
         </aside>
         <article class="issuer-editor">
           <h3 id="recipientMode">Dati destinatario</h3>
@@ -91,6 +109,11 @@
               <button id="recipientCancel" type="button" class="button-secondary">Annulla modifiche</button>
             </div>
           </form>
+          <div id="crmImportNotice" class="crm-import-notice" hidden></div>
+          <label id="crmConfirmRow" class="crm-confirm" hidden>
+            <input id="crmImportConfirm" type="checkbox">
+            Confermo di avere verificato e completato i dati della scheda importata.
+          </label>
           <p class="hint">Modificare l'anagrafica non cambia i preventivi già creati.</p>
         </article>
       </div>
@@ -191,5 +214,5 @@
   </div>
   </section>
 </main>
-<script src="app.js?v=20261109-generale-destinatari-v1"></script>
+<script src="app.js?v=20261109-contatti-import-v1"></script>
 </body></html>

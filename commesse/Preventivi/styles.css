@@ -52,3 +52,15 @@
 .general-check input{width:auto;margin:3px 0 0}
 #quoteList button[aria-current="true"]{background:#c4dfed;border-left:4px solid #116d9b;font-weight:700}
 @media(max-width:860px){.general-quote-layout{grid-template-columns:1fr}}
+
+/* V1.3: CRM import staging in General > Recipient directory */
+.recipient-actions{display:flex;gap:8px;flex-wrap:wrap}
+.recipient-actions button{flex:1 1 125px}
+.crm-import-panel{padding:12px;margin-top:14px;background:#f4f8fb;border:1px solid #d3e1ed;border-radius:7px}
+.crm-import-panel h3{margin:0 0 8px}
+.crm-import-panel #crmImportSearchButton{margin-bottom:10px}
+.crm-import-result{display:block;width:100%;text-align:left;margin:5px 0;background:#e3edf8;color:#19405e;font-weight:500}
+.crm-import-result span{display:block;font-size:.78rem;opacity:.85;font-weight:400;margin-top:3px}
+.crm-import-notice{padding:10px;background:#eff6fc;border-left:3px solid #1767aa;font-size:.85rem;margin:10px 0}
+.crm-confirm{display:flex;gap:8px;align-items:start;font-size:.85rem;margin:10px 0}
+.crm-confirm input{width:auto;margin-top:2px}
