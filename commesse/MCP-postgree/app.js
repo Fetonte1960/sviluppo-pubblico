@@ -1,8 +1,8 @@
 "use strict";
 
 // Front V0.1.0 — incrementare la versione a ogni pubblicazione.
-const FRONT_VERSION = "0.2.1";
-const EXPECTED_SERVER_VERSION = "1.2.2";
+const FRONT_VERSION = "0.3.0";
+const EXPECTED_SERVER_VERSION = "1.3.1";
 const DEFAULT_SERVER_URL = "https://mcp-postgree.onrender.com";
 const TOOL_NAME = "CommandToMCPPostgree";
 const PAGE_INSTRUCTIONS = "https://github.com/Fetonte1960/sviluppo-pubblico/blob/main/commesse/MCP-postgree/ISTRUZIONI.md";
@@ -51,6 +51,9 @@ function renderPrompt() {
     "Contratto MCP invariabile: " + TOOL_NAME + "(comando: string).",
     "Endpoint previsto: " + endpoint,
     "Versione frontend test: " + FRONT_VERSION + "; versione server rilevata: " + version + ".",
+    "Connessione ChatGPT: selezionare OAuth e usare l'endpoint " + endpoint + ".",
+    "Per autenticarsi, incollare il token del gestionale SOLO nel modulo HTTPS di mcp-postgree.onrender.com.",
+    "Il server usa OAuth 2.1 con PKCE S256 e non trasmette mai il token originario a ChatGPT.",
     "Verifica prima se tra gli strumenti di questa chat compare " + TOOL_NAME + ".",
     "Se esiste, invocalo con comando esattamente 'Init' e mostra il menu ricevuto.",
     "Poi attendi la mia scelta; non effettuare scritture in automatico.",
@@ -75,6 +78,7 @@ function setServerVersion(data) {
   $("serverVersion").textContent = version;
   $("serverVersionDetail").textContent = version;
   $("serverCommit").textContent = commit;
+  $("oauthStatus").textContent = data?.oauthEnabled === true ? "Attivo" : "Non attivo";
   renderPrompt();
 }
 function resetServerUi(base) {
@@ -82,6 +86,7 @@ function resetServerUi(base) {
   $("serverVersion").textContent = "V" + EXPECTED_SERVER_VERSION + " attesa";
   $("serverVersionDetail").textContent = "V" + EXPECTED_SERVER_VERSION + " (non verificata)";
   $("serverCommit").textContent = "—";
+  $("oauthStatus").textContent = "da verificare";
   setStatus(base ? "Da verificare" : "Non configurato");
   $("wakeProgress").value = 0;
   renderPrompt();
@@ -378,6 +383,8 @@ function installHandlers() {
   $("testMcpBtn").addEventListener("click", testMcp);
   $("clearTestTokenBtn").addEventListener("click", () => { $("testToken").value = ""; feedback("mcpFeedback", "Token rimosso."); });
   $("openGptBtn").addEventListener("click", openChatGpt);
+  $("copyEndpointBtn").addEventListener("click", () =>
+    copyText(DEFAULT_SERVER_URL + "/mcp", "URL MCP copiato. In ChatGPT scegli OAuth.", "gptFeedback"));
   $("copyPromptBtn").addEventListener("click", () =>
     copyText(renderPrompt(), "Istruzione copiata. Incollala nella chat GPT.", "gptFeedback"));
   $("serverUrl").addEventListener("change", () => {

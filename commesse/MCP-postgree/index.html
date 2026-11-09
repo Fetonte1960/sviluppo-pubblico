@@ -6,17 +6,17 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https: http://localhost:* http://127.0.0.1:*; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="description" content="MCP-postgree: laboratorio di test token per gestionale, risveglio Render Free e bootstrap ChatGPT">
-  <title>MCP-postgree · Laboratorio v0.2.1</title>
-  <link rel="stylesheet" href="./styles.css?v=0.2.1">
-  <script defer src="./app.js?v=0.2.1"></script>
+  <title>MCP-postgree · Laboratorio v0.3.0</title>
+  <link rel="stylesheet" href="./styles.css?v=0.3.0">
+  <script defer src="./app.js?v=0.3.0"></script>
 </head>
 <body>
   <header class="topbar">
     <div class="topinner">
       <div class="identity"><span class="mark">M</span><div><strong>MCP-postgree</strong><small>Laboratorio MCP · PostgreSQL</small></div></div>
       <div class="versions" aria-label="Versioni e stato">
-        <span class="version"><span>Frontend</span><strong id="frontVersion">V0.2.1</strong></span>
-        <span class="version"><span>Server</span><strong id="serverVersion">V1.2.2 attesa</strong></span>
+        <span class="version"><span>Frontend</span><strong id="frontVersion">V0.3.0</strong></span>
+        <span class="version"><span>Server</span><strong id="serverVersion">V1.3.1 attesa</strong></span>
         <span id="connectionStatus" class="status" data-state="idle">Non configurato</span>
       </div>
     </div>
@@ -50,6 +50,7 @@
           <div class="facts">
             <div><span>Versione server</span><strong id="serverVersionDetail">—</strong></div>
             <div><span>Commit backend</span><strong id="serverCommit">—</strong></div>
+            <div><span>OAuth 2.1 / PKCE</span><strong id="oauthStatus">da verificare</strong></div>
             <div><span>Endpoint MCP</span><code id="mcpEndpoint">—</code></div>
           </div>
           <div class="notice muted">L'endpoint <code>/health</code> non richiede token. Il pulsante non crea, configura o distribuisce server Render.</div>
@@ -76,7 +77,7 @@
             <label for="policyDraft">Bozza dati per il registro server</label>
             <textarea id="policyDraft" rows="10" readonly spellcheck="false"></textarea>
             <div class="button-line"><button id="registerDemoBtn" class="primary" type="button">Attiva token nel laboratorio</button><button id="copyPolicyBtn" class="secondary" type="button">Copia bozza</button><button id="clearTokenBtn" class="text-btn" type="button">Elimina dalla pagina</button></div>
-            <div class="notice warning"><strong>Token non ancora attivo.</strong> L'attivazione demo, se riuscita, concede ESCLUSIVAMENTE READ_ONLY a laboratorio_a e laboratorio_b su Neon di prova, per 60 minuti. Per qualsiasi schema aziendale serve un provisioning amministrativo separato. Non incollare il token nella chat AI.</div>
+            <div class="notice warning"><strong>Permessi del laboratorio.</strong> L'attivazione demo, se riuscita, concede ESCLUSIVAMENTE READ_ONLY a laboratorio_a e laboratorio_b su Neon di prova, per 60 minuti. Per qualsiasi schema aziendale serve un provisioning amministrativo separato. Non incollare il token nella chat AI.</div>
           </div>
         </section>
       </div>
@@ -95,20 +96,31 @@
 
         <section class="panel" aria-labelledby="gptTitle">
           <div class="panel-head"><span class="ordinal">04</span><div><h2 id="gptTitle">Avvia ChatGPT</h2><p>Bootstrap iniziale come in Tiralinee MCP.</p></div></div>
-          <p class="panel-copy">L'istruzione include la procedura corretta di inizializzazione e il riferimento al contratto. Non contiene token, hash, password o stringhe di connessione.</p>
+          <p class="panel-copy">Collega ChatGPT al server tramite <strong>OAuth</strong>; quindi avvia la chat con le istruzioni di base. Il token segreto non deve essere incollato nella chat.</p>
+          <div class="oauth-guide">
+            <strong>Collegamento ChatGPT con OAuth</strong>
+            <div class="oauth-url"><code>https://mcp-postgree.onrender.com/mcp</code><button id="copyEndpointBtn" class="secondary" type="button">Copia URL MCP</button></div>
+            <ol>
+              <li>Prima premi <strong>Genera token e attiva demo</strong>, poi <strong>Copia</strong> accanto al token.</li>
+              <li>Nella configurazione MCP di ChatGPT inserisci l'URL qui sopra e scegli <strong>OAuth</strong> come autenticazione.</li>
+              <li>Quando si apre la pagina protetta <strong>mcp-postgree.onrender.com</strong>, incolla lì il token e premi <strong>Autorizza il collegamento</strong>.</li>
+              <li>Torna in ChatGPT, richiama <code>CommandToMCPPostgree("Init")</code> e verifica i due schemi demo.</li>
+            </ol>
+            <p class="hint"><strong>Importante:</strong> il token viene consegnato soltanto al nostro server nella pagina di autorizzazione, mai a ChatGPT come testo del messaggio.</p>
+          </div>
           <label for="bootstrapPrompt">Istruzione iniziale</label>
           <textarea id="bootstrapPrompt" rows="13" readonly spellcheck="false"></textarea>
           <div class="button-line">
             <button id="openGptBtn" class="primary" type="button">Apri GPT con istruzioni</button>
             <button id="copyPromptBtn" class="secondary" type="button">Copia istruzione</button>
           </div>
-          <p id="gptFeedback" class="hint" role="status" aria-live="polite">Per usare il connettore MCP in ChatGPT occorre configurarlo nel client con il token: aprire una chat non installa automaticamente un connettore.</p>
+          <p id="gptFeedback" class="hint" role="status" aria-live="polite">In ChatGPT seleziona OAuth. La schermata protetta del server chiederà il token del gestionale; aprire una chat non installa automaticamente il connettore.</p>
         </section>
       </div>
     </div>
 
     <footer>
-      <div><strong>MCP-postgree · Front Test V0.2.1</strong><span>Contratto: CommandToMCPPostgree(comando)</span></div>
+      <div><strong>MCP-postgree · Front Test V0.3.0</strong><span>Contratto: CommandToMCPPostgree(comando)</span></div>
       <div><a href="./ISTRUZIONI.md" target="_blank" rel="noopener noreferrer">Istruzioni</a><a href="https://github.com/Fetonte1960/sviluppo-pubblico/tree/main/commesse/MCP-postgree" target="_blank" rel="noopener noreferrer">Artefatti pubblici</a></div>
     </footer>
   </main>

@@ -1,6 +1,6 @@
 # MCP-postgree — Istruzione pubblica di avvio
 
-**Frontend test:** V0.2.1 (incrementare progressivamente a ogni release).
+**Frontend test:** V0.3.0 (incrementare progressivamente a ogni release).
 **Server:** leggere la versione effettiva da \`GET /health\`, senza supporre una versione in assenza di connessione.
 
 ## Scopo e contratto
@@ -18,6 +18,25 @@ Ogni gestionale ha un token casuale generato localmente. Il token viene inviato 
 Generare un token non conferisce accesso agli archivi aziendali. L'amministratore registra la sua impronta SHA-256 nel secret store del backend con database/profilo, ruolo, schemi, tabelle e colonne esplicitamente autorizzati. La policy di default è deny.
 
 La pagina statica GitHub Pages registra automaticamente o su comando un token di prova a scadenza (60 minuti) sul **solo server demo Render Free**, associandolo a READ_ONLY sui due schemi fittizi laboratorio_a e laboratorio_b. L'identificativo gestionale e il ruolo richiesto nella pagina non possono elevare queste autorizzazioni. La registrazione avviene inviando solo SHA-256 del token via HTTPS, non il token segreto. Nessun token aziendale viene autoregistrato.
+
+## Collegare ChatGPT a MCP-postgree mediante OAuth 2.1
+
+URL della connessione MCP:
+https://mcp-postgree.onrender.com/mcp
+
+1. Nel laboratorio premi **Genera token e attiva demo**. Premi **Copia** sul token segreto generato.
+2. Aggiungi MCP-postgree tra le connessioni di ChatGPT, con l'URL MCP indicato sopra e modalità **OAuth**.
+3. Il client scoprirà automaticamente \`/.well-known/oauth-protected-resource\` e \`/.well-known/oauth-authorization-server\`, registrerà il client OAuth in DCR e avvierà l'autorizzazione Code + PKCE S256.
+4. Sul form HTTPS del server \`mcp-postgree.onrender.com\`, incolla il token di gestionale e premi **Autorizza il collegamento**. Non incollarlo nella chat GPT.
+5. ChatGPT riceverà soltanto un access token OAuth distinto e limitato alla risorsa MCP; il server lo riconduce alle policy del token originario.
+6. Esegui \`CommandToMCPPostgree("Init")\`. La demo consente solo READ_ONLY sui due schemi sintetici.
+
+Il codice OAuth è monouso, l'access token ha durata massima 30 minuti e il token demo scade dopo 60 minuti o al riavvio di Render Free. Non vengono attualmente emessi refresh token: ripetere l'autorizzazione quando necessario. L'identità dimostrativa è il gestionale associato al token, **non** un account personale verificato. L'uso in produzione con utenti nominativi richiede un provider di identità approvato.
+
+### Endpoint pubblici OAuth
+
+- https://mcp-postgree.onrender.com/.well-known/oauth-protected-resource
+- https://mcp-postgree.onrender.com/.well-known/oauth-authorization-server
 
 ## Avvio GPT
 
