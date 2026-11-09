@@ -1,6 +1,6 @@
 # MCP-postgree — Istruzione pubblica di avvio
 
-**Frontend test:** V0.3.1 (incrementare progressivamente a ogni release).
+**Frontend test:** V0.3.2 (incrementare progressivamente a ogni release).
 **Server:** leggere la versione effettiva da \`GET /health\`, senza supporre una versione in assenza di connessione.
 
 ## Scopo e contratto
