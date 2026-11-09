@@ -16,6 +16,8 @@ if(!demoSession || !/^[0-9a-f-]{36}$/i.test(demoSession)){
 let companyId = "", quote = null, catalog = [], prices = [], batches = [], allQuotes = [], dossier = [];
 let companies = [], creatingIssuer = false, issuerFormBaseline = "";
 let recipients = [], recipientId = "", creatingRecipient = false, recipientFormBaseline = "";
+let chapterTemplates = [], templateId = "", creatingTemplate = false, templateBaseline = "";
+let chapterAttachBusy = false;
 let pendingCrmImport = null, crmCandidates = [];
 let dossierProject = "farmacia-demo", lastImageUrl = null;
 const fmt = n => n == null ? "DA DEFINIRE" : Number(n).toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
@@ -283,49 +285,184 @@ async function chooseIssuer(next){
   }
   const changed=next!==companyId;
   companyId=next;quote=null;
+  templateId="";chapterTemplates=[];
   recipientId="";recipients=[];
   clearCrmPending();
   $("contattiImportPanel").hidden=true;
   renderIssuerForm();
   if(changed)await refresh();
 }
+
+const templateFields=["templateTitle","templateDescription","templateOrder"];
+function readTemplate(){
+  return {title:$("templateTitle").value.trim(),
+    description:$("templateDescription").value.trim(),
+    order:Number($("templateOrder").value)};
+}
+function templateDirty(){return JSON.stringify(readTemplate())!==templateBaseline}
+function selectedTemplate(){return chapterTemplates.find(t=>t.id===templateId)}
+function renderTemplateForm(){
+  const item=selectedTemplate();
+  creatingTemplate=!item;
+  $("templateTitle").value=item?.title||"";
+  $("templateDescription").value=item?.description||"";
+  $("templateOrder").value=item?.order??50;
+  $("templateMode").textContent=item?"Modifica capitolo dell'archivio":"Nuovo capitolo";
+  $("templateSave").textContent=item?"Salva modifiche":"Crea capitolo";
+  $("templateStatus").disabled=!item;
+  $("templateStatus").textContent=item?.active?"Disattiva capitolo":"Riattiva capitolo";
+  templateBaseline=JSON.stringify(readTemplate());
+  renderTemplateList();
+}
+function renderTemplateList(){
+  const showInactive=$("templateShowInactive").checked;
+  const shown=chapterTemplates.filter(t=>showInactive||t.active);
+  $("templateList").innerHTML=shown.map(t=>
+    '<button type="button" class="chapter-template '+(t.active?'':'inactive')+
+    '" data-template-id="'+escapeHtml(t.id)+'" aria-pressed="'+(t.id===templateId)+'" '+
+    'title="Un clic seleziona; doppio clic aggiunge al preventivo">'+
+    '<strong>'+escapeHtml(t.title)+'</strong><span>'+
+    escapeHtml(t.description||"Capitolo di preventivo")+
+    (t.active?"":" · DISATTIVATO")+'</span></button>').join("")||
+    '<p class="chapter-preview-empty">Nessun capitolo disponibile. Crea un nuovo capitolo.</p>';
+}
+async function refreshChapterTemplates(){
+  chapterTemplates=await request("/api/chapter-templates?companyId="+companyId+"&includeInactive=true");
+  if(!chapterTemplates.some(t=>t.id===templateId)){
+    templateId=chapterTemplates.find(t=>t.active)?.id||chapterTemplates[0]?.id||"";
+  }
+  renderTemplateForm();
+}
+function newTemplate(){
+  templateId="";
+  creatingTemplate=true;
+  renderTemplateForm();
+  $("templateTitle").focus();
+}
+function chooseTemplate(id){
+  if(!chapterTemplates.some(t=>t.id===id))return false;
+  if(id===templateId)return true;
+  if(templateDirty()&&!confirm("Modifiche al capitolo non salvate. Scartarle?"))return false;
+  templateId=id;
+  renderTemplateForm();
+  return true;
+}
+async function saveTemplate(){
+  if(issuerIsDirty()||creatingIssuer)throw Error("Salva prima l'emittente");
+  const payload={companyId,...readTemplate()};
+  if(!payload.title)throw Error("Inserisci il titolo del capitolo");
+  if(!Number.isInteger(payload.order)||payload.order<0||payload.order>10000)
+    throw Error("L'ordine deve essere un numero intero da 0 a 10000");
+  const created=creatingTemplate||!templateId;
+  const result=await request(created?"/api/chapter-templates":
+    "/api/chapter-templates/"+templateId,json(created?"POST":"PUT",payload));
+  templateId=result.id;
+  await refreshChapterTemplates();
+  renderQuoteChapterSummary();
+  status(created?"Capitolo creato nell'archivio demo.":"Capitolo dell'archivio aggiornato.");
+}
+async function toggleTemplateStatus(){
+  const item=selectedTemplate();
+  if(!item)throw Error("Seleziona un capitolo");
+  const next=!item.active;
+  if(!next&&!confirm("Disattivare questo capitolo nell'archivio? I preventivi esistenti non saranno modificati."))return;
+  await request("/api/chapter-templates/"+item.id+"/status",
+    json("PUT",{companyId,active:next}));
+  await refreshChapterTemplates();
+  status(next?"Capitolo riattivato.":"Capitolo disattivato nell'archivio.");
+}
+function renderQuoteChapterSummary(){
+  $("chapterCurrentQuote").textContent=quote
+    ? quote.reference+" — "+quote.draft.subject
+    : "Nessuna bozza aperta";
+  const host=$("quoteChapterSummary");
+  if(!quote){
+    host.innerHTML='<p class="chapter-preview-empty">Apri o crea un preventivo da Generale.</p>';
+    return;
+  }
+  host.innerHTML=quote.draft.chapters.length?
+    [...quote.draft.chapters].sort((a,b)=>a.order-b.order).map(c=>
+      '<div class="chapter-summary"><span><b>'+escapeHtml(c.title)+'</b> · '+
+      c.lines.length+' voci</span></div>').join(""):
+    '<p class="chapter-preview-empty">Preventivo ancora senza capitoli. Doppio clic su un capitolo nell’archivio per aggiungerlo.</p>';
+}
+async function addTemplateToQuote(id){
+  if(chapterAttachBusy)return;
+  const item=chapterTemplates.find(t=>t.id===id);
+  if(!item)throw Error("Capitolo non trovato");
+  if(!item.active)throw Error("Capitolo disattivato: riattivalo prima di inserirlo");
+  if(!quote){
+    status("Crea o apri un preventivo da Generale prima di inserire capitoli.",true);
+    return;
+  }
+  if(templateDirty())throw Error("Salva le modifiche al capitolo prima di inserirlo");
+  chapterAttachBusy=true;
+  try{
+    // Preserve any edits to an already opened body before inserting a new chapter.
+    await save();
+    const idQuote=quote.id;
+    const result=await request("/api/quotes/"+idQuote+"/chapters/from-catalog",
+      json("POST",{companyId,templateId:id}));
+    await openQuote(idQuote);
+    const select=$("activeChapter");
+    if(select)select.value=result.chapter.id;
+    renderQuoteChapterSummary();
+    status(result.added?"Capitolo «"+item.title+"» aggiunto al preventivo.":
+      "Capitolo «"+item.title+"» già presente: nessun duplicato.");
+  }finally{
+    chapterAttachBusy=false;
+  }
+}
+
 function showStep(which){
-  if(which==="quote"){
+  if(which!=="general"){
     if(creatingIssuer){
-      status("Completa o annulla la creazione del nuovo emittente prima di proseguire.",true);
+      status("Completa o annulla la creazione dell'emittente.",true);
       return false;
     }
-    if(!companyId){status("Crea o seleziona un emittente prima di proseguire.",true);return false}
+    if(!companyId){status("Seleziona prima un emittente.",true);return false}
     if(issuerIsDirty()||recipientIsDirty()){
-      status("Salva le anagrafiche prima di passare al corpo preventivo.",true);
+      status("Salva le anagrafiche prima di proseguire.",true);
       return false;
     }
     if(quote&&($("generalSubject").value.trim()!==quote.draft.subject||
        $("applyRecipient").checked)){
-      status("Salva i dati generali della bozza prima di passare al corpo preventivo.",true);
+      status("Salva i dati generali prima di proseguire.",true);
       return false;
     }
   }
-  const issuer=which==="general";
-  $("issuerPanel").hidden=!issuer;
-  $("quotePanel").hidden=issuer;
-  $("tabIssuer").classList.toggle("active",issuer);
-  $("tabQuote").classList.toggle("active",!issuer);
-  $("tabIssuer").setAttribute("aria-selected",String(issuer));
-  $("tabQuote").setAttribute("aria-selected",String(!issuer));
+  if(which!=="chapters" && templateDirty() &&
+     !$("chapterPanel").hidden){
+    status("Salva o annulla le modifiche al capitolo prima di cambiare scheda.",true);
+    return false;
+  }
+  const general=which==="general",chapters=which==="chapters",body=which==="quote";
+  $("issuerPanel").hidden=!general;
+  $("chapterPanel").hidden=!chapters;
+  $("quotePanel").hidden=!body;
+  for(const [id,selected] of [["tabIssuer",general],
+                              ["tabChapters",chapters],["tabQuote",body]]){
+    $(id).classList.toggle("active",selected);
+    $(id).setAttribute("aria-selected",String(selected));
+  }
   displayIssuer();
+  if(chapters)renderQuoteChapterSummary();
   return true;
 }
 
 async function refresh(){
   if(!companyId)return;
-  [catalog,prices,batches,allQuotes,recipients]=await Promise.all([
+  [catalog,prices,batches,allQuotes,recipients,chapterTemplates]=await Promise.all([
     request("/api/catalog?companyId="+companyId),
     request("/api/prices/"+companyId),
     request("/api/batches?companyId="+companyId),
     request("/api/quotes?companyId="+companyId),
-    request("/api/recipients?companyId="+companyId)
+    request("/api/recipients?companyId="+companyId),
+    request("/api/chapter-templates?companyId="+companyId+"&includeInactive=true")
   ]);
+  if(!chapterTemplates.some(t=>t.id===templateId))
+    templateId=chapterTemplates.find(t=>t.active)?.id||chapterTemplates[0]?.id||"";
+  renderTemplateForm();
   if(!recipients.some(r=>r.id===recipientId))recipientId=recipients[0]?.id||"";
   renderRecipientForm();
   $("quoteList").innerHTML=allQuotes.map(q=>
@@ -336,6 +473,7 @@ async function refresh(){
   dossierProject = batches[0]?.sourceProjectId || "farmacia-demo";
   await loadDossier();
   renderCatalog();renderPrices();renderQuote();renderGeneralQuote();
+  renderQuoteChapterSummary();
 }
 function renderCatalog(){
   const s=$("searchCatalog").value.toLowerCase();
@@ -367,9 +505,12 @@ function renderQuote(){
     '<label>Condizioni commerciali<textarea id="conditions">'+escapeHtml(d.conditions)+'</textarea></label>'+
     '<label>Capitolo attivo per importazione/aggiunta<select id="activeChapter">'+d.chapters.map(c=>
       '<option value="'+c.id+'">'+escapeHtml(c.title)+'</option>').join("")+'</select></label>'+
-    '<button id="addChapter">Nuovo capitolo</button>';
+    '<button type="button" data-go-chapters class="button-secondary">Apri archivio Capitoli</button>'+
+    (d.chapters.length?'':'<p class="chapter-preview-empty">Il preventivo non contiene ancora capitoli. Vai nella scheda Capitoli e usa il doppio clic per inserirli.</p>');
   for(const c of [...d.chapters].sort((a,b)=>a.order-b.order)){
-    html+='<section class="chapter"><h3>'+escapeHtml(c.title)+'</h3><table><thead><tr>'+
+    html+='<section class="chapter"><div class="chapter-top"><h3>'+escapeHtml(c.title)+'</h3>'+
+      (c.lines.length===0?'<button type="button" class="button-secondary" data-remove-chapter="'+
+      escapeHtml(c.id)+'">Rimuovi capitolo vuoto</button>':'')+'</div><table><thead><tr>'+
       '<th>Codice / descrizione</th><th>Quantità</th><th>UM</th><th>Prezzo vendita</th><th>Blocco</th><th></th></tr></thead><tbody>';
     for(const l of c.lines) html+='<tr data-line="'+l.id+'"><td>'+escapeHtml(l.code)+
       '<div>'+escapeHtml(l.description)+'</div>'+(l.verify?'<span class="badge">DA VERIFICARE</span>':'')+'</td>'+
@@ -432,7 +573,7 @@ function collect(){
 async function save(){await request("/api/quotes/"+quote.id+"/draft?companyId="+companyId,json("PUT",collect())); await openQuote(quote.id)}
 async function openQuote(id){
   quote=await request("/api/quotes/"+id+"?companyId="+companyId);
-  renderQuote();renderGeneralQuote();
+  renderQuote();renderGeneralQuote();renderQuoteChapterSummary();
 }
 async function downloadPdf(revision){
   if(!quote)return;
@@ -553,10 +694,28 @@ $("recipientNew").onclick=()=>guard(async()=>{
 $("recipientCancel").onclick=renderRecipientForm;
 $("recipientForm").onsubmit=e=>{e.preventDefault();guard(saveRecipient)};
 $("generalSave").onclick=()=>guard(saveGeneral);
+$("templateList").onclick=e=>{
+  const button=e.target.closest("[data-template-id]");
+  if(button)chooseTemplate(button.dataset.templateId);
+};
+$("templateList").ondblclick=e=>{
+  const button=e.target.closest("[data-template-id]");
+  if(button)guard(()=>addTemplateToQuote(button.dataset.templateId));
+};
+$("templateForm").onsubmit=e=>{e.preventDefault();guard(saveTemplate)};
+$("templateNew").onclick=()=>guard(async()=>{
+  if(templateDirty()&&!confirm("Scartare le modifiche non salvate?"))return;
+  newTemplate();
+});
+$("templateStatus").onclick=()=>guard(toggleTemplateStatus);
+$("templateShowInactive").onchange=renderTemplateList;
 $("tabIssuer").onclick=()=>showStep("general");
+$("tabChapters").onclick=()=>showStep("chapters");
 $("tabQuote").onclick=()=>showStep("quote");
-$("goQuote").onclick=()=>showStep("quote");
-$("backIssuer").onclick=()=>showStep("general");
+$("goQuote").onclick=()=>showStep("chapters");
+$("goBody").onclick=()=>showStep("quote");
+$("backGeneralFromChapters").onclick=()=>showStep("general");
+$("backIssuer").onclick=()=>showStep("chapters");
 $("reload").onclick=()=>guard(refresh);
 $("newQuote").onclick=()=>guard(async()=>{
   if(creatingIssuer||issuerIsDirty()||recipientIsDirty())
@@ -572,7 +731,7 @@ $("newQuote").onclick=()=>guard(async()=>{
   await refresh();
   await openQuote(created.id);
   $("newSubject").value="";
-  showStep("quote");
+  showStep("chapters");
 });
 $("quoteList").onclick=e=>{const b=e.target.closest("[data-open]");if(b)guard(async()=>{
   if(issuerIsDirty()||recipientIsDirty())
@@ -584,6 +743,7 @@ $("searchCatalog").oninput=renderCatalog;
 $("catalog").onclick=e=>guard(async()=>{
   const btn=e.target.closest("[data-add]");if(!btn||!quote)return;
   const chapterId=showSelectedChapter();
+  if(!chapterId)throw Error("Aggiungi prima un capitolo dalla scheda Capitoli (doppio clic)");
   await save();
   await request("/api/quotes/"+quote.id+"/lines",json("POST",{
     companyId,chapterId,workId:btn.dataset.add,quantity:1}));
@@ -603,13 +763,20 @@ $("priceList").onclick=e=>guard(async()=>{
 });
 $("editor").onclick=e=>guard(async()=>{
   if(e.target.closest("[data-go-general]")){showStep("general");return}
+  if(e.target.closest("[data-go-chapters]")){showStep("chapters");return}
+  const chapterButton=e.target.closest("[data-remove-chapter]");
+  if(chapterButton){
+    const chapter=quote.draft.chapters.find(c=>c.id===chapterButton.dataset.removeChapter);
+    if(!chapter||chapter.lines.length)throw Error("Puoi rimuovere solo capitoli ancora vuoti");
+    if(!confirm("Rimuovere il capitolo vuoto «"+chapter.title+"» dal preventivo? L'archivio non cambia."))return;
+    collect();
+    quote.draft.chapters=quote.draft.chapters.filter(c=>c.id!==chapter.id);
+    await save();
+    renderQuoteChapterSummary();
+    return;
+  }
   const rm=e.target.closest("[data-remove]");
   if(rm){collect();for(const c of quote.draft.chapters)c.lines=c.lines.filter(l=>l.id!==rm.dataset.remove);await save()}
-  if(e.target.id==="addChapter"){
-    collect();let title=prompt("Nome capitolo:","Nuovo capitolo");if(!title)return;
-    quote.draft.chapters.push({id:crypto.randomUUID(),title,order:quote.draft.chapters.length,lines:[]});
-    await save();
-  }
 });
 $("save").onclick=()=>guard(save);
 $("revision").onclick=()=>guard(async()=>{await save();await request("/api/quotes/"+quote.id+
@@ -619,7 +786,9 @@ $("pdf").onclick=()=>guard(async()=>{await save();await downloadPdf()});
 $("revisions").onclick=e=>{const b=e.target.closest("[data-historic]");if(b)guard(()=>downloadPdf(Number(b.dataset.historic)))};
 $("import").onclick=()=>guard(async()=>{
   if(!quote)throw Error("Apri una bozza");
-  const chapterId=showSelectedChapter();await save();
+  const chapterId=showSelectedChapter();
+  if(!chapterId)throw Error("Aggiungi prima un capitolo dalla scheda Capitoli");
+  await save();
   const result=await request("/api/quotes/"+quote.id+"/imports/"+encodeURIComponent($("batch").value),
     json("POST",{companyId,chapterId}));await openQuote(quote.id);
   alert("Importazione: "+result.added+" inserite, "+result.skipped+" già presenti, "+

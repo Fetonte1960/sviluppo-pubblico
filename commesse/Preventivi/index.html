@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="it">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Preventivi V1.3 — Demo sintetica</title><link rel="stylesheet" href="styles.css"></head>
+<title>Preventivi V1.4 — Demo sintetica</title><link rel="stylesheet" href="styles.css"></head>
 <body>
-<header><h1>Preventivi <small>V1.3 · DEMO SINTETICA</small></h1><p>Frontend GitHub Pages, calcoli e preparazione preventivi nel servizio Render. Solo dati sintetici; modifiche temporanee per sessione, Neon non collegato.</p></header>
+<header><h1>Preventivi <small>V1.4 · DEMO SINTETICA</small></h1><p>Frontend GitHub Pages, calcoli e preparazione preventivi nel servizio Render. Solo dati sintetici; modifiche temporanee per sessione, Neon non collegato.</p></header>
 <main>
   <section class="toolbar">
     <span id="status" aria-live="polite">Connessione non inizializzata</span>
@@ -18,7 +18,8 @@
   </section>
   <nav class="step-tabs" role="tablist" aria-label="Fasi di compilazione preventivo">
     <button id="tabIssuer" class="step-tab active" type="button" role="tab" aria-selected="true" aria-controls="issuerPanel">1 · Generale</button>
-    <button id="tabQuote" class="step-tab" type="button" role="tab" aria-selected="false" aria-controls="quotePanel">2 · Corpo preventivo</button>
+    <button id="tabChapters" class="step-tab" type="button" role="tab" aria-selected="false" aria-controls="chapterPanel">2 · Capitoli</button>
+    <button id="tabQuote" class="step-tab" type="button" role="tab" aria-selected="false" aria-controls="quotePanel">3 · Corpo preventivo</button>
   </nav>
   <section id="issuerPanel" class="step-panel" role="tabpanel" aria-labelledby="tabIssuer">
     <div class="section-title">
@@ -152,18 +153,65 @@
         <p class="hint">Le modifiche agiscono solo sulla bozza corrente: le revisioni già archiviate non cambiano.</p>
       </article>
     </section>
-    <div class="next-step"><button id="goQuote" type="button">Vai a 2 · Corpo preventivo</button></div>
+    <div class="next-step"><button id="goQuote" type="button">Vai a 2 · Capitoli</button></div>
+  </section>
+  <section id="chapterPanel" class="step-panel" role="tabpanel" aria-labelledby="tabChapters" hidden>
+    <div class="section-title">
+      <h2>2. Capitoli</h2>
+      <p class="hint">Organizza l'archivio dei capitoli. <b>Un clic seleziona, doppio clic aggiunge il capitolo al preventivo aperto.</b></p>
+    </div>
+    <div class="quote-context">
+      <div><small>Preventivo aperto</small><strong id="chapterCurrentQuote">—</strong>
+        <span class="hint">Se manca una bozza, creala prima dalla scheda Generale.</span></div>
+      <button id="backGeneralFromChapters" type="button" class="button-secondary">Torna a Generale</button>
+    </div>
+    <div class="chapter-admin-layout">
+      <aside>
+        <h3>Archivio capitoli dell'emittente</h3>
+        <p class="hint">Doppio clic sulla riga desiderata per inserirla nel Corpo preventivo.</p>
+        <label class="chapter-toggle"><input id="templateShowInactive" type="checkbox"> Mostra anche capitoli disattivati</label>
+        <div id="templateList" class="chapter-library" aria-label="Capitoli disponibili"></div>
+        <p class="hint">L'inserimento ripetuto dello stesso capitolo non crea doppioni.</p>
+      </aside>
+      <article>
+        <h3 id="templateMode">Gestione capitolo</h3>
+        <form id="templateForm">
+          <div class="grid2">
+            <label>Nome capitolo *
+              <input id="templateTitle" maxlength="120" required autocomplete="off" placeholder="Es. Manutenzione">
+            </label>
+            <label>Ordine nell'archivio
+              <input id="templateOrder" type="number" min="0" max="10000" step="1" value="50" required>
+            </label>
+          </div>
+          <label>Descrizione / note del capitolo
+            <textarea id="templateDescription" maxlength="500" placeholder="Descrizione facoltativa"></textarea>
+          </label>
+          <div class="actionbar">
+            <button id="templateNew" type="button" class="button-secondary">Nuovo capitolo</button>
+            <button id="templateSave" type="submit">Salva capitolo</button>
+            <button id="templateStatus" type="button" class="button-secondary" disabled>Disattiva</button>
+          </div>
+        </form>
+        <p class="hint">Le modifiche all'archivio non cambiano i capitoli già inseriti nei preventivi.</p>
+        <div class="general-section">
+          <h3>Capitoli inseriti nel preventivo</h3>
+          <div id="quoteChapterSummary" aria-live="polite"></div>
+        </div>
+      </article>
+    </div>
+    <div class="next-step"><button id="goBody" type="button">Vai a 3 · Corpo preventivo</button></div>
   </section>
   <section id="quotePanel" class="step-panel" role="tabpanel" aria-labelledby="tabQuote" hidden>
     <div class="quote-context">
       <div><small>Emittente selezionato</small><strong id="chosenIssuer">—</strong>
         <span class="hint">I documenti esistenti mantengono l'intestazione salvata alla creazione.</span></div>
-      <button id="backIssuer" type="button" class="button-secondary">Torna a Generale</button>
+      <button id="backIssuer" type="button" class="button-secondary">Torna a Capitoli</button>
     </div>
     <div class="layout">
     <aside>
       <h2>Strumenti per il corpo preventivo</h2>
-      <p class="hint">Emittente, destinatario, nuovo preventivo e archivio sono nella scheda Generale.</p>
+      <p class="hint">Anagrafiche e gestione delle bozze sono in Generale; archivio e inserimento capitoli nella scheda Capitoli.</p>
       <h2>Import computi</h2>
       <select id="batch"></select><button id="import">Importa lotto nel capitolo</button>
       <p class="hint">Stesse righe importate due volte non producono duplicati. Lotto sintetico.</p>
@@ -214,5 +262,5 @@
   </div>
   </section>
 </main>
-<script src="app.js?v=20261109-contatti-import-v1"></script>
+<script src="app.js?v=20261109-capitoli-dblclick-v1"></script>
 </body></html>
