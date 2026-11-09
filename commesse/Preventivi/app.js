@@ -107,6 +107,7 @@ async function saveIssuer(){
 }
 async function chooseIssuer(next){
   if(!companies.some(c=>c.id===next))return;
+  if(next===companyId && !creatingIssuer && !issuerIsDirty())return;
   if(issuerIsDirty() &&
     !confirm("L'anagrafica contiene modifiche non salvate. Vuoi scartarle?")){
       $("company").value=companyId;return;
