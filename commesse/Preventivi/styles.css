@@ -38,3 +38,17 @@
 .connection-settings summary{cursor:pointer;color:#52677e;font-size:.8rem}
 .connection-row{display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin-top:10px}
 .connection-row label{min-width:280px;margin:0}
+
+/* V1.2 — General tab: issuer, recipient, quote lifecycle */
+.general-subheading{font-size:1.06rem;margin:18px 0 10px;color:#184a71}
+.general-section{margin-top:18px;padding-top:4px;border-top:1px solid #d6e0ec}
+.general-quote-layout{display:grid;grid-template-columns:minmax(280px,1fr) minmax(320px,1fr);gap:14px}
+.general-quote-layout article,.general-current{padding:17px}
+.general-quote-layout #newSubject{margin-bottom:12px}
+.general-quote-layout #newQuote{width:100%}
+.general-current{margin-top:14px}
+.registry-note{background:#f1f6fb;padding:10px;border-radius:6px;font-size:.87rem;color:#253c53}
+.general-check{display:flex;gap:8px;align-items:start;line-height:1.45;margin-top:24px}
+.general-check input{width:auto;margin:3px 0 0}
+#quoteList button[aria-current="true"]{background:#c4dfed;border-left:4px solid #116d9b;font-weight:700}
+@media(max-width:860px){.general-quote-layout{grid-template-columns:1fr}}

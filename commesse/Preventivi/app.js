@@ -15,6 +15,7 @@ if(!demoSession || !/^[0-9a-f-]{36}$/i.test(demoSession)){
 }
 let companyId = "", quote = null, catalog = [], prices = [], batches = [], allQuotes = [], dossier = [];
 let companies = [], creatingIssuer = false, issuerFormBaseline = "";
+let recipients = [], recipientId = "", creatingRecipient = false, recipientFormBaseline = "";
 let dossierProject = "farmacia-demo", lastImageUrl = null;
 const fmt = n => n == null ? "DA DEFINIRE" : Number(n).toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
 const value = n => n == null ? "" : n;
@@ -43,7 +44,7 @@ async function connect(){
   await loadCompanies(companyId);
   quote=null;
   await refresh();
-  showStep("issuer");
+  showStep("general");
 }
 
 const issuerFields = ["issuerName","issuerAddress","issuerTaxId","issuerContact"];
@@ -105,11 +106,107 @@ async function saveIssuer(){
   await refresh();
   status(created?"Emittente creato nella demo.":"Anagrafica emittente aggiornata.");
 }
+
+const recipientFields=["recipientName","recipientAddress","recipientTaxId","recipientContact"];
+function readRecipient(){
+  return {name:$("recipientName").value.trim(),address:$("recipientAddress").value.trim(),
+    taxId:$("recipientTaxId").value.trim(),contact:$("recipientContact").value.trim()};
+}
+function recipientIsDirty(){return JSON.stringify(readRecipient())!==recipientFormBaseline}
+function selectedRecipient(){return recipients.find(r=>r.id===recipientId)}
+function renderRecipientOptions(){
+  const options='<option value="">— Seleziona destinatario —</option>'+
+    recipients.map(r=>'<option value="'+escapeHtml(r.id)+'">'+
+    escapeHtml(r.details.name)+'</option>').join("");
+  $("recipientSelect").innerHTML=options;
+  $("recipientSelect").value=recipientId||"";
+  $("newRecipientSummary").textContent=selectedRecipient()
+    ? selectedRecipient().details.name+" — "+selectedRecipient().details.address
+    : "Per creare un preventivo, registra e seleziona un destinatario.";
+}
+function renderRecipientForm(){
+  const d=selectedRecipient()?.details||{name:"",address:"",taxId:"",contact:""};
+  creatingRecipient=!selectedRecipient();
+  $("recipientName").value=d.name||"";
+  $("recipientAddress").value=d.address||"";
+  $("recipientTaxId").value=d.taxId||"";
+  $("recipientContact").value=d.contact||"";
+  recipientFormBaseline=JSON.stringify(readRecipient());
+  $("recipientMode").textContent=creatingRecipient?"Nuovo destinatario":"Dati del destinatario selezionato";
+  $("recipientSave").textContent=creatingRecipient?"Crea destinatario":"Salva modifiche destinatario";
+  renderRecipientOptions();
+}
+function beginNewRecipient(){
+  recipientId="";
+  creatingRecipient=true;
+  for(const id of recipientFields)$(id).value="";
+  recipientFormBaseline=JSON.stringify(readRecipient());
+  $("recipientMode").textContent="Nuovo destinatario";
+  $("recipientSave").textContent="Crea destinatario";
+  renderRecipientOptions();
+  $("recipientName").focus();
+}
+async function chooseRecipient(nextId){
+  if(recipientIsDirty()&&!confirm("Il destinatario ha modifiche non salvate. Scartarle?")){
+    $("recipientSelect").value=recipientId||"";return;
+  }
+  recipientId=recipients.some(r=>r.id===nextId)?nextId:"";
+  renderRecipientForm();
+}
+async function saveRecipient(){
+  if(creatingIssuer||issuerIsDirty())
+    throw Error("Salva prima l'anagrafica emittente.");
+  const details=readRecipient();
+  if(!details.name||!details.address)throw Error("Nome e indirizzo del destinatario sono obbligatori");
+  const isNew=creatingRecipient||!recipientId;
+  const item=await request(isNew?"/api/recipients":"/api/recipients/"+recipientId,
+    json(isNew?"POST":"PUT",{companyId,details}));
+  recipientId=item.id;
+  creatingRecipient=false;
+  await refresh();
+  status(isNew?"Destinatario creato nella demo.":"Destinatario aggiornato.");
+}
+function renderGeneralQuote(){
+  const exists=Boolean(quote);
+  $("openedQuote").textContent=exists
+    ? quote.reference+" — "+quote.status
+    : "Nessun preventivo aperto. Creane uno oppure selezionalo dall'archivio.";
+  const r=quote?.draft?.recipient;
+  $("openedRecipient").textContent=r
+    ? "Destinatario registrato in questa bozza: "+r.name+
+        (r.address?" — "+r.address:"")
+    : "";
+  $("generalSubject").disabled=!exists;
+  $("generalSave").disabled=!exists;
+  $("generalSubject").value=exists?quote.draft.subject:"";
+  $("applyRecipient").disabled=!exists||!recipientId;
+  $("applyRecipient").checked=false;
+  document.querySelectorAll("#quoteList [data-open]").forEach(button=>{
+    button.setAttribute("aria-current",String(exists&&button.dataset.open===quote.id));
+  });
+}
+async function saveGeneral(){
+  if(!quote)throw Error("Seleziona prima un preventivo dall'archivio");
+  if(issuerIsDirty()||recipientIsDirty())
+    throw Error("Salva prima le modifiche alle anagrafiche");
+  const subject=$("generalSubject").value.trim();
+  if(!subject)throw Error("Oggetto del preventivo obbligatorio");
+  const apply=$("applyRecipient").checked;
+  if(apply&&!recipientId)throw Error("Seleziona un destinatario prima di applicarlo");
+  await request("/api/quotes/"+quote.id+"/general",json("PUT",{
+    companyId,recipientId:apply?recipientId:null,subject
+  }));
+  const id=quote.id;
+  await refresh();
+  await openQuote(id);
+  status("Dati generali della bozza salvati.");
+}
+
 async function chooseIssuer(next){
   if(!companies.some(c=>c.id===next))return;
   if(next===companyId && !creatingIssuer && !issuerIsDirty())return;
-  if(issuerIsDirty() &&
-    !confirm("L'anagrafica contiene modifiche non salvate. Vuoi scartarle?")){
+  if((issuerIsDirty()||recipientIsDirty()) &&
+    !confirm("Ci sono modifiche anagrafiche non salvate. Vuoi scartarle?")){
       $("company").value=companyId;return;
     }
   if(quote && next!==companyId && !confirm(
@@ -118,6 +215,7 @@ async function chooseIssuer(next){
   }
   const changed=next!==companyId;
   companyId=next;quote=null;
+  recipientId="";recipients=[];
   renderIssuerForm();
   if(changed)await refresh();
 }
@@ -128,12 +226,17 @@ function showStep(which){
       return false;
     }
     if(!companyId){status("Crea o seleziona un emittente prima di proseguire.",true);return false}
-    if(issuerIsDirty()){
-      status("Salva l'anagrafica emittente prima di passare al preventivo.",true);
+    if(issuerIsDirty()||recipientIsDirty()){
+      status("Salva le anagrafiche prima di passare al corpo preventivo.",true);
+      return false;
+    }
+    if(quote&&($("generalSubject").value.trim()!==quote.draft.subject||
+       $("applyRecipient").checked)){
+      status("Salva i dati generali della bozza prima di passare al corpo preventivo.",true);
       return false;
     }
   }
-  const issuer=which==="issuer";
+  const issuer=which==="general";
   $("issuerPanel").hidden=!issuer;
   $("quotePanel").hidden=issuer;
   $("tabIssuer").classList.toggle("active",issuer);
@@ -146,12 +249,15 @@ function showStep(which){
 
 async function refresh(){
   if(!companyId)return;
-  [catalog,prices,batches,allQuotes]=await Promise.all([
+  [catalog,prices,batches,allQuotes,recipients]=await Promise.all([
     request("/api/catalog?companyId="+companyId),
     request("/api/prices/"+companyId),
     request("/api/batches?companyId="+companyId),
-    request("/api/quotes?companyId="+companyId)
+    request("/api/quotes?companyId="+companyId),
+    request("/api/recipients?companyId="+companyId)
   ]);
+  if(!recipients.some(r=>r.id===recipientId))recipientId=recipients[0]?.id||"";
+  renderRecipientForm();
   $("quoteList").innerHTML=allQuotes.map(q=>
     '<button data-open="'+q.id+'">'+escapeHtml(q.reference+" — "+q.subject)+" (r"+q.revisions+")</button>").join("");
   $("batch").innerHTML=batches.map(b=>'<option value="'+escapeHtml(b.batchId)+'">'+escapeHtml(b.sourceProjectId+" / "+b.sourceRevision)+"</option>").join("");
@@ -159,7 +265,7 @@ async function refresh(){
     " voci consultabili · "+batches.length+" lotti disponibili.";
   dossierProject = batches[0]?.sourceProjectId || "farmacia-demo";
   await loadDossier();
-  renderCatalog();renderPrices(); renderQuote();
+  renderCatalog();renderPrices();renderQuote();renderGeneralQuote();
 }
 function renderCatalog(){
   const s=$("searchCatalog").value.toLowerCase();
@@ -184,9 +290,10 @@ function renderQuote(){
     '<div class="issuer-in-document"><b>Emittente del documento:</b> '+escapeHtml(d.issuer.name)+
     ' · '+escapeHtml(d.issuer.address)+(d.issuer.taxId?' · '+escapeHtml(d.issuer.taxId):'')+
     (d.issuer.contact?' · '+escapeHtml(d.issuer.contact):'')+'</div>'+
-    '<div class="grid2"><label>Destinatario<input id="recipient" value="'+escapeHtml(d.recipient.name)+'"></label>'+
-    '<label>Indirizzo destinatario<input id="recipientAddress" value="'+escapeHtml(d.recipient.address)+'"></label></div>'+
-    '<label>Oggetto<input id="subject" value="'+escapeHtml(d.subject)+'"></label>'+
+    '<div class="issuer-in-document"><b>Destinatario:</b> '+escapeHtml(d.recipient.name)+
+    ' · '+escapeHtml(d.recipient.address)+(d.recipient.taxId?' · '+escapeHtml(d.recipient.taxId):'')+
+    ' | <b>Oggetto:</b> '+escapeHtml(d.subject)+'</div>'+
+    '<button type="button" data-go-general class="button-secondary">Modifica emittente, destinatario e dati generali</button>'+
     '<label>Condizioni commerciali<textarea id="conditions">'+escapeHtml(d.conditions)+'</textarea></label>'+
     '<label>Capitolo attivo per importazione/aggiunta<select id="activeChapter">'+d.chapters.map(c=>
       '<option value="'+c.id+'">'+escapeHtml(c.title)+'</option>').join("")+'</select></label>'+
@@ -233,8 +340,8 @@ async function refreshTotals(){
 function collect(){
   if(!quote)throw Error("Nessuna bozza aperta");
   const d=quote.draft;
-  d.recipient.name=$("recipient").value.trim();d.recipient.address=$("recipientAddress").value.trim();
-  d.subject=$("subject").value.trim();d.conditions=$("conditions").value;
+  // Recipient and subject are managed only from the General tab.
+  d.conditions=$("conditions").value;
   d.options.vatRate=number($("vat").value);
   for(const key of ["general","contingency","discount"]){
     const kind=document.querySelector('[data-adjust="'+key+'"]').value;
@@ -253,7 +360,10 @@ function collect(){
   return d;
 }
 async function save(){await request("/api/quotes/"+quote.id+"/draft?companyId="+companyId,json("PUT",collect())); await openQuote(quote.id)}
-async function openQuote(id){quote=await request("/api/quotes/"+id+"?companyId="+companyId);renderQuote()}
+async function openQuote(id){
+  quote=await request("/api/quotes/"+id+"?companyId="+companyId);
+  renderQuote();renderGeneralQuote();
+}
 async function downloadPdf(revision){
   if(!quote)return;
   const postfix=revision?"&revision="+revision:"";
@@ -358,27 +468,41 @@ $("issuerCards").onclick=e=>{const b=e.target.closest("[data-issuer]");if(b)guar
 $("issuerNew").onclick=beginNewIssuer;
 $("issuerCancel").onclick=renderIssuerForm;
 $("issuerForm").onsubmit=e=>{e.preventDefault();guard(saveIssuer)};
-$("tabIssuer").onclick=()=>showStep("issuer");
+$("recipientSelect").onchange=()=>guard(()=>chooseRecipient($("recipientSelect").value));
+$("recipientNew").onclick=()=>guard(async()=>{
+  if(recipientIsDirty()&&!confirm("Scartare le modifiche non salvate al destinatario?"))return;
+  beginNewRecipient();
+});
+$("recipientCancel").onclick=renderRecipientForm;
+$("recipientForm").onsubmit=e=>{e.preventDefault();guard(saveRecipient)};
+$("generalSave").onclick=()=>guard(saveGeneral);
+$("tabIssuer").onclick=()=>showStep("general");
 $("tabQuote").onclick=()=>showStep("quote");
 $("goQuote").onclick=()=>showStep("quote");
-$("backIssuer").onclick=()=>showStep("issuer");
+$("backIssuer").onclick=()=>showStep("general");
 $("reload").onclick=()=>guard(refresh);
 $("newQuote").onclick=()=>guard(async()=>{
-  if(!companyId)throw Error("Seleziona prima un emittente nella scheda 1");
-  const name=$("newRecipient").value.trim();
-  const address=$("newRecipientAddress").value.trim();
+  if(creatingIssuer||issuerIsDirty()||recipientIsDirty())
+    throw Error("Salva le anagrafiche prima di creare il preventivo.");
+  if(!companyId||!recipientId)
+    throw Error("Seleziona o crea emittente e destinatario nella scheda Generale.");
   const subject=$("newSubject").value.trim();
-  if(!name||!subject)throw Error("Destinatario e oggetto sono obbligatori");
-  const created=await request("/api/quotes",json("POST",{
-    companyId,recipient:{name,address},subject}));
+  if(!subject)throw Error("Inserire l'oggetto del nuovo preventivo.");
+  const created=await request("/api/quotes/from-recipient",json("POST",{
+    companyId,recipientId,subject
+  }));
   quote=created;
   await refresh();
   await openQuote(created.id);
-  $("newRecipient").value="";
-  $("newRecipientAddress").value="";
   $("newSubject").value="";
+  showStep("quote");
 });
-$("quoteList").onclick=e=>{const b=e.target.closest("[data-open]");if(b)guard(()=>openQuote(b.dataset.open))};
+$("quoteList").onclick=e=>{const b=e.target.closest("[data-open]");if(b)guard(async()=>{
+  if(issuerIsDirty()||recipientIsDirty())
+    throw Error("Salva le anagrafiche prima di aprire un preventivo");
+  await openQuote(b.dataset.open);
+  showStep("quote");
+})};
 $("searchCatalog").oninput=renderCatalog;
 $("catalog").onclick=e=>guard(async()=>{
   const btn=e.target.closest("[data-add]");if(!btn||!quote)return;
@@ -401,6 +525,7 @@ $("priceList").onclick=e=>guard(async()=>{
     manualSalePrice:field("manualSalePrice")}));await refresh();
 });
 $("editor").onclick=e=>guard(async()=>{
+  if(e.target.closest("[data-go-general]")){showStep("general");return}
   const rm=e.target.closest("[data-remove]");
   if(rm){collect();for(const c of quote.draft.chapters)c.lines=c.lines.filter(l=>l.id!==rm.dataset.remove);await save()}
   if(e.target.id==="addChapter"){

@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="it">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Preventivi V1.1 — Demo sintetica</title><link rel="stylesheet" href="styles.css"></head>
+<title>Preventivi V1.2 — Demo sintetica</title><link rel="stylesheet" href="styles.css"></head>
 <body>
-<header><h1>Preventivi <small>V1.1 · DEMO SINTETICA</small></h1><p>Frontend GitHub Pages, calcoli e preparazione preventivi nel servizio Render. Solo dati sintetici; modifiche temporanee per sessione, Neon non collegato.</p></header>
+<header><h1>Preventivi <small>V1.2 · DEMO SINTETICA</small></h1><p>Frontend GitHub Pages, calcoli e preparazione preventivi nel servizio Render. Solo dati sintetici; modifiche temporanee per sessione, Neon non collegato.</p></header>
 <main>
   <section class="toolbar">
     <span id="status" aria-live="polite">Connessione non inizializzata</span>
@@ -17,14 +17,15 @@
     </details>
   </section>
   <nav class="step-tabs" role="tablist" aria-label="Fasi di compilazione preventivo">
-    <button id="tabIssuer" class="step-tab active" type="button" role="tab" aria-selected="true" aria-controls="issuerPanel">1 · Anagrafica emittente</button>
+    <button id="tabIssuer" class="step-tab active" type="button" role="tab" aria-selected="true" aria-controls="issuerPanel">1 · Generale</button>
     <button id="tabQuote" class="step-tab" type="button" role="tab" aria-selected="false" aria-controls="quotePanel">2 · Corpo preventivo</button>
   </nav>
   <section id="issuerPanel" class="step-panel" role="tabpanel" aria-labelledby="tabIssuer">
     <div class="section-title">
-      <div><h2>1. Anagrafica emittente</h2>
-      <p class="hint">Gestisci più aziende emittenti. Ogni azienda mantiene i propri preventivi e il proprio prezziario.</p></div>
+      <div><h2>1. Generale</h2>
+      <p class="hint">Imposta emittente e destinatario, crea un preventivo o riaprine uno esistente.</p></div>
     </div>
+    <h3 class="general-subheading">Anagrafica emittente</h3>
     <div class="issuer-layout">
       <aside class="issuer-directory">
         <h3>Emittenti disponibili</h3>
@@ -57,29 +58,89 @@
           </div>
         </form>
         <p id="issuerNotice" class="hint">Se modifichi un'emittente, i preventivi già creati conserveranno i dati precedenti.</p>
-        <div class="next-step"><button id="goQuote" type="button">Vai a 2 · Corpo preventivo</button></div>
       </article>
     </div>
+    <section class="general-section">
+      <h3 class="general-subheading">Anagrafica destinatario</h3>
+      <div class="issuer-layout">
+        <aside class="issuer-directory">
+          <label for="recipientSelect">Destinatari dell'emittente selezionato</label>
+          <select id="recipientSelect" aria-label="Elenco destinatari"></select>
+          <p class="hint">Ogni emittente dispone di un archivio destinatari indipendente.</p>
+          <button id="recipientNew" type="button">+ Nuovo destinatario</button>
+        </aside>
+        <article class="issuer-editor">
+          <h3 id="recipientMode">Dati destinatario</h3>
+          <form id="recipientForm">
+            <div class="grid2">
+              <label>Ragione sociale / nominativo *
+                <input id="recipientName" maxlength="160" required autocomplete="off" placeholder="Cliente di prova">
+              </label>
+              <label>Partita IVA / codice fiscale
+                <input id="recipientTaxId" maxlength="40" autocomplete="off" placeholder="Solo dati sintetici">
+              </label>
+              <label>Indirizzo / sede *
+                <input id="recipientAddress" maxlength="300" required autocomplete="off" placeholder="Via di Prova 10">
+              </label>
+              <label>Recapiti
+                <input id="recipientContact" maxlength="180" autocomplete="off" placeholder="Recapiti DEMO">
+              </label>
+            </div>
+            <div class="actionbar">
+              <button id="recipientSave" type="submit">Salva destinatario</button>
+              <button id="recipientCancel" type="button" class="button-secondary">Annulla modifiche</button>
+            </div>
+          </form>
+          <p class="hint">Modificare l'anagrafica non cambia i preventivi già creati.</p>
+        </article>
+      </div>
+    </section>
+    <section class="general-section">
+      <h3 class="general-subheading">Gestione generale dei preventivi</h3>
+      <div class="general-quote-layout">
+        <article>
+          <h3>Nuovo preventivo</h3>
+          <p class="hint">Utilizza l'emittente e il destinatario selezionati sopra.</p>
+          <p id="newRecipientSummary" class="registry-note">Seleziona o crea prima un destinatario.</p>
+          <label for="newSubject">Oggetto del nuovo preventivo *</label>
+          <input id="newSubject" maxlength="240" placeholder="Es. Ristrutturazione farmacia DEMO">
+          <button id="newQuote" type="button">Crea nuovo preventivo</button>
+        </article>
+        <article>
+          <h3>Archivio preventivi</h3>
+          <p class="hint" id="demoInfo">Caricamento archivio…</p>
+          <div id="quoteList"></div>
+          <button id="reload" type="button" class="button-secondary">Ricarica archivio</button>
+        </article>
+      </div>
+      <article class="general-current">
+        <h3>Preventivo aperto</h3>
+        <p id="openedQuote" class="registry-note">Nessun preventivo selezionato.</p>
+        <p id="openedRecipient" class="hint"></p>
+        <div class="grid2">
+          <label>Oggetto del preventivo aperto
+            <input id="generalSubject" maxlength="240" disabled>
+          </label>
+          <label class="general-check"><input id="applyRecipient" type="checkbox" disabled>
+            Sostituisci il destinatario del preventivo aperto con quello selezionato nell'anagrafica
+          </label>
+        </div>
+        <button id="generalSave" type="button" disabled>Salva dati generali della bozza</button>
+        <p class="hint">Le modifiche agiscono solo sulla bozza corrente: le revisioni già archiviate non cambiano.</p>
+      </article>
+    </section>
+    <div class="next-step"><button id="goQuote" type="button">Vai a 2 · Corpo preventivo</button></div>
   </section>
   <section id="quotePanel" class="step-panel" role="tabpanel" aria-labelledby="tabQuote" hidden>
     <div class="quote-context">
       <div><small>Emittente selezionato</small><strong id="chosenIssuer">—</strong>
         <span class="hint">I documenti esistenti mantengono l'intestazione salvata alla creazione.</span></div>
-      <button id="backIssuer" type="button" class="button-secondary">Modifica anagrafica</button>
+      <button id="backIssuer" type="button" class="button-secondary">Torna a Generale</button>
     </div>
     <div class="layout">
     <aside>
-      <h2>Archivio preventivi</h2>
-      <div class="new-quote-form">
-        <h3>Nuovo preventivo</h3>
-        <label>Destinatario *<input id="newRecipient" maxlength="160" placeholder="Cliente DEMO"></label>
-        <label>Indirizzo destinatario<input id="newRecipientAddress" maxlength="300" placeholder="Indirizzo DEMO"></label>
-        <label>Oggetto lavori *<input id="newSubject" maxlength="240" placeholder="Ristrutturazione DEMO"></label>
-        <button id="newQuote">Crea nuova bozza</button>
-      </div>
-      <button id="reload" type="button" class="button-secondary">Ricarica elenco</button>
-      <p class="hint" id="demoInfo">Gli archivi di esempio vengono caricati al primo avvio.</p>
-      <div id="quoteList"></div>
+      <h2>Strumenti per il corpo preventivo</h2>
+      <p class="hint">Emittente, destinatario, nuovo preventivo e archivio sono nella scheda Generale.</p>
       <h2>Import computi</h2>
       <select id="batch"></select><button id="import">Importa lotto nel capitolo</button>
       <p class="hint">Stesse righe importate due volte non producono duplicati. Lotto sintetico.</p>
@@ -130,5 +191,5 @@
   </div>
   </section>
 </main>
-<script src="app.js?v=20261109-tabbed-emittenti-v2"></script>
+<script src="app.js?v=20261109-generale-destinatari-v1"></script>
 </body></html>
