@@ -1,6 +1,6 @@
 # MCP-postgree — Istruzione pubblica di avvio
 
-**Frontend test:** V0.3.2 (incrementare progressivamente a ogni release).
+**Frontend test:** V0.3.3 (incrementare progressivamente a ogni release).
 **Server:** leggere la versione effettiva da \`GET /health\`, senza supporre una versione in assenza di connessione.
 
 ## Scopo e contratto
@@ -61,3 +61,7 @@ Il polling di risveglio termina automaticamente al successo, alla scadenza o qua
 Il test diretto \`initialize\` + \`tools/list\` + \`tools/call Init\` dal browser non richiede la distribuzione del token a ChatGPT, ma comporta una richiesta HTTPS al server impostato dall'operatore. Verificare accuratamente il dominio destinatario prima di utilizzare un token attivo.
 Connettersi al client ChatGPT non è equivalente a fare il test nel browser.
 Non usare database reali fino ad autorizzazione esplicita.
+
+## Registrazione OAuth DCR V1.3.4
+
+Il server accetta callback ChatGPT autorizzati, anche multipli, e richieste di registrazione che includono il grant `refresh_token`. La risposta mantiene soltanto `authorization_code`: non sono ancora emessi refresh token. I callback di domini diversi da ChatGPT continuano a essere bloccati.
