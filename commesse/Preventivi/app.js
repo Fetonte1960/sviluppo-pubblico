@@ -14,6 +14,7 @@ if(!demoSession || !/^[0-9a-f-]{36}$/i.test(demoSession)){
   localStorage.setItem("preventivi-demo-session",demoSession);
 }
 let companyId = "", quote = null, catalog = [], prices = [], batches = [], allQuotes = [], dossier = [];
+let companies = [], creatingIssuer = false, issuerFormBaseline = "";
 let dossierProject = "farmacia-demo", lastImageUrl = null;
 const fmt = n => n == null ? "DA DEFINIRE" : Number(n).toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
 const value = n => n == null ? "" : n;
@@ -39,11 +40,109 @@ async function connect(){
   localStorage.setItem("preventivi-demo-api",apiBase);
   if(!apiBase && location.hostname.toLowerCase().endsWith(".github.io"))
     throw Error("Inserire l'indirizzo API demo autorizzata: GitHub Pages ospita solo il frontend statico.");
-  const companies=await request("/api/demo/companies");
-  $("company").innerHTML=companies.map(c=>'<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.details.name)+'</option>').join("");
-  companyId=$("company").value;quote=null; await refresh();
-  if(allQuotes.length) await openQuote(allQuotes[0].id);
+  await loadCompanies(companyId);
+  quote=null;
+  await refresh();
+  showStep("issuer");
 }
+
+const issuerFields = ["issuerName","issuerAddress","issuerTaxId","issuerContact"];
+function readIssuer(){
+  return {name:$("issuerName").value.trim(),address:$("issuerAddress").value.trim(),
+    taxId:$("issuerTaxId").value.trim(),contact:$("issuerContact").value.trim()};
+}
+function issuerIsDirty(){
+  return JSON.stringify(readIssuer()) !== issuerFormBaseline;
+}
+function issuerSelected(){return companies.find(c=>c.id===companyId)}
+function displayIssuer(){
+  const current=issuerSelected();
+  $("chosenIssuer").textContent=current?.details.name||"Nessun emittente";
+  $("company").value=companyId;
+  $("issuerCards").innerHTML=companies.map(c=>
+    '<button type="button" class="issuer-card '+(c.id===companyId?'active':'')+
+    '" data-issuer="'+escapeHtml(c.id)+'"><b>'+escapeHtml(c.details.name)+'</b>'+
+    '<span>'+escapeHtml(c.details.address)+'</span></button>').join("");
+}
+function renderIssuerForm(){
+  creatingIssuer=false;
+  const d=issuerSelected()?.details||{name:"",address:"",taxId:"",contact:""};
+  $("issuerName").value=d.name||"";
+  $("issuerAddress").value=d.address||"";
+  $("issuerTaxId").value=d.taxId||"";
+  $("issuerContact").value=d.contact||"";
+  issuerFormBaseline=JSON.stringify(readIssuer());
+  $("issuerMode").textContent="Dati dell'emittente selezionato";
+  $("issuerSave").textContent="Salva modifiche emittente";
+  $("issuerNotice").textContent="I preventivi precedenti conservano i dati dell'emittente fotografati alla creazione.";
+  displayIssuer();
+}
+async function loadCompanies(preferred=companyId){
+  companies=await request("/api/demo/companies");
+  $("company").innerHTML=companies.map(c=>
+    '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.details.name)+'</option>').join("");
+  companyId=companies.some(c=>c.id===preferred)?preferred:(companies[0]?.id||"");
+  renderIssuerForm();
+}
+function beginNewIssuer(){
+  creatingIssuer=true;
+  for(const field of issuerFields)$(field).value="";
+  issuerFormBaseline=JSON.stringify(readIssuer());
+  $("issuerMode").textContent="Nuovo emittente";
+  $("issuerSave").textContent="Crea emittente";
+  $("issuerNotice").textContent="Al salvataggio verrà creato un emittente distinto con archivio preventivi e prezziario propri.";
+  $("issuerName").focus();
+}
+async function saveIssuer(){
+  const details=readIssuer();
+  if(!details.name||!details.address)
+    throw Error("Ragione sociale e indirizzo dell'emittente sono obbligatori");
+  const created=creatingIssuer;
+  const company=await request(created?"/api/demo/companies":
+    "/api/demo/companies/"+companyId,json(created?"POST":"PUT",details));
+  quote=null;
+  await loadCompanies(company.id);
+  await refresh();
+  status(created?"Emittente creato nella demo.":"Anagrafica emittente aggiornata.");
+}
+async function chooseIssuer(next){
+  if(!companies.some(c=>c.id===next))return;
+  if(issuerIsDirty() &&
+    !confirm("L'anagrafica contiene modifiche non salvate. Vuoi scartarle?")){
+      $("company").value=companyId;return;
+    }
+  if(quote && next!==companyId && !confirm(
+    "Cambiare emittente? Eventuali modifiche non salvate al preventivo aperto verranno perse.")){
+    $("company").value=companyId;return;
+  }
+  const changed=next!==companyId;
+  companyId=next;quote=null;
+  renderIssuerForm();
+  if(changed)await refresh();
+}
+function showStep(which){
+  if(which==="quote"){
+    if(creatingIssuer){
+      status("Completa o annulla la creazione del nuovo emittente prima di proseguire.",true);
+      return false;
+    }
+    if(!companyId){status("Crea o seleziona un emittente prima di proseguire.",true);return false}
+    if(issuerIsDirty()){
+      status("Salva l'anagrafica emittente prima di passare al preventivo.",true);
+      return false;
+    }
+  }
+  const issuer=which==="issuer";
+  $("issuerPanel").hidden=!issuer;
+  $("quotePanel").hidden=issuer;
+  $("tabIssuer").classList.toggle("active",issuer);
+  $("tabQuote").classList.toggle("active",!issuer);
+  $("tabIssuer").setAttribute("aria-selected",String(issuer));
+  $("tabQuote").setAttribute("aria-selected",String(!issuer));
+  displayIssuer();
+  return true;
+}
+
 async function refresh(){
   if(!companyId)return;
   [catalog,prices,batches,allQuotes]=await Promise.all([
@@ -78,9 +177,12 @@ function renderPrices(){
 }
 function showSelectedChapter(){return $("activeChapter")?.value||quote?.draft.chapters[0]?.id}
 function renderQuote(){
-  if(!quote){$("editor").innerHTML='<div class="empty">Seleziona o crea un preventivo.</div>';$("revisions").innerHTML="";return}
+  if(!quote){$("editor").innerHTML='<div class="empty">Seleziona o crea un preventivo.</div>';$("revisions").innerHTML="";renderExternalBlocks();return}
   const d=quote.draft;
   let html='<p><b>'+escapeHtml(quote.reference)+'</b> · '+escapeHtml(quote.status)+' · <span class="badge">DEMO</span></p>'+
+    '<div class="issuer-in-document"><b>Emittente del documento:</b> '+escapeHtml(d.issuer.name)+
+    ' · '+escapeHtml(d.issuer.address)+(d.issuer.taxId?' · '+escapeHtml(d.issuer.taxId):'')+
+    (d.issuer.contact?' · '+escapeHtml(d.issuer.contact):'')+'</div>'+
     '<div class="grid2"><label>Destinatario<input id="recipient" value="'+escapeHtml(d.recipient.name)+'"></label>'+
     '<label>Indirizzo destinatario<input id="recipientAddress" value="'+escapeHtml(d.recipient.address)+'"></label></div>'+
     '<label>Oggetto<input id="subject" value="'+escapeHtml(d.subject)+'"></label>'+
@@ -250,16 +352,30 @@ $("resetDemo").onclick=()=>guard(async()=>{
   if(!confirm("Ripristinare gli ARCHIVI DEMO ORIGINALI? Le modifiche effettuate ai dati sintetici andranno perse."))return;
   await request("/api/demo/reset",json("POST",{}));await connect();
 });
-$("company").onchange=()=>guard(async()=>{companyId=$("company").value;quote=null;await refresh();
-  if(allQuotes.length)await openQuote(allQuotes[0].id)});
+$("company").onchange=()=>guard(()=>chooseIssuer($("company").value));
+$("issuerCards").onclick=e=>{const b=e.target.closest("[data-issuer]");if(b)guard(()=>chooseIssuer(b.dataset.issuer))};
+$("issuerNew").onclick=beginNewIssuer;
+$("issuerCancel").onclick=renderIssuerForm;
+$("issuerForm").onsubmit=e=>{e.preventDefault();guard(saveIssuer)};
+$("tabIssuer").onclick=()=>showStep("issuer");
+$("tabQuote").onclick=()=>showStep("quote");
+$("goQuote").onclick=()=>showStep("quote");
+$("backIssuer").onclick=()=>showStep("issuer");
 $("reload").onclick=()=>guard(refresh);
 $("newQuote").onclick=()=>guard(async()=>{
-  const name=prompt("Destinatario DEMO (solo dati sintetici):","Cliente sintetico");
-  if(!name)return;
-  const title=prompt("Oggetto lavori:","Ristrutturazione farmacia DEMO");
-  if(!title)return;
-  quote=await request("/api/quotes",json("POST",{companyId,recipient:{name,address:"Indirizzo DEMO"},
-    subject:title}));await refresh();await openQuote(quote.id)
+  if(!companyId)throw Error("Seleziona prima un emittente nella scheda 1");
+  const name=$("newRecipient").value.trim();
+  const address=$("newRecipientAddress").value.trim();
+  const subject=$("newSubject").value.trim();
+  if(!name||!subject)throw Error("Destinatario e oggetto sono obbligatori");
+  const created=await request("/api/quotes",json("POST",{
+    companyId,recipient:{name,address},subject}));
+  quote=created;
+  await refresh();
+  await openQuote(created.id);
+  $("newRecipient").value="";
+  $("newRecipientAddress").value="";
+  $("newSubject").value="";
 });
 $("quoteList").onclick=e=>{const b=e.target.closest("[data-open]");if(b)guard(()=>openQuote(b.dataset.open))};
 $("searchCatalog").oninput=renderCatalog;

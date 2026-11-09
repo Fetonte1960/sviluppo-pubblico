@@ -3,3 +3,38 @@
 .externaltool label{margin-top:5px}
 #externalImage{display:block;max-width:480px;width:100%;height:auto;margin:10px 0;border:1px solid #d9e4ef}
 #externalImage[hidden]{display:none}
+
+/* Preventivi V1.1 — two-step tabbed workflow */
+[hidden]{display:none!important}
+.step-tabs{display:flex;gap:8px;align-items:stretch;margin:6px 0 14px;border-bottom:2px solid #ced9e6}
+.step-tab{background:#e1e8f2;color:#324960;border-radius:7px 7px 0 0;padding:12px 22px;font-size:.96rem}
+.step-tab.active{background:white;color:#164875;border-bottom:3px solid #1773a6;box-shadow:0 -1px 3px #152e4514}
+.step-tab:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #efaf37;outline-offset:2px}
+.step-panel{padding-bottom:24px}
+.section-title{margin-bottom:12px}.section-title h2{font-size:1.15rem;margin:0 0 4px}
+.section-title p{margin:0}
+.issuer-layout{display:grid;grid-template-columns:minmax(250px,320px) minmax(340px,1fr);gap:14px;align-items:start}
+.issuer-layout aside,.issuer-layout article{min-height:260px}
+.issuer-cards{margin:12px 0}
+.issuer-card{display:block;width:100%;background:#f1f5fa;color:#22364d;text-align:left;margin-bottom:8px;white-space:normal;border:1px solid #d5e1ec;font-weight:500}
+.issuer-card.active{border:2px solid #1773a6;background:#e4f2fb}
+.issuer-card span{display:block;color:#617184;font-size:.78rem;font-weight:400;margin-top:3px}
+.issuer-editor{max-width:900px}
+.issuer-editor h3{font-size:1.08rem}
+.button-secondary{background:#e0e9f2;color:#234d6c}.button-secondary:hover{background:#c9ddea}
+.next-step{border-top:1px solid #dbe5ee;padding-top:16px;margin-top:18px;display:flex;justify-content:flex-end}
+.next-step button{font-size:.93rem;padding:10px 18px}
+.quote-context{display:flex;align-items:center;justify-content:space-between;background:white;border:1px solid #d8e3ed;border-radius:8px;padding:12px 16px;margin-bottom:14px;gap:14px}
+.quote-context small{display:block;color:#647589}
+.quote-context strong{display:block;margin:4px 0;font-size:1.06rem}
+.quote-context .hint{display:block}
+.new-quote-form{background:#f4f8fc;border:1px solid #dbe5f0;border-radius:7px;padding:10px;margin:10px 0}
+.new-quote-form h3{margin:0 0 10px}
+.new-quote-form button{width:100%}
+.issuer-in-document{margin:8px 0;padding:8px;background:#f4f8fc;border-left:3px solid #1875a7;font-size:.85rem}
+@media(max-width:800px){.issuer-layout{grid-template-columns:1fr}.step-tab{flex:1;padding:11px 9px;font-size:.83rem}.quote-context{align-items:flex-start;flex-direction:column}}
+
+.connection-settings{margin-left:auto;max-width:100%}
+.connection-settings summary{cursor:pointer;color:#52677e;font-size:.8rem}
+.connection-row{display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin-top:10px}
+.connection-row label{min-width:280px;margin:0}
