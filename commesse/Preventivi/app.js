@@ -13,7 +13,8 @@ if(!demoSession || !/^[0-9a-f-]{36}$/i.test(demoSession)){
   demoSession=crypto.randomUUID();
   localStorage.setItem("preventivi-demo-session",demoSession);
 }
-let companyId = "", quote = null, catalog = [], prices = [], batches = [], allQuotes = [];
+let companyId = "", quote = null, catalog = [], prices = [], batches = [], allQuotes = [], dossier = [];
+let dossierProject = "farmacia-demo", lastImageUrl = null;
 const fmt = n => n == null ? "DA DEFINIRE" : Number(n).toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
 const value = n => n == null ? "" : n;
 const number = s => s === "" || s == null ? null : Number(s);
@@ -25,7 +26,7 @@ async function request(url, opts={}){
     const response=await fetch(apiBase + url,{...opts,signal:ctrl.signal,headers:{"Content-Type":"application/json","X-Preventivi-Demo-Session":demoSession,...(opts.headers||{})}});
     if(!response.ok){let t=await response.text();try{t=JSON.parse(t).detail||t}catch{} throw Error(response.status+" "+t);}
     status("API collegata · modalità DEMO");
-    return response.headers.get("content-type")?.includes("application/pdf") ? await response.blob() : await response.json();
+    return ["application/pdf","image/png"].some(t=>response.headers.get("content-type")?.includes(t)) ? await response.blob() : await response.json();
   }finally{clearTimeout(timeout)}
 }
 const json=(method,body)=>({method,body:JSON.stringify(body)});
@@ -56,6 +57,8 @@ async function refresh(){
   $("batch").innerHTML=batches.map(b=>'<option value="'+escapeHtml(b.batchId)+'">'+escapeHtml(b.sourceProjectId+" / "+b.sourceRevision)+"</option>").join("");
   $("demoInfo").textContent=allQuotes.length+" preventivi di esempio · "+catalog.length+
     " voci consultabili · "+batches.length+" lotti disponibili.";
+  dossierProject = batches[0]?.sourceProjectId || "farmacia-demo";
+  await loadDossier();
   renderCatalog();renderPrices(); renderQuote();
 }
 function renderCatalog(){
@@ -108,6 +111,7 @@ function renderQuote(){
   html+='<label>IVA (vuota = non configurata)<input id="vat" type="number" step=".01" min="0" value="'+value(d.options.vatRate)+'"></label></div>'+
     '<div id="totals">Calcolo in aggiornamento…</div>';
   $("editor").innerHTML=html;
+  renderExternalBlocks();
   $("revisions").innerHTML=quote.revisions.map(r=>
     '<div class="rev">Revisione '+r.number+' — '+escapeHtml(r.reason)+
     ' <button data-historic="'+r.number+'">PDF storico</button></div>').join("");
@@ -165,6 +169,81 @@ async function pricePreview(){
   await request("/api/quotes/"+quote.id+"/apply-prices",json("POST",{
     companyId,confirmationToken:plan.confirmationToken}));await openQuote(quote.id);
 }
+
+async function loadDossier(){
+  dossier=await request("/api/dossier?companyId="+companyId+"&projectId="+encodeURIComponent(dossierProject));
+  $("externalAsset").innerHTML=dossier.map(a=>
+    '<option value="'+a.artifactId+'|'+a.version+'">'+escapeHtml(a.title+
+      " · "+a.sourceRevision+" (v"+a.version+")")+'</option>').join("");
+  $("externalProject").value=dossierProject;
+  renderExternalBlocks();
+}
+function externalOptions(){
+  if(!quote)return;
+  const chapters=quote.draft.chapters;
+  const previous=$("externalChapter").value || $("activeChapter")?.value;
+  $("externalChapter").innerHTML=chapters.map(c=>
+    '<option value="'+c.id+'">'+escapeHtml(c.title)+'</option>').join("");
+  if(chapters.some(c=>c.id===previous))$("externalChapter").value=previous;
+  chooseExternalLines();
+}
+function chooseExternalLines(){
+  if(!quote)return;
+  const chapter=quote.draft.chapters.find(c=>c.id===$("externalChapter").value);
+  $("externalLine").innerHTML=(chapter?.lines||[]).map(l=>
+    '<option value="'+l.id+'">'+escapeHtml(l.code+" · "+l.description)+'</option>').join("");
+}
+function renderExternalBlocks(){
+  const host=$("externalList");
+  if(!quote){host.innerHTML='<p class="hint">Apri un preventivo.</p>';return}
+  externalOptions();
+  const places=["Documento","Copertina","Capitolo","Voce","Allegato finale"];
+  host.innerHTML=[...(quote.draft.blocks||[])].sort((a,b)=>a.order-b.order).map(b=>
+    '<div class="cardline"><b>'+escapeHtml(places[b.placement]||"Elemento")+" · "+escapeHtml(b.title)+
+    '</b><div class="hint">'+escapeHtml(b.caption)+" · "+escapeHtml(b.projectId||"")+
+    " v"+b.artifactVersion+'</div><button data-delete-external="'+b.id+'">Rimuovi</button></div>'
+  ).join("")||'<p class="hint">Nessun elemento esterno inserito.</p>';
+}
+async function addExternal(){
+  if(!quote)throw Error("Apri prima un preventivo");
+  if(!dossier.length)throw Error("Nessun elemento nel dossier demo per il progetto");
+  const [artifactId,version]=$("externalAsset").value.split("|");
+  const placement=Number($("externalPlace").value);
+  const chapterId=[2,3].includes(placement)?$("externalChapter").value:null;
+  const lineId=placement===3?$("externalLine").value:null;
+  if(placement===3&&!lineId)throw Error("Selezionare una voce");
+  if([2,3].includes(placement)&&!chapterId)throw Error("Selezionare un capitolo");
+  const caption=$("externalCaption").value.trim(),order=Number($("externalOrder").value);
+  await save(); // do not lose pending edits in the document
+  await request("/api/quotes/"+quote.id+"/external",json("POST",{
+    companyId,projectId:dossierProject,artifactId,version:Number(version),
+    placement,chapterId,lineId,caption,order
+  }));
+  await openQuote(quote.id);
+}
+async function previewExternal(){
+  if(!dossier.length)throw Error("Il dossier demo non contiene immagini");
+  const [artifactId,version]=$("externalAsset").value.split("|");
+  const data=await request("/api/dossier/"+artifactId+"/image?companyId="+companyId+
+    "&projectId="+encodeURIComponent(dossierProject)+"&version="+version);
+  if(lastImageUrl)URL.revokeObjectURL(lastImageUrl);
+  lastImageUrl=URL.createObjectURL(data);
+  $("externalImage").src=lastImageUrl;
+  $("externalImage").hidden=false;
+}
+$("externalChapter").onchange=chooseExternalLines;
+$("externalProject").onchange=()=>guard(async()=>{dossierProject=$("externalProject").value.trim();await loadDossier()});
+$("externalPreview").onclick=()=>guard(previewExternal);
+$("externalAdd").onclick=()=>guard(addExternal);
+$("externalList").onclick=e=>guard(async()=>{
+  const b=e.target.closest("[data-delete-external]");
+  if(!b||!quote)return;
+  if(!confirm("Rimuovere l'elemento esterno dalla bozza? Le revisioni storiche restano invariate."))return;
+  await request("/api/quotes/"+quote.id+"/external/"+b.dataset.deleteExternal+
+    "?companyId="+companyId,{method:"DELETE"});
+  await openQuote(quote.id);
+});
+
 $("apiBase").value=apiBase;
 $("connect").onclick=()=>guard(connect);
 $("resetDemo").onclick=()=>guard(async()=>{

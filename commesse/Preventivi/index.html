@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="it">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Preventivi V0 — Demo sintetica</title><link rel="stylesheet" href="styles.css"></head>
+<title>Preventivi V1 — Demo sintetica</title><link rel="stylesheet" href="styles.css"></head>
 <body>
-<header><h1>Preventivi <small>V0 · DEMO SINTETICA</small></h1><p>Frontend GitHub Pages, calcoli e preparazione preventivi nel servizio Render. Solo dati sintetici; modifiche temporanee per sessione, Neon non collegato.</p></header>
+<header><h1>Preventivi <small>V1 · DEMO SINTETICA</small></h1><p>Frontend GitHub Pages, calcoli e preparazione preventivi nel servizio Render. Solo dati sintetici; modifiche temporanee per sessione, Neon non collegato.</p></header>
 <main>
   <section class="toolbar">
     <label>Azienda emittente <select id="company"></select></label>
@@ -35,6 +35,29 @@
         <button id="previewPrices">Aggiorna prezzi…</button><button id="pdf">PDF cliente</button>
       </div>
       <div id="editor" class="empty">Crea o apri una bozza per iniziare.</div>
+      <section id="externalTool" class="externaltool">
+        <h3>Aggiungi elemento esterno — immagine e didascalia</h3>
+        <p class="hint">L'immagine è conservata nel dossier demo sul server, fuori dal computo e dai calcoli.</p>
+        <div class="grid2">
+          <label>Progetto dossier<input id="externalProject" value="farmacia-demo"></label>
+          <label>Immagine disponibile<select id="externalAsset"></select></label>
+          <label>Collocazione<select id="externalPlace">
+            <option value="0">Nel documento</option>
+            <option value="1">Copertina</option>
+            <option value="2">Nel capitolo</option>
+            <option value="3">Dopo una voce</option>
+            <option value="4">Allegato finale</option>
+          </select></label>
+          <label>Capitolo<select id="externalChapter"></select></label>
+          <label>Voce<select id="externalLine"></select></label>
+          <label>Ordine<input id="externalOrder" type="number" min="0" max="10000" value="10"></label>
+        </div>
+        <label>Didascalia da stampare nel PDF<input id="externalCaption" maxlength="300" value="Vista tridimensionale dimostrativa"></label>
+        <div class="actionbar"><button id="externalPreview">Anteprima immagine</button>
+          <button id="externalAdd">Aggiungi elemento esterno</button></div>
+        <img id="externalImage" alt="Anteprima immagine dossier" hidden>
+        <h3>Elementi esterni della bozza</h3><div id="externalList"></div>
+      </section>
       <h3>Revisioni conservate</h3><div id="revisions"></div>
     </article>
     <aside>
@@ -44,5 +67,5 @@
     </aside>
   </div>
 </main>
-<script src="app.js?v=20261030-render3"></script>
+<script src="app.js?v=20261109-issue5-v1"></script>
 </body></html>
