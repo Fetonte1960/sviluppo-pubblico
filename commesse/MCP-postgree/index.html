@@ -6,17 +6,17 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https: http://localhost:* http://127.0.0.1:*; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="description" content="Laboratorio MCP-postgree: avvia Pratiche Fotovoltaico simulato, genera ticket di commessa e bootstrap per ChatGPT e Claude">
-  <title>MCP-postgree · Laboratorio v0.7.0</title>
-  <link rel="stylesheet" href="./styles.css?v=0.7.0">
-  <script defer src="./app.js?v=0.7.0"></script>
+  <title>MCP-postgree · Laboratorio v0.8.0</title>
+  <link rel="stylesheet" href="./styles.css?v=0.8.0">
+  <script defer src="./app.js?v=0.8.0"></script>
 </head>
 <body>
   <header class="topbar">
     <div class="topinner">
       <div class="identity"><span class="mark">M</span><div><strong>MCP-postgree</strong><small>Laboratorio MCP · PostgreSQL</small></div></div>
       <div class="versions" aria-label="Versioni e stato">
-        <span class="version"><span>Frontend</span><strong id="frontVersion">V0.7.0</strong></span>
-        <span class="version"><span>Server</span><strong id="serverVersion">V1.6.0 attesa</strong></span>
+        <span class="version"><span>Frontend</span><strong id="frontVersion">V0.8.0</strong></span>
+        <span class="version"><span>Server</span><strong id="serverVersion">V1.7.0 attesa</strong></span>
         <span id="connectionStatus" class="status" data-state="idle">Non configurato</span>
       </div>
     </div>
@@ -45,7 +45,7 @@
       <div class="simulator-grid">
         <div>
           <h3>Collegamento OAuth aziendale (solo la prima volta)</h3>
-          <p class="panel-copy">Prepara una sola credenziale aziendale demo prima di registrare i gestionali. Se ChatGPT o Claude è già collegato con tale identità <code>CONNECT_ONLY</code>, non occorre reinserirla a ogni sessione.</p>
+          <p class="panel-copy">Prepara una sola credenziale aziendale demo prima di registrare i gestionali. La persistenza dei refresh OAuth ora usa PostgreSQL, ma <strong>l'identità DEMO è temporanea</strong> (60 minuti e azzeramento al riavvio): per collegamenti durevoli serve una credenziale aziendale registrata stabilmente nel secret store Render.</p>
           <div class="button-line"><button id="prepareCompanyBtn" class="secondary" type="button">Prepara token aziendale DEMO</button></div>
           <p class="hint" id="companyFeedback" role="status" aria-live="polite">Collegamento MCP: <code>https://mcp-postgree.onrender.com/mcp</code>. Il token aziendale va soltanto nella pagina OAuth protetta del server.</p>
           <div id="companyResults" hidden>
@@ -114,6 +114,7 @@
             <div><span>Versione server</span><strong id="serverVersionDetail">—</strong></div>
             <div><span>Commit backend</span><strong id="serverCommit">—</strong></div>
             <div><span>OAuth 2.1 / PKCE</span><strong id="oauthStatus">da verificare</strong></div>
+            <div><span>Refresh OAuth persistente</span><strong id="oauthPersistence">da verificare</strong></div>
             <div><span>Endpoint MCP</span><code id="mcpEndpoint">—</code></div>
           </div>
           <div class="notice muted">L'endpoint <code>/health</code> non richiede token. Il pulsante non crea, configura o distribuisce server Render.</div>
@@ -184,7 +185,7 @@
     </div>
 
     <footer>
-      <div><strong>MCP-postgree · Front Test V0.7.0</strong><span>Contratto: CommandToMCPPostgree(comando)</span></div>
+      <div><strong>MCP-postgree · Front Test V0.8.0</strong><span>Contratto: CommandToMCPPostgree(comando)</span></div>
       <div><a href="./ISTRUZIONI.md" target="_blank" rel="noopener noreferrer">Istruzioni</a><a href="https://github.com/Fetonte1960/sviluppo-pubblico/tree/main/commesse/MCP-postgree" target="_blank" rel="noopener noreferrer">Artefatti pubblici</a></div>
     </footer>
   </main>

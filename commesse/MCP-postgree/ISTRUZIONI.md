@@ -125,3 +125,14 @@ Procedura frontend: 1) preparare il token aziendale demo e autorizzare una volta
 Il backend usa il **medesimo** endpoint demo già esistente \`POST /demo/register\`: in caso di registrazione applicativa richiede anche \`Authorization: Bearer <token-azienda-demo>\` e i campi \`applicationId\`, \`applicationName\`, \`dataset\`. Verifica che il token aziendale sia CONNECT_ONLY e assegna l'applicativo a **quella** azienda. Le autorizzazioni sono in RAM con TTL, non persistenti; le policy reali restano in \`MCP_ACCESS_JSON\` e si configurano senza ricompilare il software (ma un cambio delle variabili Render può comportare un riavvio). Nessun nuovo schema o privilegio PostgreSQL.
 
 La Root applicativa viene generata a runtime dal registro delle app demo. Il catalogo demo non è un sistema amministrativo definitivo per aziende reali.
+
+
+## Refresh OAuth persistente — backend V1.7.0 / frontend V0.8.0
+
+Il progetto MCP-postgree utilizza il database Neon già dedicato al connettore (non i DB dei clienti) per la rotazione persistente dei refresh token. La tabella separata \`mcp_oauth.refresh_grants\` conserva **solamente hash SHA-256**, famiglia, client OAuth, resource, policy fingerprint, scadenza assoluta e flag used/revoked. Il ruolo \`mcp_oauth_writer\` ha permessi sullo schema OAuth; le credenziali della connessione sono segreti Render \`ConnectionStrings__OAuth\` e \`MCP_OAUTH_REFRESH_PERSISTENCE=postgresql\`.
+
+Il server mantiene invariati \`MCP_OAUTH_HMAC_KEY\`, client_id DCR generati con firma, endpoints OAuth, scope e tool \`CommandToMCPPostgree(comando: string)\`. Il refresh token dura 1–30 giorni (predefinito 7), non si estende oltre la scadenza assoluta originaria; il rinnovo è atomico, i replay revocano l'intera famiglia. In caso di guasto DB il token non viene trasformato in grant volatile; il server risponde \`temporarily_unavailable\` HTTP503, così il client può riprovare.
+
+**Distinzione essenziale**: questa persistenza riguarda l'autorizzazione OAuth quando la sua policy aziendale sorgente è stabile in \`MCP_ACCESS_JSON\`. I token **DEMO** di 60 minuti rimangono nella RAM del server, si perdono al riavvio e non costituiscono una connessione aziendale persistente. La sessione di commessa e il ticket bootstrap restano temporanei (30 / 5 minuti). Se il connettore era già autorizzato con una vecchia famiglia refresh volatile, è necessaria una nuova autorizzazione iniziale dopo il cambio di storage; le nuove famiglie usano PostgreSQL. Il pannello server mostra il tipo di persistenza rilevato da \`/health\`.
+
+Nessun cambio dei dati delle pratiche vere; la tabella OAuth è nello schema dedicato del database di collaudo MCP-postgree.

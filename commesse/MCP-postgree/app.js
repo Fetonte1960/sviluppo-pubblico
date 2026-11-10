@@ -1,8 +1,8 @@
 "use strict";
 
 // Front V0.1.0 — incrementare la versione a ogni pubblicazione.
-const FRONT_VERSION = "0.7.0";
-const EXPECTED_SERVER_VERSION = "1.6.0";
+const FRONT_VERSION = "0.8.0";
+const EXPECTED_SERVER_VERSION = "1.7.0";
 const DEFAULT_SERVER_URL = "https://mcp-postgree.onrender.com";
 const TOOL_NAME = "CommandToMCPPostgree";
 const PAGE_INSTRUCTIONS = "https://github.com/Fetonte1960/sviluppo-pubblico/blob/main/commesse/MCP-postgree/ISTRUZIONI.md";
@@ -81,6 +81,9 @@ function setServerVersion(data) {
   $("serverVersionDetail").textContent = version;
   $("serverCommit").textContent = commit;
   $("oauthStatus").textContent = data?.oauthEnabled === true ? "Attivo" : "Non attivo";
+  $("oauthPersistence").textContent = data?.oauthRefreshPersistence === "postgresql" ?
+    "PostgreSQL · attivo" : data?.oauthRefreshPersistence === "volatile" ?
+    "Volatile · non persistente" : "Non dichiarato";
   renderPrompt();
 }
 function resetServerUi(base) {
@@ -89,6 +92,7 @@ function resetServerUi(base) {
   $("serverVersionDetail").textContent = "V" + EXPECTED_SERVER_VERSION + " (non verificata)";
   $("serverCommit").textContent = "—";
   $("oauthStatus").textContent = "da verificare";
+  $("oauthPersistence").textContent = "da verificare";
   setStatus(base ? "Da verificare" : "Non configurato");
   $("wakeProgress").value = 0;
   renderPrompt();
