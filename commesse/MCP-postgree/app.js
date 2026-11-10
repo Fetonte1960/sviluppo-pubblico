@@ -1,8 +1,8 @@
 "use strict";
 
 // Front V0.1.0 — incrementare la versione a ogni pubblicazione.
-const FRONT_VERSION = "0.8.0";
-const EXPECTED_SERVER_VERSION = "1.7.0";
+const FRONT_VERSION = "0.9.0";
+const EXPECTED_SERVER_VERSION = "1.8.0";
 const DEFAULT_SERVER_URL = "https://mcp-postgree.onrender.com";
 const TOOL_NAME = "CommandToMCPPostgree";
 const PAGE_INSTRUCTIONS = "https://github.com/Fetonte1960/sviluppo-pubblico/blob/main/commesse/MCP-postgree/ISTRUZIONI.md";
@@ -54,7 +54,9 @@ function renderPrompt() {
     "Endpoint previsto: " + endpoint,
     "Versione frontend test: " + FRONT_VERSION + "; versione server rilevata: " + version + ".",
     "Connessione ChatGPT: selezionare OAuth e usare l'endpoint " + endpoint + ".",
-    "Per autenticarsi, incollare il token del gestionale SOLO nel modulo HTTPS di mcp-postgree.onrender.com.",
+    "Per il collegamento PERMANENTE inserisci la password MCP_OAUTH_LOGIN_TOKEN soltanto sul modulo HTTPS OAuth del server, mai nella chat.",
+    "La credenziale permanente e' CONNECT_ONLY: nessun accesso ai dati senza ticket e sessione applicativa autorizzata.",
+    "Per provare gestionali DEMO con ticket di commessa serve una connessione OAuth DEMO separata, con token temporaneo.",
     "Il server usa OAuth 2.1 con PKCE S256 e non trasmette mai il token originario a ChatGPT.",
     "Verifica prima se tra gli strumenti di questa chat compare " + TOOL_NAME + ".",
     "Se esiste, invocalo con comando esattamente 'Init' e mostra il menu ricevuto.",
@@ -81,6 +83,9 @@ function setServerVersion(data) {
   $("serverVersionDetail").textContent = version;
   $("serverCommit").textContent = commit;
   $("oauthStatus").textContent = data?.oauthEnabled === true ? "Attivo" : "Non attivo";
+  $("permanentLoginStatus").textContent = data?.oauthPermanentLoginConfigured === true ?
+    "Password permanente configurata" : data?.oauthPermanentLoginConfigured === false ?
+    "Segreto non configurato sul server" : "Non dichiarato dal server";
   $("oauthPersistence").textContent = data?.oauthRefreshPersistence === "postgresql" ?
     "PostgreSQL · attivo" : data?.oauthRefreshPersistence === "volatile" ?
     "Volatile · non persistente" : "Non dichiarato";
@@ -92,6 +97,7 @@ function resetServerUi(base) {
   $("serverVersionDetail").textContent = "V" + EXPECTED_SERVER_VERSION + " (non verificata)";
   $("serverCommit").textContent = "—";
   $("oauthStatus").textContent = "da verificare";
+  $("permanentLoginStatus").textContent = "da verificare";
   $("oauthPersistence").textContent = "da verificare";
   setStatus(base ? "Da verificare" : "Non configurato");
   $("wakeProgress").value = 0;
@@ -415,7 +421,7 @@ async function prepareCompanyCredential() {
     }
     $("enterpriseToken").value = state.enterpriseToken;
     $("companyResults").hidden = false;
-    feedback("companyFeedback", "Token 1 aziendale DEMO pronto. Usalo soltanto nel modulo OAuth del connettore. Se era già collegato con questa identità, puoi saltare l'autorizzazione.");
+    feedback("companyFeedback", "Token DEMO pronto (60 minuti). Usalo soltanto con una connessione OAuth DEMO separata, non al posto della password permanente Render.");
   } catch (error) {
     feedback("companyFeedback", formatError(error));
   } finally {
@@ -520,7 +526,7 @@ async function createSessionBootstrap() {
       "Sei l'assistente AI del gestionale simulato " + app.name + " (" + id + ").",
       "CONNETTORE MCP: " + DEFAULT_SERVER_URL + "/mcp",
       "CONTRATTO IMMUTATO: CommandToMCPPostgree(comando: string).",
-      "Il connettore deve gia' essere collegato via OAuth aziendale CONNECT_ONLY: non richiedere nuovamente il token 1.",
+      "Utilizza la connessione OAuth DEMO associata al token temporaneo; NON la connessione permanente con password Render.",
       "Questa e' una simulazione READ_ONLY: nessun archivio reale, soltanto " + app.dataset + ".",
       "Commessa di prova selezionata: " + commessa + ".",
       "Verifica la presenza dello strumento e invocalo con il comando:",
@@ -539,7 +545,7 @@ async function createSessionBootstrap() {
     $("sessionResults").hidden = false;
     $("sessionPlaceholder").hidden = true;
     feedback("sessionFeedback", "Bootstrap pronto per " + app.name + " / commessa " + commessa +
-      ". Copia in ChatGPT o Claude con OAuth aziendale già collegato.");
+      ". Copia in ChatGPT o Claude con la connessione OAuth DEMO separata.");
   } catch (error) {
     feedback("sessionFeedback", formatError(error));
   } finally {
@@ -608,6 +614,8 @@ function installHandlers() {
   $("openSessionGptBtn").addEventListener("click", () => openSessionChat("gpt"));
   $("openSessionClaudeBtn").addEventListener("click", () => openSessionChat("claude"));
   $("clearSessionBtn").addEventListener("click", clearSessionDemo);
+  $("copyPermanentEndpointBtn").addEventListener("click", () =>
+    copyText((state.baseUrl || DEFAULT_SERVER_URL) + "/mcp", "URL MCP copiato. In ChatGPT o Claude scegli OAuth e usa la password permanente solo sulla pagina HTTPS del server.", "companyFeedback"));
   $("copyEndpointBtn").addEventListener("click", () =>
     copyText(DEFAULT_SERVER_URL + "/mcp", "URL MCP copiato. In ChatGPT scegli OAuth.", "gptFeedback"));
   $("copyPromptBtn").addEventListener("click", () =>

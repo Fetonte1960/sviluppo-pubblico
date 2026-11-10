@@ -5,18 +5,18 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https: http://localhost:* http://127.0.0.1:*; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
-  <meta name="description" content="Laboratorio MCP-postgree: avvia Pratiche Fotovoltaico simulato, genera ticket di commessa e bootstrap per ChatGPT e Claude">
-  <title>MCP-postgree · Laboratorio v0.8.0</title>
-  <link rel="stylesheet" href="./styles.css?v=0.8.0">
-  <script defer src="./app.js?v=0.8.0"></script>
+  <meta name="description" content="MCP-postgree: password OAuth permanente su Render, connessione ChatGPT e Claude e laboratorio DEMO separato">
+  <title>MCP-postgree · Laboratorio v0.9.0</title>
+  <link rel="stylesheet" href="./styles.css?v=0.9.0">
+  <script defer src="./app.js?v=0.9.0"></script>
 </head>
 <body>
   <header class="topbar">
     <div class="topinner">
       <div class="identity"><span class="mark">M</span><div><strong>MCP-postgree</strong><small>Laboratorio MCP · PostgreSQL</small></div></div>
       <div class="versions" aria-label="Versioni e stato">
-        <span class="version"><span>Frontend</span><strong id="frontVersion">V0.8.0</strong></span>
-        <span class="version"><span>Server</span><strong id="serverVersion">V1.7.0 attesa</strong></span>
+        <span class="version"><span>Frontend</span><strong id="frontVersion">V0.9.0</strong></span>
+        <span class="version"><span>Server</span><strong id="serverVersion">V1.8.0 attesa</strong></span>
         <span id="connectionStatus" class="status" data-state="idle">Non configurato</span>
       </div>
     </div>
@@ -26,32 +26,47 @@
     <section class="hero">
       <p class="eyebrow">AMBIENTE DI COLLAUDO · SENZA DATI AZIENDALI REALI</p>
       <h1>Un server MCP per tutti i gestionali.</h1>
-      <p>Registra e seleziona qualsiasi gestionale dimostrativo senza ricompilare MCP-postgree, poi avvia una chat associata alla sua commessa. Inizia da <strong>Pratiche Fotovoltaico</strong>. I test usano solo dati sintetici e non accedono alle pratiche reali.</p>
+      <p>Collega ChatGPT o Claude con la <strong>password OAuth permanente custodita su Render</strong>. Il simulatore dei gestionali DEMO resta disponibile separatamente, solo con dati sintetici.</p>
     </section>
 
     <nav class="steps" aria-label="Percorso di prova">
       <span><b>1</b> Verifica server</span>
-      <span><b>2</b> Collega OAuth aziendale una volta</span>
-      <span><b>3</b> Seleziona applicativo e commessa</span>
-      <span><b>4</b> Genera ticket e avvia AI</span>
+      <span><b>2</b> Collega OAuth permanente</span>
+      <span><b>3</b> Verifica Init (CONNECT_ONLY)</span>
+      <span><b>4</b> Facoltativo: DEMO gestionali</span>
     </nav>
+
+    <section class="panel" aria-labelledby="permanentTitle" id="oauth-permanente">
+      <div class="panel-head"><span class="ordinal">00</span><div><h2 id="permanentTitle">Collegamento OAuth permanente</h2><p>La password è un segreto Render: non viene generata o salvata da questo laboratorio.</p></div></div>
+      <div class="facts"><div><span>Segreto MCP_OAUTH_LOGIN_TOKEN</span><strong id="permanentLoginStatus">da verificare</strong></div></div>
+      <div class="oauth-guide">
+        <ol>
+          <li>Controlla lo stato <strong>Password permanente configurata</strong> letto da /health.</li>
+          <li>In ChatGPT o Claude collega <code>https://mcp-postgree.onrender.com/mcp</code> scegliendo <strong>OAuth</strong>.</li>
+          <li>Inserisci la password conservata in Render soltanto nella pagina HTTPS di MCP-postgree, mai nella chat o in questo sito.</li>
+          <li>Richiama <code>CommandToMCPPostgree</code> con comando <code>Init</code>. Atteso: <strong>CONNECT_ONLY</strong>, nessun accesso ai dati senza sessione autorizzata.</li>
+        </ol>
+        <div class="button-line"><button id="copyPermanentEndpointBtn" class="secondary" type="button">Copia URL MCP permanente</button><a href="https://dashboard.render.com/web/srv-dbortcm417fc7397kvng" target="_blank" rel="noopener noreferrer">Environment su Render</a></div>
+      </div>
+      <div class="notice warning"><strong>Modalità separate:</strong> la password permanente autentica il server ma non autorizza da sola i dati. Il simulatore DEMO seguente crea una diversa identità aziendale temporanea. Per usare i suoi ticket devi collegare una seconda connessione OAuth DEMO: i ticket non funzionano con la connessione permanente.</div>
+    </section>
 
     <section class="panel simulator-panel" aria-labelledby="sessionTitle" id="simulatore">
       <div class="panel-head"><span class="ordinal">01</span><div>
-        <h2 id="sessionTitle">Registro gestionali e simulatore di avvio</h2>
+        <h2 id="sessionTitle">Simulatore DEMO opzionale — identità separata</h2>
         <p>Aggiungi applicativi di prova a runtime: nessuna modifica al codice server o ricompilazione.</p>
       </div></div>
       <div class="notice muted"><strong>Solo dati sintetici, sempre READ_ONLY.</strong> Ogni gestionale registrato nel laboratorio riceve una propria Root, una credenziale applicativa e uno dei due dataset fittizi. Questo registro demo è separato dalle policy aziendali reali. Il codice <code>id</code> simula la commessa.</div>
       <div class="simulator-grid">
         <div>
-          <h3>Collegamento OAuth aziendale (solo la prima volta)</h3>
-          <p class="panel-copy">Prepara una sola credenziale aziendale demo prima di registrare i gestionali. La persistenza dei refresh OAuth ora usa PostgreSQL, ma <strong>l'identità DEMO è temporanea</strong> (60 minuti e azzeramento al riavvio): per collegamenti durevoli serve una credenziale aziendale registrata stabilmente nel secret store Render.</p>
-          <div class="button-line"><button id="prepareCompanyBtn" class="secondary" type="button">Prepara token aziendale DEMO</button></div>
+          <h3>Token OAuth DEMO temporaneo (non è la password Render)</h3>
+          <p class="panel-copy">Per provare ticket e gestionali simulati, genera una credenziale aziendale <strong>DEMO valida 60 minuti</strong> e collegala come seconda identità OAuth. Non usare qui la password permanente Render.</p>
+          <div class="button-line"><button id="prepareCompanyBtn" class="secondary" type="button">Genera token DEMO (60 minuti)</button></div>
           <p class="hint" id="companyFeedback" role="status" aria-live="polite">Collegamento MCP: <code>https://mcp-postgree.onrender.com/mcp</code>. Il token aziendale va soltanto nella pagina OAuth protetta del server.</p>
           <div id="companyResults" hidden>
-            <label for="enterpriseToken">Token 1 aziendale per la schermata OAuth</label>
+            <label for="enterpriseToken">Token DEMO per connessione OAuth separata</label>
             <div class="secret-row"><input id="enterpriseToken" type="password" readonly autocomplete="off"><button id="copyEnterpriseTokenBtn" class="secondary" type="button">Copia token 1</button></div>
-            <p class="hint">Apri le impostazioni del connettore in ChatGPT o Claude e collega l'endpoint MCP usando OAuth. Incolla il token soltanto sulla pagina <code>mcp-postgree.onrender.com</code>. Il laboratorio non installa da solo il connettore.</p>
+            <p class="hint">Collega questo token soltanto nella pagina HTTPS OAuth di una connessione DEMO separata, non al posto della password permanente Render. Il laboratorio non installa automaticamente il connettore.</p>
           </div>
           <div class="divider-line"></div>
           <h3>Registra un gestionale nel laboratorio</h3>
@@ -77,11 +92,11 @@
             <button id="createSessionBtn" class="primary" type="button">Genera ticket e bootstrap</button>
             <button id="clearSessionBtn" class="text-btn" type="button">Svuota dati di prova</button>
           </div>
-          <p id="sessionFeedback" class="hint" role="status" aria-live="polite">Se hai già collegato OAuth aziendale, puoi generare subito il ticket. Altrimenti prepara il token 1 una sola volta.</p>
+          <p id="sessionFeedback" class="hint" role="status" aria-live="polite">I ticket DEMO funzionano soltanto con il connettore OAuth DEMO, non con quello permanente.</p>
         </div>
         <div>
           <h3>Avvio della chat AI</h3>
-          <p class="panel-copy">Il bootstrap contiene un ticket monouso (5 minuti), non il token OAuth. La chat lo usa per ottenere la sessione legata alla commessa.</p>
+          <p class="panel-copy">Il bootstrap contiene un ticket monouso (5 minuti), non il token OAuth. Funziona solo con la connessione OAuth DEMO separata.</p>
           <div id="sessionResults" hidden>
             <label for="sessionBootstrap">Istruzione iniziale pronta per ChatGPT o Claude</label>
             <textarea id="sessionBootstrap" rows="13" readonly spellcheck="false"></textarea>
@@ -165,10 +180,10 @@
             <strong>Collegamento ChatGPT con OAuth</strong>
             <div class="oauth-url"><code>https://mcp-postgree.onrender.com/mcp</code><button id="copyEndpointBtn" class="secondary" type="button">Copia URL MCP</button></div>
             <ol>
-              <li>Prima premi <strong>Genera token e attiva demo</strong>, poi <strong>Copia</strong> accanto al token.</li>
+              <li>Per la connessione permanente usa la password <code>MCP_OAUTH_LOGIN_TOKEN</code> custodita in Render. Non generare un token DEMO.</li>
               <li>Nella configurazione MCP di ChatGPT inserisci l'URL qui sopra e scegli <strong>OAuth</strong> come autenticazione.</li>
-              <li>Quando si apre la pagina protetta <strong>mcp-postgree.onrender.com</strong>, incolla lì il token e premi <strong>Autorizza il collegamento</strong>.</li>
-              <li>Torna in ChatGPT, richiama <code>CommandToMCPPostgree("Init")</code> e verifica i due schemi demo.</li>
+              <li>Quando si apre la pagina protetta <strong>mcp-postgree.onrender.com</strong>, inserisci la password permanente e premi <strong>Autorizza il collegamento</strong>.</li>
+              <li>Torna in ChatGPT, richiama <code>CommandToMCPPostgree("Init")</code> e verifica CONNECT_ONLY. I dati sintetici sono disponibili solo con la connessione DEMO separata.</li>
             </ol>
             <p class="hint"><strong>Importante:</strong> il token viene consegnato soltanto al nostro server nella pagina di autorizzazione, mai a ChatGPT come testo del messaggio.</p>
           </div>
@@ -178,14 +193,14 @@
             <button id="openGptBtn" class="primary" type="button">Apri GPT con istruzioni</button>
             <button id="copyPromptBtn" class="secondary" type="button">Copia istruzione</button>
           </div>
-          <p id="gptFeedback" class="hint" role="status" aria-live="polite">In ChatGPT seleziona OAuth. La schermata protetta del server chiederà il token del gestionale; aprire una chat non installa automaticamente il connettore.</p>
+          <p id="gptFeedback" class="hint" role="status" aria-live="polite">In ChatGPT seleziona OAuth e usa la password permanente sulla pagina HTTPS del server. Aprire una chat non installa il connettore.</p>
         </section>
 
       </div>
     </div>
 
     <footer>
-      <div><strong>MCP-postgree · Front Test V0.8.0</strong><span>Contratto: CommandToMCPPostgree(comando)</span></div>
+      <div><strong>MCP-postgree · Front Test V0.9.0</strong><span>Contratto: CommandToMCPPostgree(comando)</span></div>
       <div><a href="./ISTRUZIONI.md" target="_blank" rel="noopener noreferrer">Istruzioni</a><a href="https://github.com/Fetonte1960/sviluppo-pubblico/tree/main/commesse/MCP-postgree" target="_blank" rel="noopener noreferrer">Artefatti pubblici</a></div>
     </footer>
   </main>

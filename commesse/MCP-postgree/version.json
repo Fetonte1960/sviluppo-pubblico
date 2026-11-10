@@ -1,8 +1,8 @@
 {
-  "frontVersion": "0.8.0",
+  "frontVersion": "0.9.0",
   "buildDate": "2026-11-10",
   "serverVersionSource": "/health",
-  "expectedServerVersion": "1.7.0",
+  "expectedServerVersion": "1.8.0",
   "defaultBackend": "https://mcp-postgree.onrender.com",
-  "authMode": "OAuth 2.1 PKCE (DCR)"
+  "authMode": "OAuth 2.1 PKCE + password permanente CONNECT_ONLY"
 }
