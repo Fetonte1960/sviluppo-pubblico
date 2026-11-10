@@ -1,7 +1,7 @@
 "use strict";
 
 // Front V0.1.0 — incrementare la versione a ogni pubblicazione.
-const FRONT_VERSION = "1.0.0";
+const FRONT_VERSION = "1.1.0";
 const EXPECTED_SERVER_VERSION = "1.9.0";
 const DEFAULT_SERVER_URL = "https://mcp-postgree.onrender.com";
 const TOOL_NAME = "CommandToMCPPostgree";
@@ -650,12 +650,32 @@ function showCatalogItem(item) {
   feedback("catalogFeedback", "Scheda " + item.appCode + " caricata. Puoi modificare il testo di bootstrap e salvare senza ripubblicare i frontend.");
 }
 
+function setCatalogConnected(connected) {
+  state.catalogConnected = connected;
+  $("catalogProtected").hidden = !connected;
+  $("catalogAdminToken").disabled = connected;
+  $("catalogLoadBtn").disabled = connected;
+  $("catalogLoadBtn").textContent = connected ? "Collegato" : "Collega";
+  $("catalogFeedback").dataset.state = connected ? "online" : "idle";
+  if (!connected) {
+    state.catalogRecords = Object.create(null);
+    $("catalogSelect").replaceChildren(new Option("— Carica il catalogo —", ""));
+    state.catalogRevision = 0;
+    $("catalogRevision").textContent = "—";
+  }
+}
+
 async function loadCatalog(selectCode = null) {
   const button = $("catalogLoadBtn");
+  const refresh = $("catalogRefreshBtn");
   button.disabled = true;
-  feedback("catalogFeedback", "Lettura catalogo PostgreSQL...");
+  refresh.disabled = true;
+  $("catalogFeedback").dataset.state = "pending";
+  feedback("catalogFeedback", "Verifica credenziali e collegamento PostgreSQL in corso...");
   try {
     const data = await catalogFetch("GET");
+    if (!Array.isArray(data.applications))
+      throw new Error("Risposta del catalogo non valida.");
     state.catalogRecords = Object.create(null);
     $("catalogSelect").replaceChildren(new Option("— Seleziona gestionale —", ""));
     for (const entry of data.applications) {
@@ -663,17 +683,25 @@ async function loadCatalog(selectCode = null) {
       $("catalogSelect").append(new Option(entry.appName + " · " + entry.appCode +
         (entry.enabled ? "" : " (bozza)"), entry.appCode));
     }
+    setCatalogConnected(true);
     const pick = selectCode || data.applications[0]?.appCode;
     if (pick && state.catalogRecords[pick]) {
       $("catalogSelect").value = pick;
       showCatalogItem(state.catalogRecords[pick]);
     } else {
-      feedback("catalogFeedback", "Catalogo caricato: nessuna applicazione.");
+      clearCatalogForm();
+      feedback("catalogFeedback", "Collegato al database: nessuna applicazione registrata.");
     }
+    $("catalogFeedback").dataset.state = "online";
+    feedback("catalogFeedback", "Collegato al database: " + data.applications.length +
+      (data.applications.length === 1 ? " applicazione registrata." : " applicazioni registrate."));
   } catch (err) {
-    feedback("catalogFeedback", formatError(err));
+    setCatalogConnected(false);
+    $("catalogFeedback").dataset.state = "error";
+    feedback("catalogFeedback", "Collegamento NON riuscito: " + formatError(err));
   } finally {
-    button.disabled = false;
+    button.disabled = state.catalogConnected === true;
+    refresh.disabled = false;
   }
 }
 
@@ -734,7 +762,32 @@ function previewCatalogBootstrap() {
 
 
 function installHandlers() {
-  $("catalogLoadBtn").addEventListener("click", () => void loadCatalog());
+  $("catalogLoginForm").addEventListener("submit", event => {
+    event.preventDefault();
+    if (!state.catalogConnected) void loadCatalog();
+  });
+  $("catalogRefreshBtn").addEventListener("click", () => void loadCatalog());
+  const tabs = [["generalTabBtn", "generalTabPanel"], ["registryTabBtn", "registryTabPanel"]];
+  function selectTab(index, moveFocus = false) {
+    tabs.forEach(([buttonId, panelId], i) => {
+      const active = index === i;
+      const button = $(buttonId);
+      button.setAttribute("aria-selected", String(active));
+      button.classList.toggle("is-active", active);
+      button.tabIndex = active ? 0 : -1;
+      $(panelId).hidden = !active;
+    });
+    if (moveFocus) $(tabs[index][0]).focus();
+  }
+  tabs.forEach(([buttonId], index) => {
+    $(buttonId).addEventListener("click", () => selectTab(index));
+    $(buttonId).addEventListener("keydown", event => {
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+      event.preventDefault();
+      selectTab((index + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length, true);
+    });
+  });
+  setCatalogConnected(false);
   $("catalogNewBtn").addEventListener("click", clearCatalogForm);
   $("catalogSaveBtn").addEventListener("click", () => void saveCatalog());
   $("catalogPreviewBtn").addEventListener("click", previewCatalogBootstrap);
