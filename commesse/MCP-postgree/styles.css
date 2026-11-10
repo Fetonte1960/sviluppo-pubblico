@@ -6,3 +6,12 @@
 .oauth-url{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .oauth-url code{font-size:.76rem;word-break:break-all;color:#174a85}
 .oauth-url button{white-space:nowrap}
+
+/* Simulatore sessioni, frontend V0.6.0 */
+.simulator-panel{margin-bottom:20px;border-color:#abc9ee}
+.simulator-panel .panel-head{margin-bottom:12px}
+.simulator-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:26px;margin-top:20px}
+.simulator-grid h3{font-size:1rem;letter-spacing:-.01em;margin:8px 0 10px}
+.simulator-grid .notice{margin-top:10px}
+.divider-line{border-top:1px solid #e1e8f2;margin:21px 0 17px}
+@media(max-width:840px){.simulator-grid{grid-template-columns:1fr;gap:18px}}

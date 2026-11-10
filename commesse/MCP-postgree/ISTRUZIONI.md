@@ -100,3 +100,28 @@ Il pannello **05 — Sessione applicativa** prepara una prova isolata per due ap
 **Test in browser:** aprire il pannello 05, selezionare \`APP A\` e commessa \`1\`, generare il bootstrap; copiare il **token aziendale DEMO** soltanto nel modulo OAuth di ChatGPT/Claude quando si collega il connettore. Copiare il bootstrap nella nuova chat. Ripetere con \`APP B\`. Il token che identifica la commessa NON viene inserito nella schermata OAuth.
 
 **Sicurezza:** la modalità legacy con token senza CompanyId resta invariata. In modalità enterprise la policy \`CONNECT_ONLY\` non può leggere dati; il token dell'applicativo non è accettato per accesso diretto MCP né per login OAuth, solo per emettere ticket lato backend. Le Root di produzione provengono dalla configurazione riservata \`MCP_ACCESS_JSON\` e non ancora da Neon. Nessun database aziendale è stato collegato.
+
+
+## Simulatore Pratiche Fotovoltaico — frontend V0.6.0, backend V1.5.1
+
+Il laboratorio pubblico può ora simulare, senza aprire il gestionale, il lancio dell'applicativo **Pratiche Fotovoltaico** con la struttura di sicurezza azienda → applicativo → commessa. La simulazione non usa né pretende di usare il vero database Pratiche Fotovoltaico: impiega il dataset artificiale \`laboratorio_a.casi\` nel Neon di test READ_ONLY; \`id\` simula una commessa (1 o 2) ai soli fini del collaudo.
+
+Nella nuova sezione prominente **Simulatore gestionale**:
+1. **Solo primo collegamento OAuth DEMO:** cliccare \`Prepara token aziendale DEMO\`, poi copiare il token 1 e inserirlo nella **pagina protetta di consenso OAuth del server**, non nel testo della chat. Se il connettore ChatGPT/Claude è già autorizzato con una credenziale demo aziendale \`CONNECT_ONLY\` valida, non serve premere né reinserire token 1. Il token per la demo ha una scadenza effettiva di 60 minuti e può richiedere riconnessione dopo scadenza o restart Render.
+2. Selezionare \`Pratiche Fotovoltaico · simulazione\` e il codice commessa (per esempio \`1\`).
+3. Cliccare \`Genera ticket e bootstrap\`: il frontend registra un token backend applicativo temporaneo (solo nel browser in memoria) e invoca \`POST /api/mcp-postgree/v1/session-bootstrap\`. Il ticket monouso resta valido cinque minuti. Non è necessario aprire il gestionale reale.
+4. Copiare il bootstrap e aprire ChatGPT o Claude dai pulsanti. L'apertura della chat **non** spedisce il ticket in URL: il prompt va incollato nella chat aperta. La chat già collegata mediante OAuth chiama \`CommandToMCPPostgree\` con \`session.attach\`, ottiene il token session e le due Root; poi può effettuare soltanto i comandi READ_ONLY autorizzati per quella commessa.
+5. Per testare isolamento, scegliere \`Applicativo B\`, generare un **nuovo** ticket, e verificare che gli schemi e le Root del primo applicativo non siano disponibili.
+
+Limitazioni: il laboratorio non può installare automaticamente un connettore nella UI ChatGPT/Claude; la conferma OAuth va completata nell'app AI una tantum. Le Root del simulatore sono quelle in V1.5.1 su server, non provengono dall'editor Neon Gestione_istruzione_AI. Nessun token vero aziendale va immesso in questo sito pubblico. I ticket e le sessioni sono conservati solo in RAM Render e scadono. L'attuale profilo di test è READ_ONLY; non abilita modifiche a pratiche reali.
+
+
+## Registro gestionali dinamico demo — Front V0.7.0 / Backend V1.6.0
+
+Rettifica architetturale: l'applicativo **Pratiche Fotovoltaico non è presente nel codice del server**. Il server universale supporta un numero configurato di gestionali e la demo permette la registrazione a runtime, senza rebuild/deploy, di un massimo di 16 applicativi per azienda demo. Il laboratorio può aggiungere qualsiasi nome/identificativo di applicativo e assegnargli uno dei due dataset sintetici consentiti (\`laboratorio_a\` o \`laboratorio_b\`). Non concede mai accesso a schemi arbitrari o reali.
+
+Procedura frontend: 1) preparare il token aziendale demo e autorizzare una volta OAuth in ChatGPT/Claude; 2) inserire il nome, l'ID e il dataset del gestionale e cliccare Registra gestionale di prova; 3) scegliere un applicativo già registrato, indicare la commessa e generare ticket/bootstrap; 4) trasferire il bootstrap alla chat.
+
+Il backend usa il **medesimo** endpoint demo già esistente \`POST /demo/register\`: in caso di registrazione applicativa richiede anche \`Authorization: Bearer <token-azienda-demo>\` e i campi \`applicationId\`, \`applicationName\`, \`dataset\`. Verifica che il token aziendale sia CONNECT_ONLY e assegna l'applicativo a **quella** azienda. Le autorizzazioni sono in RAM con TTL, non persistenti; le policy reali restano in \`MCP_ACCESS_JSON\` e si configurano senza ricompilare il software (ma un cambio delle variabili Render può comportare un riavvio). Nessun nuovo schema o privilegio PostgreSQL.
+
+La Root applicativa viene generata a runtime dal registro delle app demo. Il catalogo demo non è un sistema amministrativo definitivo per aziende reali.
