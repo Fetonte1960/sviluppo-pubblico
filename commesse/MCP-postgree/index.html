@@ -6,7 +6,7 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https: http://localhost:* http://127.0.0.1:*; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="description" content="MCP-postgree: password OAuth permanente su Render, connessione ChatGPT e Claude e laboratorio DEMO separato">
-  <title>MCP-postgree · Laboratorio v1.1.0</title>
+  <title>MCP-postgree · Laboratorio v1.2.0</title>
   <link rel="stylesheet" href="./styles.css?v=1.0.0">
   <script defer src="./app.js?v=1.0.0"></script>
 </head>
@@ -15,7 +15,7 @@
     <div class="topinner">
       <div class="identity"><span class="mark">M</span><div><strong>MCP-postgree</strong><small>Laboratorio MCP · PostgreSQL</small></div></div>
       <div class="versions" aria-label="Versioni e stato">
-        <span class="version"><span>Frontend</span><strong id="frontVersion">V1.1.0</strong></span>
+        <span class="version"><span>Frontend</span><strong id="frontVersion">V1.2.0</strong></span>
         <span class="version"><span>Server</span><strong id="serverVersion">V1.9.0 attesa</strong></span>
         <span id="connectionStatus" class="status" data-state="idle">Non configurato</span>
       </div>
@@ -223,14 +223,13 @@
       <div id="catalogProtected" hidden>
       <div class="notice muted"><strong>Separazione dei permessi:</strong> il catalogo definisce le caratteristiche del software; non attiva l'accesso ai dati delle aziende. Lo stato `enabled` abilita la definizione MASTER, non concede credenziali o permessi PostgreSQL.</div>
       <p class="hint">Database: <code>mcp_applications</code> · amministrazione protetta con <code>MCP_REGISTRY_ADMIN_TOKEN</code> di Render. La password non è quella OAuth; può essere ricordata dal gestore password del browser come «Pannello MCP», mai dal localStorage del laboratorio.</p>
-      <div>
-        <label for="catalogSelect">Applicazioni registrate</label>
-        <select id="catalogSelect"><option value="">— Seleziona gestionale —</option></select>
-      </div>
-      <div class="button-line">
-        <button id="catalogRefreshBtn" type="button" class="secondary">Ricarica archivio</button>
-        <button id="catalogNewBtn" type="button" class="secondary">Nuovo programma</button>
-        <span class="hint">Revisione: <strong id="catalogRevision">—</strong></span>
+      <div class="catalog-section-head">
+        <div><h3>Dettaglio applicazione</h3><p>Seleziona una riga nella griglia per modificarne i dati.</p></div>
+        <div class="button-line">
+          <button id="catalogNewBtn" type="button" class="secondary">Nuovo programma</button>
+          <button id="catalogRefreshBtn" type="button" class="secondary">Ricarica elenco</button>
+          <span class="hint">Revisione: <strong id="catalogRevision">—</strong></span>
+        </div>
       </div>
       <div class="two-fields">
         <div><label for="catalogCode">Codice univoco</label><input id="catalogCode" maxlength="64" spellcheck="false" placeholder="PRATICHE_FOTOVOLTAICO"></div>
@@ -261,13 +260,39 @@
         <label for="catalogPreview">Anteprima (senza ticket attivo)</label>
         <textarea id="catalogPreview" rows="8" readonly spellcheck="false"></textarea>
       </div>
+      <div class="catalog-launch-settings">
+        <h3>Avvio chat di collaudo</h3>
+        <p class="hint">Il pulsante Avvia chat della griglia richiede una credenziale applicativa già autorizzata dal backend MCP e una commessa valida. La password Pannello MCP non genera ticket e non deve essere usata qui.</p>
+        <div class="two-fields">
+          <div><label for="catalogCommessa">Commessa / identificativo di prova</label><input id="catalogCommessa" value="1" maxlength="64" spellcheck="false"></div>
+          <div><label for="catalogAppCredential">Credenziale applicativa autorizzata (temporanea, mai salvata)</label><input id="catalogAppCredential" type="password" autocomplete="off" maxlength="1024" placeholder="Token backend del gestionale, non OAuth e non Pannello MCP"></div>
+        </div>
+        <p id="catalogLaunchFeedback" class="hint" role="status" aria-live="polite">Seleziona l'applicazione nella griglia e premi Avvia chat. Sarà copiato il bootstrap restituito dal server, solo dopo aver ricevuto un ticket monouso valido.</p>
+        <div id="catalogCopyFallback" hidden>
+          <label for="catalogBootstrapFallback">Bootstrap generato (copia manuale se il browser blocca gli appunti)</label>
+          <textarea id="catalogBootstrapFallback" readonly rows="7" spellcheck="false"></textarea>
+          <div class="button-line"><button id="catalogCopyFallbackBtn" class="secondary" type="button">Copia bootstrap generato</button></div>
+        </div>
+      </div>
+      <section class="catalog-grid-section" aria-labelledby="catalogGridTitle">
+        <div class="catalog-section-head">
+          <div><h3 id="catalogGridTitle">Registro applicazioni</h3><p>Un clic seleziona la scheda; Avvia chat genera un ticket nuovo per quella riga.</p></div>
+          <strong id="catalogGridCount" class="catalog-grid-count">0 applicazioni</strong>
+        </div>
+        <div class="catalog-grid-scroll">
+          <table class="catalog-grid">
+            <thead><tr><th scope="col">Codice</th><th scope="col">Applicazione</th><th scope="col">Versione</th><th scope="col">Stato</th><th scope="col">Rev.</th><th scope="col">Azioni</th></tr></thead>
+            <tbody id="catalogGridBody"><tr><td colspan="6">Il registro non è ancora stato caricato.</td></tr></tbody>
+          </table>
+        </div>
+      </section>
       </div>
     </section>
 
     </div>
 
     <footer>
-      <div><strong>MCP-postgree · Front Test V1.1.0</strong><span>Contratto: CommandToMCPPostgree(comando)</span></div>
+      <div><strong>MCP-postgree · Front Test V1.2.0</strong><span>Contratto: CommandToMCPPostgree(comando)</span></div>
       <div><a href="./ISTRUZIONI.md" target="_blank" rel="noopener noreferrer">Istruzioni</a><a href="https://github.com/Fetonte1960/sviluppo-pubblico/tree/main/commesse/MCP-postgree" target="_blank" rel="noopener noreferrer">Artefatti pubblici</a></div>
     </footer>
   </main>
