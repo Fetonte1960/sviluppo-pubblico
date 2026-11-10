@@ -650,6 +650,22 @@ function showCatalogItem(item) {
   feedback("catalogFeedback", "Scheda " + item.appCode + " caricata. Puoi modificare il testo di bootstrap e salvare senza ripubblicare i frontend.");
 }
 
+function offerBrowserPasswordSave() {
+  // La credenziale resta nel password manager del browser, non in localStorage.
+  // Il supporto e l'eventuale richiesta di conferma dipendono dal browser.
+  if (typeof PasswordCredential !== "function" || !navigator.credentials?.store) return;
+  try {
+    const credential = new PasswordCredential({
+      id: "Pannello MCP",
+      name: "Pannello MCP",
+      password: $("catalogAdminToken").value
+    });
+    void navigator.credentials.store(credential).catch(() => {});
+  } catch {
+    // Il normale autocomplete del form resta la soluzione di riserva.
+  }
+}
+
 function setCatalogConnected(connected) {
   state.catalogConnected = connected;
   $("catalogProtected").hidden = !connected;
@@ -683,7 +699,9 @@ async function loadCatalog(selectCode = null) {
       $("catalogSelect").append(new Option(entry.appName + " · " + entry.appCode +
         (entry.enabled ? "" : " (bozza)"), entry.appCode));
     }
+    const firstConnection = !state.catalogConnected;
     setCatalogConnected(true);
+    if (firstConnection) offerBrowserPasswordSave();
     const pick = selectCode || data.applications[0]?.appCode;
     if (pick && state.catalogRecords[pick]) {
       $("catalogSelect").value = pick;
