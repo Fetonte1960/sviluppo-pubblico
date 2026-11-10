@@ -1,4 +1,4 @@
-# MCP-postgree — istruzioni pubbliche (Front V0.9.0 / Backend V1.8.0)
+# MCP-postgree — istruzioni pubbliche (Front V1.1.0 / Backend V1.9.0 atteso)
 
 Endpoint MCP: https://mcp-postgree.onrender.com/mcp
 
@@ -33,3 +33,11 @@ Il database PostgreSQL **`mcp_applications`** è separato sia dal DB delle azien
 Per usare l'editor, l'amministratore deve prima configurare **due segreti differenti dall'OAuth** sul server Render → Environment: `ConnectionStrings__Applications` (connessione al nuovo DB Neon con ruolo limitato `mcp_app_catalog_rw`) e `MCP_REGISTRY_ADMIN_TOKEN` (segreto casuale di almeno 32 caratteri). Conservare le credenziali esclusivamente nel secret store, mai in chat, Git o URL. Inserire `MCP_REGISTRY_ADMIN_TOKEN` nel campo protetto del laboratorio, poi scegliere «Carica archivio», selezionare il gestionale, modificare il bootstrap e salvare. Il browser non lo conserva in localStorage. Se le variabili sono assenti, il server restituisce `catalog_not_configured` HTTP503. Non usare `MCP_OAUTH_LOGIN_TOKEN` per amministrare il catalogo.
 
 Il testo accetta `{{APP_CODE}}`, `{{APP_NAME}}`, `{{MCP_ENDPOINT}}`, `{{ROOT_ID}}`, `{{COMMESSA}}` e `{{TICKET}}` (obbligatorio). Quando un backend gestionale registrato tramite policy applicativa valida richiede `session-bootstrap`, MCP-postgree recupera il template MASTER abilitato e sostituisce questi campi con i valori autorizzati; il frontend usa il campo `bootstrap` della risposta. Le modifiche al testo saranno quindi disponibili senza ricompilare né ripubblicare il front gestionale. Il catalogo da solo non abilita credenziali, schemi o operazioni sui dati reali e non cambia le sessioni DEMO esistenti.
+
+## Laboratorio V1.1.0 — schede e collegamento Registro applicazioni
+
+La pagina di laboratorio presenta due tab: **Generale** per lo stato del server, OAuth e DEMO, e **Registro applicazioni** per l'editor MASTER.
+
+Nel Registro, prima della verifica delle credenziali, rimangono visibili solo il campo **Password Pannello MCP**, il pulsante **Collega** e il messaggio di stato. Per collegarsi inserire `MCP_REGISTRY_ADMIN_TOKEN` (custodito in Render, distinto dalla credenziale OAuth) e premere **Collega**. Il backend verifica la credenziale ed esegue una lettura reale di `mcp_applications/public.applications` tramite API del catalogo. Solo dopo la risposta positiva appare l'elenco e la scheda, mentre password e pulsante diventano disabilitati. Un errore mantiene la schermata chiusa, mostrando il motivo.
+
+Il browser può offrire il salvataggio della credenziale nel proprio password manager con identificativo **Pannello MCP**, se supportato e consentito dalle impostazioni locali; il laboratorio non salva la password in localStorage o nel repository. Non confondere l'autenticazione al pannello con l'abilitazione di dati aziendali: restano separate le policy applicative e l'aggancio tramite ticket monouso.
