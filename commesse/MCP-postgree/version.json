@@ -1,9 +1,9 @@
 {
-  "frontVersion": "1.1.0",
+  "frontVersion": "1.2.0",
   "buildDate": "2026-11-10",
   "serverVersionSource": "/health",
-  "expectedServerVersion": "1.9.0",
+  "expectedServerVersion": "1.10.0",
   "defaultBackend": "https://mcp-postgree.onrender.com",
   "authMode": "OAuth 2.1 PKCE + password permanente CONNECT_ONLY",
-  "applicationCatalog": "Pannello MCP: accesso protetto e tab Registro applicazioni"
+  "applicationCatalog": "MASTER editor dettagli sopra griglia; launch chat con ticket autorizzato"
 }
