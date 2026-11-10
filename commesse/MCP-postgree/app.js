@@ -1,7 +1,7 @@
 "use strict";
 
-// Front V0.1.0 — incrementare la versione a ogni pubblicazione.
-const FRONT_VERSION = "1.2.0";
+// Front V1.3.0 — incrementare la versione a ogni pubblicazione.
+const FRONT_VERSION = "1.3.0";
 const EXPECTED_SERVER_VERSION = "1.11.0";
 const DEFAULT_SERVER_URL = "https://mcp-postgree.onrender.com";
 const TOOL_NAME = "CommandToMCPPostgree";
