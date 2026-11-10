@@ -1,15 +1,15 @@
 "use strict";
 
 // Front V0.1.0 — incrementare la versione a ogni pubblicazione.
-const FRONT_VERSION = "0.9.0";
-const EXPECTED_SERVER_VERSION = "1.8.0";
+const FRONT_VERSION = "1.0.0";
+const EXPECTED_SERVER_VERSION = "1.9.0";
 const DEFAULT_SERVER_URL = "https://mcp-postgree.onrender.com";
 const TOOL_NAME = "CommandToMCPPostgree";
 const PAGE_INSTRUCTIONS = "https://github.com/Fetonte1960/sviluppo-pubblico/blob/main/commesse/MCP-postgree/ISTRUZIONI.md";
 const DEFAULT_TIMEOUT_MS = 125_000;
 const state = {baseUrl: "", wakeController: null, activeToken: "", tokenHash: "", sequence: 0,
   enterpriseToken: "", applicationTokens: Object.create(null), demoCatalog: Object.create(null),
-  lastSessionPrompt: "", lastSessionExpiresAt: 0};
+  lastSessionPrompt: "", lastSessionExpiresAt: 0, catalogRecords: Object.create(null), catalogRevision: 0};
 const $ = id => document.getElementById(id);
 
 function setStatus(text, kind = "idle") {
@@ -582,7 +582,163 @@ function clearSessionDemo() {
   feedback("sessionFeedback", "Bootstrap cancellato dalla pagina. Le sessioni già agganciate scadono sul server.");
 }
 
+
+const CATALOG_PATH = "/api/mcp-postgree/v1/catalog/apps";
+
+async function catalogFetch(method, path = "", payload = null) {
+  const password = $("catalogAdminToken").value;
+  if (!password || password.trim().length < 32)
+    throw new Error("Inserisci la password amministrativa del catalogo dalla sezione Environment di Render.");
+  const origin = state.baseUrl || DEFAULT_SERVER_URL;
+  const reply = await fetch(origin + CATALOG_PATH + path, {
+    method, mode: "cors", cache: "no-store",
+    headers: {
+      "Authorization": "Bearer " + password,
+      ...(payload ? {"Content-Type": "application/json"} : {})
+    },
+    ...(payload ? {body: JSON.stringify(payload)} : {})
+  });
+  const value = await reply.json().catch(() => ({}));
+  if (!reply.ok || value.ok !== true) {
+    const errors = {catalog_not_configured:"Configura ConnectionStrings__Applications e MCP_REGISTRY_ADMIN_TOKEN su Render.",
+      catalog_unavailable:"Il database applicazioni non risponde.",revision_conflict:"Scheda modificata altrove: ricarica prima di salvare.",
+      invalid_catalog_record:"Scheda non valida: verifica schemi, Root e bootstrap (deve contenere {{TICKET}}).",
+      constraint_violation:"Vincoli del catalogo non rispettati."};
+    throw new Error(reply.status === 401 ? "Password amministrativa errata." :
+      (errors[value.error] || "Errore archivio: HTTP " + reply.status));
+  }
+  return value;
+}
+
+function clearCatalogForm() {
+  state.catalogRevision = 0;
+  $("catalogCode").value = "";
+  $("catalogName").value = "";
+  $("catalogDescription").value = "";
+  $("catalogVersion").value = "0.1.0";
+  $("catalogSchemas").value = "";
+  $("catalogRootTable").value = "";
+  $("catalogRootId").value = "";
+  $("catalogEnabled").checked = false;
+  $("catalogTemplate").value = [
+    "Sei l'assistente AI del gestionale {{APP_NAME}} ({{APP_CODE}}).",
+    "Connettore {{MCP_ENDPOINT}}, tool CommandToMCPPostgree(comando: string).",
+    "Verifica la disponibilita' dello strumento. Non inventare esiti.",
+    "Usa il ticket monouso: {\"azione\":\"session.attach\",\"ticket\":\"{{TICKET}}\"}.",
+    "Leggi la Root {{ROOT_ID}} e rispetta gli schemi autorizzati. Commessa: {{COMMESSA}}.",
+    "Solo READ_ONLY. Niente SQL libero e nessuna scrittura automatica."
+  ].join("\n");
+  $("catalogRevision").textContent = "nuova";
+  $("catalogPreviewWrap").hidden = true;
+  feedback("catalogFeedback", "Nuova scheda pronta. Salva solo dopo aver verificato tutti i campi.");
+}
+
+function showCatalogItem(item) {
+  if (!item) return;
+  state.catalogRevision = item.revision;
+  $("catalogCode").value = item.appCode;
+  $("catalogName").value = item.appName;
+  $("catalogDescription").value = item.description;
+  $("catalogVersion").value = item.appVersion;
+  $("catalogSchemas").value = item.schemas.join(", ");
+  $("catalogRootTable").value = item.rootTable;
+  $("catalogRootId").value = item.rootId;
+  $("catalogEnabled").checked = item.enabled;
+  $("catalogTemplate").value = item.aiBootstrapTemplate;
+  $("catalogRevision").textContent = String(item.revision);
+  $("catalogPreviewWrap").hidden = true;
+  feedback("catalogFeedback", "Scheda " + item.appCode + " caricata. Puoi modificare il testo di bootstrap e salvare senza ripubblicare i frontend.");
+}
+
+async function loadCatalog(selectCode = null) {
+  const button = $("catalogLoadBtn");
+  button.disabled = true;
+  feedback("catalogFeedback", "Lettura catalogo PostgreSQL...");
+  try {
+    const data = await catalogFetch("GET");
+    state.catalogRecords = Object.create(null);
+    $("catalogSelect").replaceChildren(new Option("— Seleziona gestionale —", ""));
+    for (const entry of data.applications) {
+      state.catalogRecords[entry.appCode] = entry;
+      $("catalogSelect").append(new Option(entry.appName + " · " + entry.appCode +
+        (entry.enabled ? "" : " (bozza)"), entry.appCode));
+    }
+    const pick = selectCode || data.applications[0]?.appCode;
+    if (pick && state.catalogRecords[pick]) {
+      $("catalogSelect").value = pick;
+      showCatalogItem(state.catalogRecords[pick]);
+    } else {
+      feedback("catalogFeedback", "Catalogo caricato: nessuna applicazione.");
+    }
+  } catch (err) {
+    feedback("catalogFeedback", formatError(err));
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function saveCatalog() {
+  const button = $("catalogSaveBtn");
+  button.disabled = true;
+  feedback("catalogFeedback", "Salvataggio della definizione MASTER...");
+  try {
+    const appCode = $("catalogCode").value.trim().toUpperCase();
+    if (!/^[A-Z][A-Z0-9_]{2,63}$/.test(appCode))
+      throw new Error("Codice applicativo: lettere maiuscole, numeri e _, almeno 3 caratteri.");
+    const payload = {
+      appName:$("catalogName").value.trim(),
+      description:$("catalogDescription").value.trim(),
+      appVersion:$("catalogVersion").value.trim(),
+      schemas:$("catalogSchemas").value.split(",").map(s => s.trim()).filter(Boolean),
+      rootTable:$("catalogRootTable").value.trim(),
+      rootId:$("catalogRootId").value.trim(),
+      accessMode:"READ_ONLY",
+      enabled:$("catalogEnabled").checked,
+      aiBootstrapTemplate:$("catalogTemplate").value,
+      expectedRevision:state.catalogRevision
+    };
+    const saved = await catalogFetch("PUT", "/" + encodeURIComponent(appCode), payload);
+    state.catalogRecords[appCode] = saved.application;
+    state.catalogRevision = saved.application.revision;
+    $("catalogRevision").textContent = String(state.catalogRevision);
+    await loadCatalog(appCode);
+    feedback("catalogFeedback", "Salvataggio confermato dal database. " + appCode +
+      " · revisione " + state.catalogRevision + ". Il bootstrap aggiornato sarà utilizzato dal backend al prossimo avvio autorizzato.");
+  } catch (err) {
+    feedback("catalogFeedback", formatError(err));
+  } finally {
+    button.disabled = false;
+  }
+}
+
+function previewCatalogBootstrap() {
+  const text = $("catalogTemplate").value;
+  if (!text.includes("{{TICKET}}")) {
+    feedback("catalogFeedback", "Il bootstrap deve includere il segnaposto {{TICKET}}.");
+    return;
+  }
+  const pairs = {
+    "{{APP_NAME}}":$("catalogName").value,
+    "{{APP_CODE}}":$("catalogCode").value,
+    "{{MCP_ENDPOINT}}":(state.baseUrl || DEFAULT_SERVER_URL) + "/mcp",
+    "{{ROOT_ID}}":$("catalogRootId").value,
+    "{{COMMESSA}}":"ESEMPIO",
+    "{{TICKET}}":"TICKET_DI_PROVA_NON_VALIDO"
+  };
+  let result = text;
+  for (const [key, value] of Object.entries(pairs)) result = result.replaceAll(key, value);
+  $("catalogPreview").value = result;
+  $("catalogPreviewWrap").hidden = false;
+  feedback("catalogFeedback", "Anteprima pronta: nessun ticket è stato creato e non è stato contattato MCP.");
+}
+
+
 function installHandlers() {
+  $("catalogLoadBtn").addEventListener("click", () => void loadCatalog());
+  $("catalogNewBtn").addEventListener("click", clearCatalogForm);
+  $("catalogSaveBtn").addEventListener("click", () => void saveCatalog());
+  $("catalogPreviewBtn").addEventListener("click", previewCatalogBootstrap);
+  $("catalogSelect").addEventListener("change", () => showCatalogItem(state.catalogRecords[$("catalogSelect").value]));
   $("frontVersion").textContent = "V" + FRONT_VERSION;
   $("wakeBtn").addEventListener("click", wakeServer);
   $("cancelWakeBtn").addEventListener("click", () => state.wakeController?.abort());

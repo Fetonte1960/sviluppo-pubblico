@@ -6,17 +6,17 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https: http://localhost:* http://127.0.0.1:*; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="description" content="MCP-postgree: password OAuth permanente su Render, connessione ChatGPT e Claude e laboratorio DEMO separato">
-  <title>MCP-postgree · Laboratorio v0.9.0</title>
-  <link rel="stylesheet" href="./styles.css?v=0.9.0">
-  <script defer src="./app.js?v=0.9.0"></script>
+  <title>MCP-postgree · Laboratorio v1.0.0</title>
+  <link rel="stylesheet" href="./styles.css?v=1.0.0">
+  <script defer src="./app.js?v=1.0.0"></script>
 </head>
 <body>
   <header class="topbar">
     <div class="topinner">
       <div class="identity"><span class="mark">M</span><div><strong>MCP-postgree</strong><small>Laboratorio MCP · PostgreSQL</small></div></div>
       <div class="versions" aria-label="Versioni e stato">
-        <span class="version"><span>Frontend</span><strong id="frontVersion">V0.9.0</strong></span>
-        <span class="version"><span>Server</span><strong id="serverVersion">V1.8.0 attesa</strong></span>
+        <span class="version"><span>Frontend</span><strong id="frontVersion">V1.0.0</strong></span>
+        <span class="version"><span>Server</span><strong id="serverVersion">V1.9.0 attesa</strong></span>
         <span id="connectionStatus" class="status" data-state="idle">Non configurato</span>
       </div>
     </div>
@@ -49,6 +49,54 @@
         <div class="button-line"><button id="copyPermanentEndpointBtn" class="secondary" type="button">Copia URL MCP permanente</button><a href="https://dashboard.render.com/web/srv-dbortcm417fc7397kvng" target="_blank" rel="noopener noreferrer">Environment su Render</a></div>
       </div>
       <div class="notice warning"><strong>Modalità separate:</strong> la password permanente autentica il server ma non autorizza da sola i dati. Il simulatore DEMO seguente crea una diversa identità aziendale temporanea. Per usare i suoi ticket devi collegare una seconda connessione OAuth DEMO: i ticket non funzionano con la connessione permanente.</div>
+    </section>
+
+    <section class="panel" id="catalogo-master" aria-labelledby="catalogTitle">
+      <div class="panel-head"><span class="ordinal">02</span><div>
+        <h2 id="catalogTitle">Catalogo MASTER applicazioni — PostgreSQL</h2>
+        <p>Registro persistente dei programmi, separato dal database aziendale e dalla DEMO. La modifica del bootstrap non richiede aggiornamenti ai frontend dei gestionali.</p>
+      </div></div>
+      <div class="notice muted"><strong>Separazione dei permessi:</strong> il catalogo definisce le caratteristiche del software; non attiva l'accesso ai dati delle aziende. Lo stato `enabled` abilita la definizione MASTER, non concede credenziali o permessi PostgreSQL.</div>
+      <p class="hint">Database: <code>mcp_applications</code> · amministrazione protetta con <code>MCP_REGISTRY_ADMIN_TOKEN</code> di Render. La password amministrativa non è quella OAuth e non viene salvata nel browser.</p>
+      <div class="two-fields">
+        <div><label for="catalogAdminToken">Password amministrativa del catalogo (Render)</label><input id="catalogAdminToken" type="password" autocomplete="off" maxlength="512" placeholder="Solo per caricare e salvare"></div>
+        <div><label for="catalogSelect">Applicazioni registrate</label><select id="catalogSelect"><option value="">— Carica il catalogo —</option></select></div>
+      </div>
+      <div class="button-line">
+        <button id="catalogLoadBtn" type="button" class="secondary">Carica archivio</button>
+        <button id="catalogNewBtn" type="button" class="secondary">Nuovo programma</button>
+        <span class="hint">Revisione: <strong id="catalogRevision">—</strong></span>
+      </div>
+      <div class="two-fields">
+        <div><label for="catalogCode">Codice univoco</label><input id="catalogCode" maxlength="64" spellcheck="false" placeholder="PRATICHE_FOTOVOLTAICO"></div>
+        <div><label for="catalogName">Nome applicativo</label><input id="catalogName" maxlength="120" placeholder="Pratiche Fotovoltaico"></div>
+      </div>
+      <div class="two-fields">
+        <div><label for="catalogVersion">Versione definizione MASTER</label><input id="catalogVersion" maxlength="32" value="0.1.0"></div>
+        <div><label for="catalogAccessMode">Autorizzazioni previste</label><select id="catalogAccessMode" disabled><option value="READ_ONLY">READ_ONLY (prima versione)</option></select></div>
+      </div>
+      <label for="catalogDescription">Descrizione del programma</label>
+      <textarea id="catalogDescription" rows="2" maxlength="2000"></textarea>
+      <label for="catalogSchemas">Schemi PostgreSQL del gestionale (separati da virgola)</label>
+      <input id="catalogSchemas" spellcheck="false" placeholder="pratiche_fv, componenti">
+      <p class="hint">L'elenco è una definizione MASTER. Non garantisce che lo schema sia già presente nel database aziendale.</p>
+      <div class="two-fields">
+        <div><label for="catalogRootTable">Root table istruzioni (schema.tabella)</label><input id="catalogRootTable" maxlength="129" placeholder="pratiche_fv.istruzioni_ai" spellcheck="false"></div>
+        <div><label for="catalogRootId">Documento Root</label><input id="catalogRootId" maxlength="128" spellcheck="false" placeholder="PRATICHE-FOTOVOLTAICO-ISTRUZIONI.md"></div>
+      </div>
+      <label for="catalogTemplate">Bootstrap di lancio AI — template modificabile</label>
+      <textarea id="catalogTemplate" rows="10" maxlength="16000" spellcheck="false" placeholder="Il testo deve contenere {{TICKET}}"></textarea>
+      <p class="hint">Segnaposto riconosciuti dal backend: <code>{{APP_CODE}}</code>, <code>{{APP_NAME}}</code>, <code>{{MCP_ENDPOINT}}</code>, <code>{{ROOT_ID}}</code>, <code>{{COMMESSA}}</code> e <code>{{TICKET}}</code> (obbligatorio). La sostituzione avviene sul server quando il gestionale richiede il bootstrap.</p>
+      <label><input id="catalogEnabled" type="checkbox"> Abilita la definizione MASTER (non abilita il database aziendale)</label>
+      <div class="button-line">
+        <button id="catalogSaveBtn" type="button" class="primary">Salva scheda e bootstrap</button>
+        <button id="catalogPreviewBtn" type="button" class="secondary">Anteprima bootstrap</button>
+      </div>
+      <p id="catalogFeedback" class="hint" role="status" aria-live="polite">Inserisci la password amministrativa e premi «Carica archivio». Nessun token è inviato alle chat.</p>
+      <div id="catalogPreviewWrap" hidden>
+        <label for="catalogPreview">Anteprima (senza ticket attivo)</label>
+        <textarea id="catalogPreview" rows="8" readonly spellcheck="false"></textarea>
+      </div>
     </section>
 
     <section class="panel simulator-panel" aria-labelledby="sessionTitle" id="simulatore">
@@ -200,7 +248,7 @@
     </div>
 
     <footer>
-      <div><strong>MCP-postgree · Front Test V0.9.0</strong><span>Contratto: CommandToMCPPostgree(comando)</span></div>
+      <div><strong>MCP-postgree · Front Test V1.0.0</strong><span>Contratto: CommandToMCPPostgree(comando)</span></div>
       <div><a href="./ISTRUZIONI.md" target="_blank" rel="noopener noreferrer">Istruzioni</a><a href="https://github.com/Fetonte1960/sviluppo-pubblico/tree/main/commesse/MCP-postgree" target="_blank" rel="noopener noreferrer">Artefatti pubblici</a></div>
     </footer>
   </main>
