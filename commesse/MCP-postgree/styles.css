@@ -34,3 +34,26 @@
 .catalog-connection-status[data-state="error"]{color:#8d2836;background:#fff1f2;border-color:#f5c4ca}
 .sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
 @media(max-width:650px){.catalog-login-fields{grid-template-columns:1fr}.lab-tab{padding:11px 6px;font-size:.81rem}}
+
+/* Laboratorio V1.2.0: dettaglio editabile sopra griglia MASTER */
+.catalog-section-head{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin:14px 0}
+.catalog-section-head h3,.catalog-launch-settings h3{font-size:1.01rem;color:#1d3551;margin:0 0 5px}
+.catalog-section-head p{font-size:.8rem;color:#61758d;margin:0}
+.catalog-section-head .button-line{margin:0}
+.catalog-launch-settings{border-top:1px solid #dfe7f1;margin-top:22px;padding-top:15px}
+.catalog-launch-settings .hint{max-width:950px}
+.catalog-grid-section{margin-top:23px;border-top:1px solid #dfe7f1;padding-top:13px}
+.catalog-grid-scroll{overflow-x:auto;border:1px solid #dbe3ef;border-radius:10px}
+.catalog-grid{width:100%;border-collapse:collapse;text-align:left;font-size:.81rem}
+.catalog-grid th{background:#edf3fb;color:#425b78;font-weight:750}
+.catalog-grid th,.catalog-grid td{padding:12px 10px;border-bottom:1px solid #e0e8f3;vertical-align:middle}
+.catalog-grid tr:last-child td{border-bottom:0}
+.catalog-grid tbody tr{cursor:pointer}
+.catalog-grid tbody tr:hover{background:#f5f9ff}
+.catalog-grid tbody tr.is-selected{background:#e7f2ff;box-shadow:inset 3px 0 0 #2c75cd}
+.catalog-row-actions{display:flex;align-items:center;gap:7px;min-width:188px}
+.catalog-row-actions button{padding:8px 10px;white-space:nowrap;font-size:.76rem}
+.catalog-grid-count{font-size:.78rem;color:#536d8b;white-space:nowrap}
+#catalogCopyFallback{margin-top:14px}
+#catalogCopyFallback textarea{font-family:ui-monospace,Consolas,monospace;font-size:.8rem}
+@media(max-width:650px){.catalog-grid{min-width:720px}.catalog-section-head .button-line{width:100%}}
