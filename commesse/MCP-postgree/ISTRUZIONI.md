@@ -1,6 +1,6 @@
 # MCP-postgree — Istruzione pubblica di avvio
 
-**Frontend test:** V0.3.4 (incrementare progressivamente a ogni release).
+**Frontend test:** V0.4.0 (incrementare progressivamente a ogni release).
 **Server:** leggere la versione effettiva da \`GET /health\`, senza supporre una versione in assenza di connessione.
 
 ## Scopo e contratto
@@ -62,10 +62,23 @@ Il test diretto \`initialize\` + \`tools/list\` + \`tools/call Init\` dal browse
 Connettersi al client ChatGPT non è equivalente a fare il test nel browser.
 Non usare database reali fino ad autorizzazione esplicita.
 
-## Registrazione OAuth DCR V1.3.5
+## Registrazione OAuth DCR V1.4.0
 
 Il server accetta callback ChatGPT autorizzati, anche multipli, e richieste di registrazione che includono il grant `refresh_token`. La risposta mantiene soltanto `authorization_code`: non sono ancora emessi refresh token. I callback di domini diversi da ChatGPT continuano a essere bloccati.
 
-## Ritorno automatico a ChatGPT (OAuth V1.3.5)
+## Ritorno automatico a ChatGPT (OAuth V1.4.0)
 
 Il server risponde al consenso con redirect HTTP 303 (GET) verso il callback autorizzato ChatGPT. La politica CSP dell'HTML di login ammette esplicitamente il ritorno su https://chatgpt.com e lo script protetto da nonce evita un doppio invio. Dopo aver cliccato «Autorizza il collegamento» una volta, attendere il ritorno a ChatGPT; non premere nuovamente. Se il flusso viene interrotto, ripartire da ChatGPT e generare una nuova richiesta di collegamento.
+
+
+## Collegamento Claude AI — 10/11/2026
+
+Lo stesso server MCP \`https://mcp-postgree.onrender.com/mcp\` permette la registrazione automatica OAuth DCR con i due callback **esatti** autorizzati:
+- \`https://claude.ai/api/mcp/auth_callback\`
+- \`https://claude.com/api/mcp/auth_callback\`
+
+I callback ChatGPT esistenti continuano a funzionare. L'endpoint \`POST /oauth/register\` accetta richieste con \`token_endpoint_auth_method=none\` e \`grant_types=["authorization_code","refresh_token"]\`. Nessun dominio esterno è ammesso. Il consenso presenta un modulo sul server Render: inserire il token *solo sul modulo*, mai nella chat Claude.
+
+L'access token OAuth resta di durata 30 minuti; il refresh token è opaco, monouso a rotazione, revocabile tramite \`POST /oauth/revoke\`, legato a client ID, risorsa \`/mcp\` e policy originaria del gestionale. \`MCP_OAUTH_REFRESH_DAYS\` imposta la durata della famiglia di refresh (1–30 giorni; predefinita 7). **Il registro è volatile:** un riavvio del servizio Render Free invalida anche i refresh token non scaduti. Per uso in produzione durevole serve storage dedicato approvato.
+
+L'ambiente DEMO resta READ_ONLY su due schemi sintetici di Neon. I token demo scadono dopo 60 minuti e non possono essere prolungati tramite refresh senza una policy sorgente ancora valida.
