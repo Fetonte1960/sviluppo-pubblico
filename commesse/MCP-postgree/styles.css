@@ -15,3 +15,22 @@
 .simulator-grid .notice{margin-top:10px}
 .divider-line{border-top:1px solid #e1e8f2;margin:21px 0 17px}
 @media(max-width:840px){.simulator-grid{grid-template-columns:1fr;gap:18px}}
+
+/* Laboratorio V1.1.0: schede e collegamento protetto al registro MASTER */
+.lab-tabs{display:flex;align-items:center;gap:8px;margin:22px 0 18px;padding:5px;background:#eaf0f8;border:1px solid #d5e0ed;border-radius:12px}
+.lab-tab{flex:1;border:0;background:transparent;border-radius:9px;padding:12px 16px;color:#435976;font-size:.91rem;font-weight:750;text-align:center}
+.lab-tab.is-active{background:#fff;color:#195eaa;box-shadow:0 2px 10px #1b3b6520}
+.lab-tab:hover:not(.is-active){background:#dde9f6}
+.lab-tab:focus-visible{outline:3px solid #367dd4;outline-offset:2px}
+.tab-panel[hidden],#catalogProtected[hidden]{display:none!important}
+.catalog-login{max-width:760px}
+.catalog-login-fields{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end}
+.catalog-login-fields button{min-height:45px}
+.catalog-login input:disabled{background:#edf1f6;color:#8795a8;cursor:not-allowed;opacity:1}
+.catalog-login button:disabled{background:#edf1f6;color:#718399;border-color:#d4dee9;cursor:not-allowed;opacity:1}
+.catalog-connection-status{padding:12px 14px;margin:13px 0 0;border:1px solid #dce5f0;border-radius:9px;color:#556d8c;background:#f7f9fc;font-size:.84rem;line-height:1.5}
+.catalog-connection-status[data-state="pending"]{color:#71591a;background:#fff9e8;border-color:#eee0a8}
+.catalog-connection-status[data-state="online"]{color:#126647;background:#e9f8f0;border-color:#b9dfce}
+.catalog-connection-status[data-state="error"]{color:#8d2836;background:#fff1f2;border-color:#f5c4ca}
+.sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+@media(max-width:650px){.catalog-login-fields{grid-template-columns:1fr}.lab-tab{padding:11px 6px;font-size:.81rem}}
