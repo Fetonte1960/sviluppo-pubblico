@@ -222,7 +222,7 @@
       <p id="catalogFeedback" class="catalog-connection-status" role="status" aria-live="polite" data-state="idle">Non collegato. Inserisci la password e premi «Collega».</p>
       <div id="catalogProtected" hidden>
       <div class="notice muted"><strong>Separazione dei permessi:</strong> il catalogo definisce le caratteristiche del software; non attiva l'accesso ai dati delle aziende. Lo stato `enabled` abilita la definizione MASTER, non concede credenziali o permessi PostgreSQL.</div>
-      <p class="hint">Database: <code>mcp_applications</code> · amministrazione protetta con <code>MCP_REGISTRY_ADMIN_TOKEN</code> di Render. La password amministrativa non è quella OAuth e non viene salvata nel browser.</p>
+      <p class="hint">Database: <code>mcp_applications</code> · amministrazione protetta con <code>MCP_REGISTRY_ADMIN_TOKEN</code> di Render. La password non è quella OAuth; può essere ricordata dal gestore password del browser come «Pannello MCP», mai dal localStorage del laboratorio.</p>
       <div>
         <label for="catalogSelect">Applicazioni registrate</label>
         <select id="catalogSelect"><option value="">— Seleziona gestionale —</option></select>
