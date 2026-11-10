@@ -6,17 +6,17 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https: http://localhost:* http://127.0.0.1:*; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="description" content="MCP-postgree: laboratorio di test token per gestionale, risveglio Render Free e bootstrap ChatGPT">
-  <title>MCP-postgree · Laboratorio v0.4.0</title>
-  <link rel="stylesheet" href="./styles.css?v=0.4.0">
-  <script defer src="./app.js?v=0.4.0"></script>
+  <title>MCP-postgree · Laboratorio v0.5.0</title>
+  <link rel="stylesheet" href="./styles.css?v=0.5.0">
+  <script defer src="./app.js?v=0.5.0"></script>
 </head>
 <body>
   <header class="topbar">
     <div class="topinner">
       <div class="identity"><span class="mark">M</span><div><strong>MCP-postgree</strong><small>Laboratorio MCP · PostgreSQL</small></div></div>
       <div class="versions" aria-label="Versioni e stato">
-        <span class="version"><span>Frontend</span><strong id="frontVersion">V0.4.0</strong></span>
-        <span class="version"><span>Server</span><strong id="serverVersion">V1.4.0 attesa</strong></span>
+        <span class="version"><span>Frontend</span><strong id="frontVersion">V0.5.0</strong></span>
+        <span class="version"><span>Server</span><strong id="serverVersion">V1.5.0 attesa</strong></span>
         <span id="connectionStatus" class="status" data-state="idle">Non configurato</span>
       </div>
     </div>
@@ -25,7 +25,7 @@
   <main class="shell">
     <section class="hero">
       <p class="eyebrow">AMBIENTE DI COLLAUDO · SENZA DATI AZIENDALI REALI</p>
-      <h1>Un collegamento MCP. Un token per ogni gestionale.</h1>
+      <h1>Un connettore MCP, sessioni separate per ogni applicativo.</h1>
       <p>Verifica il backend, crea una credenziale dedicata e avvia ChatGPT con l'istruzione di base. Il token viene generato <strong>solo in questo browser</strong>: l'abilitazione agli schemi avviene successivamente sul server.</p>
     </section>
 
@@ -116,11 +116,37 @@
           </div>
           <p id="gptFeedback" class="hint" role="status" aria-live="polite">In ChatGPT seleziona OAuth. La schermata protetta del server chiederà il token del gestionale; aprire una chat non installa automaticamente il connettore.</p>
         </section>
+        <section class="panel" aria-labelledby="sessionTitle">
+          <div class="panel-head"><span class="ordinal">05</span><div><h2 id="sessionTitle">Sessione applicativa · prova guidata</h2><p>Ticket nel bootstrap, OAuth aziendale separato e isolamento delle commesse.</p></div></div>
+          <p class="panel-copy">Questa funzione usa <strong>solo dati sintetici</strong>. Il server crea un ticket monouso tramite la credenziale dell'applicativo; il token aziendale si utilizza soltanto nella schermata OAuth protetta, non nella chat.</p>
+          <div class="two-fields">
+            <div><label for="sessionApp">Applicativo demo</label><select id="sessionApp">
+              <option value="a">APP A · Casi</option><option value="b">APP B · Catalogo</option>
+            </select></div>
+            <div><label for="sessionWorkOrder">Identificativo commessa</label><input id="sessionWorkOrder" value="1" maxlength="64" spellcheck="false"></div>
+          </div>
+          <div class="button-line"><button id="createSessionBtn" class="primary" type="button">Genera bootstrap di commessa</button></div>
+          <p id="sessionFeedback" class="hint" role="status" aria-live="polite">Prima collega MCP-postgree a ChatGPT o Claude con una credenziale aziendale demo. Il test usa gli schemi laboratorio_a/laboratorio_b.</p>
+          <div id="sessionResults" hidden>
+            <label for="enterpriseToken">Token OAuth aziendale DEMO (non incollarlo nella chat)</label>
+            <div class="secret-row"><input id="enterpriseToken" type="password" readonly autocomplete="off"><button id="copyEnterpriseTokenBtn" class="secondary" type="button">Copia token</button></div>
+            <p class="hint">Durante il collegamento OAuth incolla questo token <strong>solo</strong> su mcp-postgree.onrender.com. Per la prova di sessione non usare il token demo generico del pannello 02.</p>
+            <label for="sessionBootstrap">Bootstrap per la chat AI · ticket valido 5 minuti</label>
+            <textarea id="sessionBootstrap" rows="9" readonly spellcheck="false"></textarea>
+            <div class="button-line">
+              <button id="copySessionBootstrapBtn" class="secondary" type="button">Copia bootstrap</button>
+              <button id="openSessionGptBtn" class="secondary" type="button">Apri ChatGPT</button>
+              <button id="openSessionClaudeBtn" class="secondary" type="button">Apri Claude</button>
+              <button id="clearSessionBtn" class="text-btn" type="button">Cancella dati demo</button>
+            </div>
+            <p class="hint">Dopo session.attach, l'AI dovrà includere il token session restituito in ogni comando e leggere le due Root. Se non è già collegato, riavvia OAuth scegliendo il token aziendale demo.</p>
+          </div>
+        </section>
       </div>
     </div>
 
     <footer>
-      <div><strong>MCP-postgree · Front Test V0.4.0</strong><span>Contratto: CommandToMCPPostgree(comando)</span></div>
+      <div><strong>MCP-postgree · Front Test V0.5.0</strong><span>Contratto: CommandToMCPPostgree(comando)</span></div>
       <div><a href="./ISTRUZIONI.md" target="_blank" rel="noopener noreferrer">Istruzioni</a><a href="https://github.com/Fetonte1960/sviluppo-pubblico/tree/main/commesse/MCP-postgree" target="_blank" rel="noopener noreferrer">Artefatti pubblici</a></div>
     </footer>
   </main>

@@ -82,3 +82,21 @@ I callback ChatGPT esistenti continuano a funzionare. L'endpoint \`POST /oauth/r
 L'access token OAuth resta di durata 30 minuti; il refresh token è opaco, monouso a rotazione, revocabile tramite \`POST /oauth/revoke\`, legato a client ID, risorsa \`/mcp\` e policy originaria del gestionale. \`MCP_OAUTH_REFRESH_DAYS\` imposta la durata della famiglia di refresh (1–30 giorni; predefinita 7). **Il registro è volatile:** un riavvio del servizio Render Free invalida anche i refresh token non scaduti. Per uso in produzione durevole serve storage dedicato approvato.
 
 L'ambiente DEMO resta READ_ONLY su due schemi sintetici di Neon. I token demo scadono dopo 60 minuti e non possono essere prolungati tramite refresh senza una policy sorgente ancora valida.
+
+
+## Sessioni aziendali con ticket di bootstrap — V0.5.0 / Backend V1.5.0 (10/11/2026)
+
+Il pannello **05 — Sessione applicativa** prepara una prova isolata per due applicativi sul database sintetico Neon esistente, senza scritture e senza nuovi archivi:
+- identità aziendale demo OAuth con ruolo \`CONNECT_ONLY\`, nessun accesso ai dati;
+- \`APP_A\` autorizzata soltanto a \`laboratorio_a.casi\`, \`APP_B\` soltanto a \`laboratorio_b.catalogo\`;
+- il backend dell'applicativo usa la sua credenziale dedicata per \`POST /api/mcp-postgree/v1/session-bootstrap\` e ottiene un ticket monouso valido 5 minuti;
+- il bootstrap della chat include solo il ticket, mai il token OAuth aziendale né la credenziale dell'app;
+- chiamata iniziale dell'AI: \`CommandToMCPPostgree("{\"azione\":\"session.attach\",\"ticket\":\"mcp_ticket_...\"}")\`;
+- l'MCP verifica OAuth \`CONNECT_ONLY\`, azienda e allowlist di applicativi, associa applicativo e commessa e restituisce session token, Root generale e Root applicativa;
+- ogni comando successivo deve essere JSON con campo \`session\` e usa soltanto la policy del relativo applicativo, con filtro SQL aggiuntivo sul campo commessa;
+- senza session valida: \`session_required\`, senza permesso per lo schema: \`forbidden\`; \`session.close\` invalida il token;
+- i ticket e le sessioni sono volatili su Render Free, così come le autorizzazioni OAuth di prova. Un riavvio richiede un nuovo bootstrap.
+
+**Test in browser:** aprire il pannello 05, selezionare \`APP A\` e commessa \`1\`, generare il bootstrap; copiare il **token aziendale DEMO** soltanto nel modulo OAuth di ChatGPT/Claude quando si collega il connettore. Copiare il bootstrap nella nuova chat. Ripetere con \`APP B\`. Il token che identifica la commessa NON viene inserito nella schermata OAuth.
+
+**Sicurezza:** la modalità legacy con token senza CompanyId resta invariata. In modalità enterprise la policy \`CONNECT_ONLY\` non può leggere dati; il token dell'applicativo non è accettato per accesso diretto MCP né per login OAuth, solo per emettere ticket lato backend. Le Root di produzione provengono dalla configurazione riservata \`MCP_ACCESS_JSON\` e non ancora da Neon. Nessun database aziendale è stato collegato.

@@ -1,13 +1,14 @@
 "use strict";
 
 // Front V0.1.0 — incrementare la versione a ogni pubblicazione.
-const FRONT_VERSION = "0.4.0";
-const EXPECTED_SERVER_VERSION = "1.4.0";
+const FRONT_VERSION = "0.5.0";
+const EXPECTED_SERVER_VERSION = "1.5.0";
 const DEFAULT_SERVER_URL = "https://mcp-postgree.onrender.com";
 const TOOL_NAME = "CommandToMCPPostgree";
 const PAGE_INSTRUCTIONS = "https://github.com/Fetonte1960/sviluppo-pubblico/blob/main/commesse/MCP-postgree/ISTRUZIONI.md";
 const DEFAULT_TIMEOUT_MS = 125_000;
-const state = {baseUrl: "", wakeController: null, activeToken: "", tokenHash: "", sequence: 0};
+const state = {baseUrl: "", wakeController: null, activeToken: "", tokenHash: "", sequence: 0,
+  enterpriseToken: "", applicationTokens: Object.create(null), lastSessionPrompt: ""};
 const $ = id => document.getElementById(id);
 
 function setStatus(text, kind = "idle") {
@@ -362,6 +363,97 @@ function openChatGpt() {
   // Popup blockers may block the new window; fallback is copy prompt.
   void windowRef;
 }
+
+async function shaHex(token) {
+  const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
+  return hex(new Uint8Array(bytes));
+}
+function demoSecret() {
+  if (!globalThis.crypto?.getRandomValues || !crypto.subtle)
+    throw new Error("Richiesta connessione HTTPS con Web Crypto disponibile.");
+  return hex(crypto.getRandomValues(new Uint8Array(32)));
+}
+async function createDemoCredential(base, clientId, secret) {
+  const response = await fetch(base + "/demo/register", {
+    method: "POST", mode: "cors", cache: "no-store",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({tokenSha256: await shaHex(secret), clientId})
+  });
+  const doc = await response.json();
+  if (!response.ok || doc?.ok !== true)
+    throw new Error("Registrazione demo " + clientId + ": " + (doc?.error || "HTTP " + response.status));
+}
+async function createSessionBootstrap() {
+  const button = $("createSessionBtn");
+  button.disabled = true;
+  feedback("sessionFeedback", "Preparazione delle credenziali dimostrative...");
+  try {
+    const base = saveBaseIfValid();
+    if (base !== DEFAULT_SERVER_URL)
+      throw new Error("Le sessioni demo si attivano soltanto sul server di prova ufficiale.");
+    const app = $("sessionApp").value;
+    const commessa = $("sessionWorkOrder").value.trim();
+    if (!/^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$/.test(commessa))
+      throw new Error("Commessa: massimo 64 caratteri (lettere, numeri, _, -, .).");
+    if ($("connectionStatus").dataset.state !== "online" && !(await wakeServer()))
+      throw new Error("Impossibile contattare il backend demo.");
+    if (!state.enterpriseToken) {
+      const enterprise = demoSecret();
+      await createDemoCredential(base, "mcp-session-company", enterprise);
+      state.enterpriseToken = enterprise;
+    }
+    if (!state.applicationTokens[app]) {
+      const appToken = demoSecret();
+      await createDemoCredential(base, "mcp-session-app-" + app, appToken);
+      state.applicationTokens[app] = appToken;
+    }
+    const response = await fetch(base + "/api/mcp-postgree/v1/session-bootstrap", {
+      method: "POST", mode: "cors", cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + state.applicationTokens[app]
+      },
+      body: JSON.stringify({commessa})
+    });
+    const json = await response.json();
+    if (!response.ok || json?.ok !== true || !json.bootstrap)
+      throw new Error("Bootstrap rifiutato: " + (json?.error || "HTTP " + response.status));
+    state.lastSessionPrompt = [
+      "Sei l'assistente AI del gestionale demo " + (app === "a" ? "APP A (casi)" : "APP B (catalogo)") + ".",
+      "Connessione MCP: " + DEFAULT_SERVER_URL + "/mcp. Contratto unico: CommandToMCPPostgree(comando:string).",
+      "Il connettore deve essere collegato con OAuth aziendale, autorizzato sul modulo protetto del server.",
+      json.bootstrap,
+      "Il ticket e' monouso e scade in 5 minuti. Non inoltrare altri segreti.",
+      "Dopo l'aggancio usa solamente il token di sessione restituito; non accedere ad altri applicativi.",
+      "Se il tool non e' disponibile o la verifica fallisce, dichiara l'errore e non inventare risultati."
+    ].join("\n");
+    $("enterpriseToken").value = state.enterpriseToken;
+    $("sessionBootstrap").value = state.lastSessionPrompt;
+    $("sessionResults").hidden = false;
+    feedback("sessionFeedback", "Bootstrap generato: ticket valido 5 minuti, APP " + app.toUpperCase() +
+      ", commessa " + commessa + ". Collega OAuth con il token aziendale DEMO, poi passa il bootstrap alla chat.");
+  } catch (error) {
+    feedback("sessionFeedback", formatError(error));
+  } finally { button.disabled = false; }
+}
+function openSessionChat(platform) {
+  if (!state.lastSessionPrompt) return;
+  const url = platform === "claude"
+    ? "https://claude.ai/new?q=" + encodeURIComponent(state.lastSessionPrompt)
+    : "https://chatgpt.com/?q=" + encodeURIComponent(state.lastSessionPrompt);
+  window.open(url, "_blank", "noopener,noreferrer");
+  feedback("sessionFeedback", "Chat aperta se il browser lo consente. Copia il bootstrap manualmente se non viene precompilato.");
+}
+function clearSessionDemo() {
+  state.enterpriseToken = "";
+  state.applicationTokens = Object.create(null);
+  state.lastSessionPrompt = "";
+  $("enterpriseToken").value = "";
+  $("sessionBootstrap").value = "";
+  $("sessionResults").hidden = true;
+  feedback("sessionFeedback", "Dati di prova rimossi da questa pagina. Sessioni gia' agganciate scadono sul server.");
+}
+
 function installHandlers() {
   $("frontVersion").textContent = "V" + FRONT_VERSION;
   $("wakeBtn").addEventListener("click", wakeServer);
@@ -383,6 +475,14 @@ function installHandlers() {
   $("testMcpBtn").addEventListener("click", testMcp);
   $("clearTestTokenBtn").addEventListener("click", () => { $("testToken").value = ""; feedback("mcpFeedback", "Token rimosso."); });
   $("openGptBtn").addEventListener("click", openChatGpt);
+  $("createSessionBtn").addEventListener("click", createSessionBootstrap);
+  $("copyEnterpriseTokenBtn").addEventListener("click", () =>
+    copyText(state.enterpriseToken, "Token aziendale demo copiato. Incollalo solo nel form OAuth protetto.", "sessionFeedback"));
+  $("copySessionBootstrapBtn").addEventListener("click", () =>
+    copyText(state.lastSessionPrompt, "Bootstrap copiato: invialo alla chat con connettore già collegato.", "sessionFeedback"));
+  $("openSessionGptBtn").addEventListener("click", () => openSessionChat("gpt"));
+  $("openSessionClaudeBtn").addEventListener("click", () => openSessionChat("claude"));
+  $("clearSessionBtn").addEventListener("click", clearSessionDemo);
   $("copyEndpointBtn").addEventListener("click", () =>
     copyText(DEFAULT_SERVER_URL + "/mcp", "URL MCP copiato. In ChatGPT scegli OAuth.", "gptFeedback"));
   $("copyPromptBtn").addEventListener("click", () =>
