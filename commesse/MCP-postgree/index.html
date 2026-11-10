@@ -6,17 +6,17 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https: http://localhost:* http://127.0.0.1:*; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="description" content="MCP-postgree: password OAuth permanente su Render, connessione ChatGPT e Claude e laboratorio DEMO separato">
-  <title>MCP-postgree · Laboratorio v1.2.0</title>
-  <link rel="stylesheet" href="./styles.css?v=1.0.0">
-  <script defer src="./app.js?v=1.0.0"></script>
+  <title>MCP-postgree · Laboratorio v1.3.0</title>
+  <link rel="stylesheet" href="./styles.css?v=1.3.0">
+  <script defer src="./app.js?v=1.3.0"></script>
 </head>
 <body>
   <header class="topbar">
     <div class="topinner">
       <div class="identity"><span class="mark">M</span><div><strong>MCP-postgree</strong><small>Laboratorio MCP · PostgreSQL</small></div></div>
       <div class="versions" aria-label="Versioni e stato">
-        <span class="version"><span>Frontend</span><strong id="frontVersion">V1.2.0</strong></span>
-        <span class="version"><span>Server</span><strong id="serverVersion">V1.9.0 attesa</strong></span>
+        <span class="version"><span>Frontend</span><strong id="frontVersion">V1.3.0</strong></span>
+        <span class="version"><span>Server</span><strong id="serverVersion">V1.11.0 attesa</strong></span>
         <span id="connectionStatus" class="status" data-state="idle">Non configurato</span>
       </div>
     </div>
@@ -243,7 +243,17 @@
       <textarea id="catalogDescription" rows="2" maxlength="2000"></textarea>
       <label for="catalogSchemas">Schemi PostgreSQL del gestionale (separati da virgola)</label>
       <input id="catalogSchemas" spellcheck="false" placeholder="pratiche_fv, componenti">
-      <p class="hint">L'elenco è una definizione MASTER. Non garantisce che lo schema sia già presente nel database aziendale.</p>
+      <p class="hint">Il server applica esclusivamente la policy READ_ONLY dell'applicazione.</p>
+      <label for="catalogConnectionVariable">Nome variabile connection string nel gruppo Render</label>
+      <input id="catalogConnectionVariable" maxlength="128" spellcheck="false" placeholder="ConnectionStrings__PraticheFV" autocomplete="off">
+      <p class="hint">Nel MASTER viene memorizzato soltanto il nome; la connection string e la password restano nell'Environment Group di Render.</p>
+      <div class="two-fields">
+        <div><label for="catalogReadTable">Tabella dati consentita (schema.tabella)</label><input id="catalogReadTable" maxlength="129" spellcheck="false" placeholder="public.pv_practices"></div>
+        <div><label for="catalogScopeColumn">Colonna pratica / commessa (filtro obbligatorio)</label><input id="catalogScopeColumn" maxlength="63" spellcheck="false" placeholder="practice_key"></div>
+      </div>
+      <label for="catalogReadColumns">Colonne autorizzate READ_ONLY (separate da virgola)</label>
+      <input id="catalogReadColumns" spellcheck="false" placeholder="practice_key, display_name, created_at">
+      <p class="hint">La chat potrà leggere soltanto questa tabella e queste colonne, filtrate sulla pratica selezionata.</p>
       <div class="two-fields">
         <div><label for="catalogRootTable">Root table istruzioni (schema.tabella)</label><input id="catalogRootTable" maxlength="129" placeholder="pratiche_fv.istruzioni_ai" spellcheck="false"></div>
         <div><label for="catalogRootId">Documento Root</label><input id="catalogRootId" maxlength="128" spellcheck="false" placeholder="PRATICHE-FOTOVOLTAICO-ISTRUZIONI.md"></div>
@@ -262,11 +272,9 @@
       </div>
       <div class="catalog-launch-settings">
         <h3>Avvio chat di collaudo</h3>
-        <p class="hint">Il pulsante Avvia chat della griglia richiede una credenziale applicativa già autorizzata dal backend MCP e una commessa valida. La password Pannello MCP non genera ticket e non deve essere usata qui.</p>
-        <div class="two-fields">
-          <div><label for="catalogCommessa">Commessa / identificativo di prova</label><input id="catalogCommessa" value="1" maxlength="64" spellcheck="false"></div>
-          <div><label for="catalogAppCredential">Credenziale applicativa autorizzata (temporanea, mai salvata)</label><input id="catalogAppCredential" type="password" autocomplete="off" maxlength="1024" placeholder="Token backend del gestionale, non OAuth e non Pannello MCP"></div>
-        </div>
+        <p class="hint">Per il collaudo l'amministratore è già autenticato: non serve il Token 2. MCP crea un ticket READ_ONLY con identità applicativa e filtro pratica.</p>
+        <label for="catalogCommessa">Identificativo esatto della pratica / commessa</label>
+        <input id="catalogCommessa" value="1" maxlength="64" spellcheck="false">
         <p id="catalogLaunchFeedback" class="hint" role="status" aria-live="polite">Seleziona l'applicazione nella griglia e premi Avvia chat. Sarà copiato il bootstrap restituito dal server, solo dopo aver ricevuto un ticket monouso valido.</p>
         <div id="catalogCopyFallback" hidden>
           <label for="catalogBootstrapFallback">Bootstrap generato (copia manuale se il browser blocca gli appunti)</label>
@@ -292,7 +300,7 @@
     </div>
 
     <footer>
-      <div><strong>MCP-postgree · Front Test V1.2.0</strong><span>Contratto: CommandToMCPPostgree(comando)</span></div>
+      <div><strong>MCP-postgree · Front Test V1.3.0</strong><span>Contratto: CommandToMCPPostgree(comando)</span></div>
       <div><a href="./ISTRUZIONI.md" target="_blank" rel="noopener noreferrer">Istruzioni</a><a href="https://github.com/Fetonte1960/sviluppo-pubblico/tree/main/commesse/MCP-postgree" target="_blank" rel="noopener noreferrer">Artefatti pubblici</a></div>
     </footer>
   </main>

@@ -2,7 +2,7 @@
 
 // Front V0.1.0 — incrementare la versione a ogni pubblicazione.
 const FRONT_VERSION = "1.2.0";
-const EXPECTED_SERVER_VERSION = "1.10.0";
+const EXPECTED_SERVER_VERSION = "1.11.0";
 const DEFAULT_SERVER_URL = "https://mcp-postgree.onrender.com";
 const TOOL_NAME = "CommandToMCPPostgree";
 const PAGE_INSTRUCTIONS = "https://github.com/Fetonte1960/sviluppo-pubblico/blob/main/commesse/MCP-postgree/ISTRUZIONI.md";
@@ -603,7 +603,14 @@ async function catalogFetch(method, path = "", payload = null) {
   if (!reply.ok || value.ok !== true) {
     const errors = {catalog_not_configured:"Configura ConnectionStrings__Applications e MCP_REGISTRY_ADMIN_TOKEN su Render.",
       catalog_unavailable:"Il database applicazioni non risponde.",revision_conflict:"Scheda modificata altrove: ricarica prima di salvare.",
-      invalid_catalog_record:"Scheda non valida: verifica schemi, Root e bootstrap (deve contenere {{TICKET}}).",
+      invalid_catalog_record:"Scheda non valida: verifica variabile Render, tabella, colonne e Root.",
+      app_not_configured:"Scheda READ_ONLY incompleta o disabilitata.",
+      connection_variable_missing:"Variabile di connessione non presente su Render.",
+      invalid_read_policy:"Policy di lettura non valida.",
+      read_columns_missing:"Tabella o colonne non trovate nel database.",
+      invalid_commessa_or_policy:"Identificativo pratica non valido o policy mancante.",
+      admin_bootstrap_unavailable:"Avvio non riuscito: controlla il database e i log Render.",
+      bootstrap_unavailable:"Template bootstrap non disponibile.",
       constraint_violation:"Vincoli del catalogo non rispettati."};
     throw new Error(reply.status === 401 ? "Password amministrativa errata." :
       (errors[value.error] || "Errore archivio: HTTP " + reply.status));
@@ -672,7 +679,7 @@ async function launchCatalogChat(appCode, button) {
   clearCatalogBootstrap();
   if (!app || !app.enabled) {
     feedback("catalogLaunchFeedback", "Avvio non disponibile: la scheda " + appCode +
-      " è in bozza o non presente. Completa prima schemi, Root e abilitazione MASTER, poi configura una policy applicativa autorizzata.");
+      " è in bozza. Completa la policy READ_ONLY e abilitala nel registro MASTER.");
     return;
   }
   const commessa = $("catalogCommessa").value.trim();
@@ -681,29 +688,15 @@ async function launchCatalogChat(appCode, button) {
     $("catalogCommessa").focus();
     return;
   }
-  const appBearer = $("catalogAppCredential").value.trim();
-  if (!appBearer) {
-    feedback("catalogLaunchFeedback", "Serve una credenziale applicativa autorizzata dal backend per " +
-      appCode + ". La password Pannello MCP non è utilizzabile per generare ticket.");
-    $("catalogAppCredential").focus();
-    return;
-  }
   state.catalogLaunchBusy = true;
   button.disabled = true;
   feedback("catalogLaunchFeedback", "Richiesta al backend del ticket monouso per " + appCode + " / " + commessa + "...");
   try {
-    const origin = state.baseUrl || DEFAULT_SERVER_URL;
-    const reply = await fetch(origin + "/api/mcp-postgree/v1/session-bootstrap", {
-      method: "POST", mode: "cors", cache: "no-store",
-      headers: {"Content-Type":"application/json", "Authorization":"Bearer " + appBearer},
-      body: JSON.stringify({commessa, appCode})
-    });
-    const data = await reply.json().catch(() => ({}));
-    if (!reply.ok || data.ok !== true)
-      throw new Error("Backend rifiuta l'avvio (" + (data.error || "HTTP " + reply.status) +
-        "). Controlla che la credenziale e la policy siano autorizzate per questa applicazione.");
+    // MASTER admin is already authenticated: never request the application Token 2.
+    const data = await catalogFetch("POST",
+      "/" + encodeURIComponent(appCode) + "/test-bootstrap", {commessa, appCode});
     if (data.applicationId !== appCode)
-      throw new Error("Il backend non ha confermato l'identità dell'applicazione selezionata. Verifica che sia distribuito MCP-postgree V1.10.0 o successivo.");
+      throw new Error("Il backend non ha confermato l'identità dell'applicazione selezionata. Verifica il servizio MCP e la scheda MASTER.");
     if (typeof data.ticket !== "string" || !data.ticket.startsWith("mcp_ticket_") ||
         typeof data.bootstrap !== "string" || !data.bootstrap.includes(data.ticket) ||
         data.bootstrap.includes("{{TICKET}}"))
@@ -756,6 +749,10 @@ function clearCatalogForm() {
   $("catalogSchemas").value = "";
   $("catalogRootTable").value = "";
   $("catalogRootId").value = "";
+  $("catalogConnectionVariable").value = "";
+  $("catalogReadTable").value = "";
+  $("catalogScopeColumn").value = "";
+  $("catalogReadColumns").value = "";
   $("catalogEnabled").checked = false;
   $("catalogTemplate").value = [
     "Sei l'assistente AI del gestionale {{APP_NAME}} ({{APP_CODE}}).",
@@ -783,6 +780,10 @@ function showCatalogItem(item) {
   $("catalogSchemas").value = item.schemas.join(", ");
   $("catalogRootTable").value = item.rootTable;
   $("catalogRootId").value = item.rootId;
+  $("catalogConnectionVariable").value = item.connectionVariable || "";
+  $("catalogReadTable").value = item.readTable || "";
+  $("catalogScopeColumn").value = item.scopeColumn || "";
+  $("catalogReadColumns").value = (item.readColumns || []).join(", ");
   $("catalogEnabled").checked = item.enabled;
   $("catalogTemplate").value = item.aiBootstrapTemplate;
   $("catalogRevision").textContent = String(item.revision);
@@ -877,6 +878,10 @@ async function saveCatalog() {
       schemas:$("catalogSchemas").value.split(",").map(s => s.trim()).filter(Boolean),
       rootTable:$("catalogRootTable").value.trim(),
       rootId:$("catalogRootId").value.trim(),
+      connectionVariable:$("catalogConnectionVariable").value.trim(),
+      readTable:$("catalogReadTable").value.trim(),
+      scopeColumn:$("catalogScopeColumn").value.trim(),
+      readColumns:$("catalogReadColumns").value.split(",").map(s=>s.trim()).filter(Boolean),
       accessMode:"READ_ONLY",
       enabled:$("catalogEnabled").checked,
       aiBootstrapTemplate:$("catalogTemplate").value,
