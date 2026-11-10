@@ -1,4 +1,4 @@
-# MCP-postgree — istruzioni pubbliche (Front V1.1.0 / Backend V1.9.0 atteso)
+# MCP-postgree — istruzioni pubbliche (Front V1.2.0 / Backend V1.10.0)
 
 Endpoint MCP: https://mcp-postgree.onrender.com/mcp
 
@@ -41,3 +41,11 @@ La pagina di laboratorio presenta due tab: **Generale** per lo stato del server,
 Nel Registro, prima della verifica delle credenziali, rimangono visibili solo il campo **Password Pannello MCP**, il pulsante **Collega** e il messaggio di stato. Per collegarsi inserire `MCP_REGISTRY_ADMIN_TOKEN` (custodito in Render, distinto dalla credenziale OAuth) e premere **Collega**. Il backend verifica la credenziale ed esegue una lettura reale di `mcp_applications/public.applications` tramite API del catalogo. Solo dopo la risposta positiva appare l'elenco e la scheda, mentre password e pulsante diventano disabilitati. Un errore mantiene la schermata chiusa, mostrando il motivo.
 
 Il browser può offrire il salvataggio della credenziale nel proprio password manager con identificativo **Pannello MCP**, se supportato e consentito dalle impostazioni locali; il laboratorio non salva la password in localStorage o nel repository. Non confondere l'autenticazione al pannello con l'abilitazione di dati aziendali: restano separate le policy applicative e l'aggancio tramite ticket monouso.
+
+## Registro MASTER a griglia — Front V1.2.0 / Backend V1.10.0
+
+Dopo l'accesso al tab **Registro applicazioni**, il dettaglio editabile della scheda selezionata è **sopra** la griglia. Ogni riga mostra **Modifica** e **Avvia chat**. Modifica seleziona la scheda.
+
+**Avvia chat** copia il bootstrap completo **solo dopo** che il backend ha generato un ticket monouso valido. Il collaudo richiede una commessa e una credenziale applicativa autorizzata dal server, distinta dalla password Pannello MCP e dalla password OAuth. La credenziale applicativa non viene salvata nel browser; il backend verifica che il codice della riga corrisponda all'app autenticata. Il ticket e la scadenza sono controllati prima della copia. Se gli appunti sono bloccati, compare un campo per la copia manuale del bootstrap temporaneo. Non incollare le credenziali di accesso nelle chat AI.
+
+Le applicazioni MASTER in bozza (come `PRATICHE_FOTOVOLTAICO` finché non sono completati schemi, Root e policy) non possono generare ticket reali. L'eventuale abilitazione della scheda MASTER non sostituisce la policy server o l'autorizzazione OAuth dell'azienda. Per i dati sintetici resta disponibile il separato simulatore DEMO nella tab Generale.
