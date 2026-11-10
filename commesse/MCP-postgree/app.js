@@ -1,15 +1,16 @@
 "use strict";
 
 // Front V0.1.0 — incrementare la versione a ogni pubblicazione.
-const FRONT_VERSION = "1.1.0";
-const EXPECTED_SERVER_VERSION = "1.9.0";
+const FRONT_VERSION = "1.2.0";
+const EXPECTED_SERVER_VERSION = "1.10.0";
 const DEFAULT_SERVER_URL = "https://mcp-postgree.onrender.com";
 const TOOL_NAME = "CommandToMCPPostgree";
 const PAGE_INSTRUCTIONS = "https://github.com/Fetonte1960/sviluppo-pubblico/blob/main/commesse/MCP-postgree/ISTRUZIONI.md";
 const DEFAULT_TIMEOUT_MS = 125_000;
 const state = {baseUrl: "", wakeController: null, activeToken: "", tokenHash: "", sequence: 0,
   enterpriseToken: "", applicationTokens: Object.create(null), demoCatalog: Object.create(null),
-  lastSessionPrompt: "", lastSessionExpiresAt: 0, catalogRecords: Object.create(null), catalogRevision: 0};
+  lastSessionPrompt: "", lastSessionExpiresAt: 0, catalogRecords: Object.create(null), catalogRevision: 0,
+  catalogSelectedCode: "", catalogLaunchBusy: false, catalogLastBootstrap: "", catalogBootstrapExpiry: 0};
 const $ = id => document.getElementById(id);
 
 function setStatus(text, kind = "idle") {
@@ -610,7 +611,143 @@ async function catalogFetch(method, path = "", payload = null) {
   return value;
 }
 
+function clearCatalogBootstrap() {
+  state.catalogLastBootstrap = "";
+  state.catalogBootstrapExpiry = 0;
+  $("catalogBootstrapFallback").value = "";
+  $("catalogCopyFallback").hidden = true;
+}
+
+function renderCatalogGrid() {
+  const body = $("catalogGridBody");
+  if (!body) return;
+  body.replaceChildren();
+  const items = Object.values(state.catalogRecords).sort((a, b) => a.appCode.localeCompare(b.appCode));
+  $("catalogGridCount").textContent = items.length + (items.length === 1 ? " applicazione" : " applicazioni");
+  if (!items.length) {
+    const row = body.insertRow();
+    const cell = row.insertCell();
+    cell.colSpan = 6;
+    cell.textContent = "Nessuna applicazione registrata.";
+    return;
+  }
+  for (const item of items) {
+    const row = body.insertRow();
+    row.className = item.appCode === state.catalogSelectedCode ? "is-selected" : "";
+    row.setAttribute("aria-selected", String(item.appCode === state.catalogSelectedCode));
+    row.addEventListener("click", () => showCatalogItem(item));
+    for (const value of [item.appCode, item.appName, item.appVersion, item.enabled ? "Abilitata" : "Bozza", String(item.revision)]) {
+      const cell = row.insertCell();
+      cell.textContent = value;
+    }
+    const buttons = row.insertCell();
+    buttons.className = "catalog-row-actions";
+    const edit = document.createElement("button");
+    edit.type = "button";
+    edit.className = "secondary";
+    edit.textContent = "Modifica";
+    edit.setAttribute("aria-label", "Modifica " + item.appName);
+    edit.addEventListener("click", event => {
+      event.stopPropagation();
+      showCatalogItem(item);
+      $("catalogName").focus();
+    });
+    const launch = document.createElement("button");
+    launch.type = "button";
+    launch.className = "primary";
+    launch.textContent = "Avvia chat";
+    launch.setAttribute("aria-label", "Avvia chat con " + item.appName);
+    launch.addEventListener("click", event => {
+      event.stopPropagation();
+      showCatalogItem(item);
+      void launchCatalogChat(item.appCode, launch);
+    });
+    buttons.append(edit, launch);
+  }
+}
+
+async function launchCatalogChat(appCode, button) {
+  if (state.catalogLaunchBusy) return;
+  const app = state.catalogRecords[appCode];
+  clearCatalogBootstrap();
+  if (!app || !app.enabled) {
+    feedback("catalogLaunchFeedback", "Avvio non disponibile: la scheda " + appCode +
+      " è in bozza o non presente. Completa prima schemi, Root e abilitazione MASTER, poi configura una policy applicativa autorizzata.");
+    return;
+  }
+  const commessa = $("catalogCommessa").value.trim();
+  if (!/^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$/.test(commessa)) {
+    feedback("catalogLaunchFeedback", "Inserisci una commessa valida (lettere, numeri, _, - e .).");
+    $("catalogCommessa").focus();
+    return;
+  }
+  const appBearer = $("catalogAppCredential").value.trim();
+  if (!appBearer) {
+    feedback("catalogLaunchFeedback", "Serve una credenziale applicativa autorizzata dal backend per " +
+      appCode + ". La password Pannello MCP non è utilizzabile per generare ticket.");
+    $("catalogAppCredential").focus();
+    return;
+  }
+  state.catalogLaunchBusy = true;
+  button.disabled = true;
+  feedback("catalogLaunchFeedback", "Richiesta al backend del ticket monouso per " + appCode + " / " + commessa + "...");
+  try {
+    const origin = state.baseUrl || DEFAULT_SERVER_URL;
+    const reply = await fetch(origin + "/api/mcp-postgree/v1/session-bootstrap", {
+      method: "POST", mode: "cors", cache: "no-store",
+      headers: {"Content-Type":"application/json", "Authorization":"Bearer " + appBearer},
+      body: JSON.stringify({commessa, appCode})
+    });
+    const data = await reply.json().catch(() => ({}));
+    if (!reply.ok || data.ok !== true)
+      throw new Error("Backend rifiuta l'avvio (" + (data.error || "HTTP " + reply.status) +
+        "). Controlla che la credenziale e la policy siano autorizzate per questa applicazione.");
+    if (data.applicationId !== appCode)
+      throw new Error("Il backend non ha confermato l'identità dell'applicazione selezionata. Verifica che sia distribuito MCP-postgree V1.10.0 o successivo.");
+    if (typeof data.ticket !== "string" || !data.ticket.startsWith("mcp_ticket_") ||
+        typeof data.bootstrap !== "string" || !data.bootstrap.includes(data.ticket) ||
+        data.bootstrap.includes("{{TICKET}}"))
+      throw new Error("Il bootstrap non contiene un ticket applicativo valido; nessun testo copiato.");
+    const expiry = Date.parse(data.expiresAt);
+    if (!Number.isFinite(expiry) || expiry <= Date.now())
+      throw new Error("Ticket scaduto o senza data di scadenza valida.");
+    state.catalogLastBootstrap = data.bootstrap;
+    state.catalogBootstrapExpiry = expiry;
+    try {
+      await navigator.clipboard.writeText(data.bootstrap);
+      feedback("catalogLaunchFeedback", "Bootstrap con ticket monouso copiato negli appunti per " +
+        app.appName + ", commessa " + commessa + ". Incollalo in una chat con l'identità OAuth aziendale autorizzata entro " +
+        new Date(expiry).toLocaleTimeString("it-IT", {hour:"2-digit", minute:"2-digit"}) + ".");
+    } catch {
+      $("catalogBootstrapFallback").value = data.bootstrap;
+      $("catalogCopyFallback").hidden = false;
+      feedback("catalogLaunchFeedback", "Ticket generato, ma il browser ha bloccato gli appunti. Usa «Copia bootstrap generato» o seleziona il testo sottostante.");
+    }
+  } catch (error) {
+    feedback("catalogLaunchFeedback", "Avvia chat non riuscito: " + formatError(error));
+  } finally {
+    state.catalogLaunchBusy = false;
+    button.disabled = false;
+  }
+}
+
+async function copyCatalogFallback() {
+  if (!state.catalogLastBootstrap || Date.now() >= state.catalogBootstrapExpiry) {
+    clearCatalogBootstrap();
+    feedback("catalogLaunchFeedback", "Ticket scaduto: premi nuovamente Avvia chat per generarne uno.");
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(state.catalogLastBootstrap);
+    $("catalogCopyFallback").hidden = true;
+    feedback("catalogLaunchFeedback", "Bootstrap con ticket copiato. Incollalo subito nella chat autorizzata.");
+  } catch {
+    feedback("catalogLaunchFeedback", "Copia ancora bloccata: seleziona manualmente il testo della casella.");
+  }
+}
+
 function clearCatalogForm() {
+  state.catalogSelectedCode = "";
   state.catalogRevision = 0;
   $("catalogCode").value = "";
   $("catalogName").value = "";
@@ -630,11 +767,14 @@ function clearCatalogForm() {
   ].join("\n");
   $("catalogRevision").textContent = "nuova";
   $("catalogPreviewWrap").hidden = true;
+  clearCatalogBootstrap();
+  renderCatalogGrid();
   feedback("catalogFeedback", "Nuova scheda pronta. Salva solo dopo aver verificato tutti i campi.");
 }
 
 function showCatalogItem(item) {
   if (!item) return;
+  state.catalogSelectedCode = item.appCode;
   state.catalogRevision = item.revision;
   $("catalogCode").value = item.appCode;
   $("catalogName").value = item.appName;
@@ -647,6 +787,8 @@ function showCatalogItem(item) {
   $("catalogTemplate").value = item.aiBootstrapTemplate;
   $("catalogRevision").textContent = String(item.revision);
   $("catalogPreviewWrap").hidden = true;
+  clearCatalogBootstrap();
+  renderCatalogGrid();
   feedback("catalogFeedback", "Scheda " + item.appCode + " caricata. Puoi modificare il testo di bootstrap e salvare senza ripubblicare i frontend.");
 }
 
@@ -675,7 +817,9 @@ function setCatalogConnected(connected) {
   $("catalogFeedback").dataset.state = connected ? "online" : "idle";
   if (!connected) {
     state.catalogRecords = Object.create(null);
-    $("catalogSelect").replaceChildren(new Option("— Carica il catalogo —", ""));
+    state.catalogSelectedCode = "";
+    clearCatalogBootstrap();
+    renderCatalogGrid();
     state.catalogRevision = 0;
     $("catalogRevision").textContent = "—";
   }
@@ -693,18 +837,13 @@ async function loadCatalog(selectCode = null) {
     if (!Array.isArray(data.applications))
       throw new Error("Risposta del catalogo non valida.");
     state.catalogRecords = Object.create(null);
-    $("catalogSelect").replaceChildren(new Option("— Seleziona gestionale —", ""));
-    for (const entry of data.applications) {
-      state.catalogRecords[entry.appCode] = entry;
-      $("catalogSelect").append(new Option(entry.appName + " · " + entry.appCode +
-        (entry.enabled ? "" : " (bozza)"), entry.appCode));
-    }
+    for (const entry of data.applications) state.catalogRecords[entry.appCode] = entry;
+    renderCatalogGrid();
     const firstConnection = !state.catalogConnected;
     setCatalogConnected(true);
     if (firstConnection) offerBrowserPasswordSave();
-    const pick = selectCode || data.applications[0]?.appCode;
+    const pick = selectCode || state.catalogSelectedCode || data.applications[0]?.appCode;
     if (pick && state.catalogRecords[pick]) {
-      $("catalogSelect").value = pick;
       showCatalogItem(state.catalogRecords[pick]);
     } else {
       clearCatalogForm();
@@ -809,7 +948,7 @@ function installHandlers() {
   $("catalogNewBtn").addEventListener("click", clearCatalogForm);
   $("catalogSaveBtn").addEventListener("click", () => void saveCatalog());
   $("catalogPreviewBtn").addEventListener("click", previewCatalogBootstrap);
-  $("catalogSelect").addEventListener("change", () => showCatalogItem(state.catalogRecords[$("catalogSelect").value]));
+  $("catalogCopyFallbackBtn").addEventListener("click", () => void copyCatalogFallback());
   $("frontVersion").textContent = "V" + FRONT_VERSION;
   $("wakeBtn").addEventListener("click", wakeServer);
   $("cancelWakeBtn").addEventListener("click", () => state.wakeController?.abort());
