@@ -1,8 +1,8 @@
 "use strict";
 
-// Front V1.3.2 — incrementare la versione a ogni pubblicazione.
-const FRONT_VERSION = "1.3.2";
-const EXPECTED_SERVER_VERSION = "1.12.0";
+// Front V1.4.0 — incrementare la versione a ogni pubblicazione.
+const FRONT_VERSION = "1.4.0";
+const EXPECTED_SERVER_VERSION = "1.13.0";
 const DEFAULT_SERVER_URL = "https://mcp-postgree.onrender.com";
 const TOOL_NAME = "CommandToMCPPostgree";
 const PAGE_INSTRUCTIONS = "https://github.com/Fetonte1960/sviluppo-pubblico/blob/main/commesse/MCP-postgree/ISTRUZIONI.md";
@@ -608,7 +608,11 @@ async function catalogFetch(method, path = "", payload = null) {
       connection_variable_missing:"Variabile di connessione non presente su Render.",
       invalid_read_policy:"Policy di lettura non valida.",
       read_columns_missing:"Tabella o colonne non trovate nel database.",
-      invalid_commessa_or_policy:"Identificativo pratica non valido o policy mancante.",
+      invalid_app_policy:"Policy applicativa non valida.",
+      record_scope_not_allowed:"Non è ammesso un identificativo record nel ticket applicativo.",
+      schema_without_visible_tables:"Uno schema non contiene tabelle leggibili da questo account PostgreSQL.",
+      too_many_tables:"Oltre il limite di 256 tabelle leggibili.",
+      too_many_columns:"Oltre il limite di 256 colonne in una tabella.",
       admin_bootstrap_unavailable:"Avvio non riuscito: controlla il database e i log Render.",
       bootstrap_unavailable:"Template bootstrap non disponibile.",
       constraint_violation:"Vincoli del catalogo non rispettati."};
@@ -682,19 +686,13 @@ async function launchCatalogChat(appCode, button) {
       " è in bozza. Completa la policy READ_ONLY e abilitala nel registro MASTER.");
     return;
   }
-  const commessa = $("catalogCommessa").value.trim();
-  if (!/^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$/.test(commessa)) {
-    feedback("catalogLaunchFeedback", "Inserisci una commessa valida (lettere, numeri, _, - e .).");
-    $("catalogCommessa").focus();
-    return;
-  }
   state.catalogLaunchBusy = true;
   button.disabled = true;
-  feedback("catalogLaunchFeedback", "Richiesta al backend del ticket monouso per " + appCode + " / " + commessa + "...");
+  feedback("catalogLaunchFeedback", "Richiesta del ticket READ_ONLY per " + appCode + "...");
   try {
     // MASTER admin is already authenticated: never request the application Token 2.
     const data = await catalogFetch("POST",
-      "/" + encodeURIComponent(appCode) + "/test-bootstrap", {commessa, appCode});
+      "/" + encodeURIComponent(appCode) + "/test-bootstrap", {appCode});
     if (data.applicationId !== appCode)
       throw new Error("Il backend non ha confermato l'identità dell'applicazione selezionata. Verifica il servizio MCP e la scheda MASTER.");
     if (typeof data.ticket !== "string" || !data.ticket.startsWith("mcp_ticket_") ||
@@ -709,7 +707,7 @@ async function launchCatalogChat(appCode, button) {
     try {
       await navigator.clipboard.writeText(data.bootstrap);
       feedback("catalogLaunchFeedback", "Bootstrap con ticket monouso copiato negli appunti per " +
-        app.appName + ", commessa " + commessa + ". Incollalo in una chat con l'identità OAuth aziendale autorizzata entro " +
+        app.appName + ". Schemi READ_ONLY autorizzati dal MASTER. Incollalo nella chat MCP entro " +
         new Date(expiry).toLocaleTimeString("it-IT", {hour:"2-digit", minute:"2-digit"}) + ".");
     } catch {
       $("catalogBootstrapFallback").value = data.bootstrap;
@@ -750,16 +748,13 @@ function clearCatalogForm() {
   $("catalogRootTable").value = "";
   $("catalogRootId").value = "";
   $("catalogConnectionVariable").value = "";
-  $("catalogReadTable").value = "";
-  $("catalogScopeColumn").value = "";
-  $("catalogReadColumns").value = "";
   $("catalogEnabled").checked = false;
   $("catalogTemplate").value = [
     "Sei l'assistente AI del gestionale {{APP_NAME}} ({{APP_CODE}}).",
     "Connettore {{MCP_ENDPOINT}}, tool CommandToMCPPostgree(comando: string).",
     "Verifica la disponibilita' dello strumento. Non inventare esiti.",
     "Usa il ticket monouso: {\"azione\":\"session.attach\",\"ticket\":\"{{TICKET}}\"}.",
-    "Leggi la Root {{ROOT_ID}} e rispetta gli schemi autorizzati. Commessa: {{COMMESSA}}.",
+    "Leggi la Root {{ROOT_ID}} e rispetta gli schemi autorizzati dal server, senza vincolo a un singolo record.",
     "Solo READ_ONLY. Niente SQL libero e nessuna scrittura automatica."
   ].join("\n");
   $("catalogRevision").textContent = "nuova";
@@ -781,9 +776,6 @@ function showCatalogItem(item) {
   $("catalogRootTable").value = item.rootTable;
   $("catalogRootId").value = item.rootId;
   $("catalogConnectionVariable").value = item.connectionVariable || "";
-  $("catalogReadTable").value = item.readTable || "";
-  $("catalogScopeColumn").value = item.scopeColumn || "";
-  $("catalogReadColumns").value = (item.readColumns || []).join(", ");
   $("catalogEnabled").checked = item.enabled;
   $("catalogTemplate").value = item.aiBootstrapTemplate;
   $("catalogRevision").textContent = String(item.revision);
@@ -879,9 +871,6 @@ async function saveCatalog() {
       rootTable:$("catalogRootTable").value.trim(),
       rootId:$("catalogRootId").value.trim(),
       connectionVariable:$("catalogConnectionVariable").value.trim(),
-      readTable:$("catalogReadTable").value.trim(),
-      scopeColumn:$("catalogScopeColumn").value.trim(),
-      readColumns:$("catalogReadColumns").value.split(",").map(s=>s.trim()).filter(Boolean),
       accessMode:"READ_ONLY",
       enabled:$("catalogEnabled").checked,
       aiBootstrapTemplate:$("catalogTemplate").value,
