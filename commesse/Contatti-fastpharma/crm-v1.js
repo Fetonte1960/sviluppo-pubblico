@@ -10,9 +10,9 @@
  const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
  const fmt=v=>{if(!v)return "";let d=new Date(v);return Number.isFinite(d.getTime())?d.toLocaleString("it-IT",{dateStyle:"short",timeStyle:"short"}):String(v)};
  const models={
-  contacts:{title:"Contatti",single:"Contatto",group:"Anagrafiche",desc:"Persone, referenti e contatti commerciali.",
+  contacts:{title:"Contatti",single:"Contatto",group:"Commerciale",desc:"Referenti collegati all’organizzazione selezionata.",
    cols:[["first_name","Nome"],["last_name","Cognome"],["company","Azienda"],["email","Email"],["phone","Telefono"],["status","Stato"]],
-   fields:[["first_name","Nome","text",true],["last_name","Cognome","text",true],["organization_id","Organizzazione","org"],["company","Azienda (descrizione)","text"],["email","Email","email"],["phone","Telefono","tel"],["status","Stato","contactStatus"],["notes","Note","textarea"]],
+   fields:[["first_name","Nome","text",true],["last_name","Cognome","text",true],["organization_id","Organizzazione","org",true],["company","Azienda (descrizione)","text"],["email","Email","email"],["phone","Telefono","tel"],["status","Stato","contactStatus"],["notes","Note","textarea"]],
    titleOf:r=>[r.first_name,r.last_name].filter(Boolean).join(" "),subtitle:r=>r.email||r.company||"Persona / referente"},
   organizations:{title:"Organizzazioni",single:"Organizzazione",group:"Anagrafiche",desc:"Farmacie, aziende e partner collegati ai contatti.",
    cols:[["name","Organizzazione"],["type","Tipo"],["city","Città"],["phone","Telefono"],["email","Email"]],
@@ -37,16 +37,17 @@
  let data=structuredClone(demo),key=desktop?window.CONTATTI_DESKTOP.key:"",authenticated=false;
  let module="dashboard",screen="dashboard",activeId=null,tab="summary",editId=null,sortBy="",desc=false;
  let formModule="contacts",formContext=null;
- // La scelta nasce solo dall'apertura del dettaglio Organizzazione (V1.0.15).
+ // La scelta nasce solo dall'apertura del dettaglio Organizzazione (V1.0.16).
  let selectedOrganizationId=null;
  const selectedOrganization=()=>selectedOrganizationId&&getRecord("organizations",selectedOrganizationId);
- const commercial=k=>k==="activities"||k==="deals";
+ const commercial=k=>k==="contacts"||k==="activities"||k==="deals";
+ const commercialTitle=k=>k==="contacts"?"Contatti di: ":k==="activities"?"Attività di: ":"Trattative di: ";
  const belongsToOrganization=(r,id)=>String(r.organization_id||"")===String(id)||
   (!r.organization_id&&!!r.contact_id&&String(getRecord("contacts",r.contact_id)?.organization_id||"")===String(id));
  const clearOrganization=()=>{selectedOrganizationId=null;};
  const getRecord=(kind,id)=>(data[kind]||[]).find(r=>String(r.id)===String(id));
  const name=(kind,id)=>{const r=getRecord(kind,id);return r?models[kind].titleOf(r):""};
- // V1.0.12 — nome dell'organizzazione: collegamento diretto o tramite il referente.
+ // V1.0.16 — nome dell’organizzazione: collegamento diretto o tramite il referente.
  const organizationOf=r=>{
   const direct=r.organization_id&&getRecord("organizations",r.organization_id);
   if(direct?.name)return direct.name;
@@ -55,7 +56,7 @@
   if(indirect?.name)return indirect.name;
   return r.organization_id||contact?.organization_id?"Organizzazione non disponibile":"Nessuna organizzazione collegata";
  };
- const associatedTitle=(kind,r)=>(kind==="activities"?"Attività":"Trattativa")+" di: "+organizationOf(r);
+ const associatedTitle=(kind,r)=>(kind==="contacts"?"Contatto":kind==="activities"?"Attività":"Trattativa")+" di: "+organizationOf(r);
  const val=(field,value)=>{
   if(field==="organization_id")return name("organizations",value);
   if(field==="contact_id")return name("contacts",value);
@@ -110,7 +111,7 @@
   render();
   if(!archivesInitialized){
    archivesInitialized=true;
-   archivesFrame.src="./laboratorio.html?v=1.0.15";
+   archivesFrame.src="./laboratorio.html?v=1.0.16";
   }else shareArchiveSession();
  }
  function openModule(next){
@@ -155,7 +156,7 @@
   $("#breadcrumb").textContent=screen==="lists"?"CRM / Anagrafiche / Liste":screen==="archives"?"CRM / Amministrazione / Archivi":m?`CRM / ${m.group} / ${m.title}`:"CRM / Panoramica";
   $("#pageTitle").textContent=screen==="lists"?"Liste":screen==="archives"?"Salvataggio e ripristino archivi":
    commercial(module)&&selectedOrganization()?
-   (module==="activities"?"Attività di: ":"Trattative di: ")+selectedOrganization().name:m?m.title:"Dashboard";
+   commercialTitle(module)+selectedOrganization().name:m?m.title:"Dashboard";
   $("#pageSubtitle").textContent=screen==="lists"?"Elenchi esterni di enti pubblici e privati, separati dalle Organizzazioni.":screen==="archives"?"Backup e ripristino guidato dei soli dati Contatti.":m?m.desc:"Un unico punto per contatti, aziende e attività commerciali.";
   $("#newRecord").hidden=!m;$("#newRecord").disabled=!authenticated||(commercial(module)&&!selectedOrganization());
   $("#importFromLists").hidden=!(module==="organizations" && screen==="list");
@@ -177,7 +178,7 @@
     (!q||Object.values(r).join(" ").toLowerCase().includes(q)||[name("contacts",r.contact_id),name("organizations",r.organization_id)].join(" ").toLowerCase().includes(q)));
   if(sortBy)filtered.sort((a,b)=>String(val(sortBy,a[sortBy])).localeCompare(String(val(sortBy,b[sortBy])),"it",{numeric:true})*(desc?-1:1));
   $("#listTitle").textContent=commercial(module)&&selectedOrganization()?
-   (module==="activities"?"Attività di: ":"Trattative di: ")+selectedOrganization().name:m.title+" · List View";
+   commercialTitle(module)+selectedOrganization().name:m.title+" · List View";
   $("#recordCount").textContent=filtered.length+" record · "+(authenticated?"Archivio collegato":"Accesso richiesto");
   $("#recordsHead").innerHTML="<tr>"+m.cols.map(([field,label])=>`<th><button type="button" data-sort="${field}">${esc(label)} ${sortBy===field?(desc?"↓":"↑"):""}</button></th>`).join("")+"</tr>";
   $("#recordsBody").innerHTML=filtered.length?filtered.map(r=>`<tr tabindex="0" data-id="${esc(r.id)}">`+m.cols.map(([field],i)=>`<td class="${i===0?"primary-cell":""}">${esc(display(field,r)||"—")}</td>`).join("")+"</tr>").join(""):`<tr><td colspan="${m.cols.length}" class="empty-row">Nessun record trovato.</td></tr>`;
@@ -195,7 +196,7 @@
    screen="list";render();return;
   }
   $("#detailCaption").textContent=m.single+" · "+(authenticated?"Archivio collegato":"Accesso richiesto");
-  const hasOrganizationTitle=module==="activities"||module==="deals";
+  const hasOrganizationTitle=commercial(module);
   $("#detailTitle").textContent=hasOrganizationTitle?associatedTitle(module,r):m.titleOf(r);
   $("#detailSubtitle").textContent=hasOrganizationTitle?
    [m.titleOf(r),m.subtitle(r)].filter(Boolean).join(" · "):m.subtitle(r);
@@ -324,7 +325,7 @@
   $("#recordDialog").showModal();
  }
  function updateFormOrganizationTitle(){
-  if(!editId||!(formModule==="activities"||formModule==="deals"))return;
+  if(!editId||!commercial(formModule))return;
   const r={organization_id:$("#f_organization_id")?.value||"",contact_id:$("#f_contact_id")?.value||""};
   $("#dialogHeading").textContent=associatedTitle(formModule,r);
  }
