@@ -34,3 +34,24 @@
 .history-meta{text-align:right;min-width:115px}
 .history-meta b{font-size:12px;color:#15937a}
 @media(max-width:720px){.detail-action-buttons{justify-content:flex-start}.history-item{align-items:flex-start}}
+
+
+/* V1.0.3 Liste: navigation-independent registry, responsive filtering */
+.lists-overview{margin-bottom:22px}
+.lists-overview .surface-head{margin-bottom:15px}
+.lists-toolbar{display:flex;align-items:end;gap:14px;flex-wrap:wrap;margin:14px 0}
+.lists-toolbar label{font-size:12px;font-weight:700;display:grid;gap:7px;color:#536f82}
+.lists-toolbar select{min-width:270px;padding:10px;border:1px solid #dce5ed;border-radius:7px;background:#fff}
+.lists-toolbar .lists-upload{min-width:200px}
+.lists-toolbar input[type=file]{font-size:11px;max-width:270px}
+.lists-metadata{display:flex;align-items:center;flex-wrap:wrap;gap:8px 18px;padding:12px;background:#f3f8fa;border:1px solid #e5eff1;border-radius:8px;color:#52687a;font-size:12px}
+.lists-filters{display:flex;flex-wrap:wrap;gap:8px}
+.lists-filters input,.lists-filters select{min-height:36px;min-width:120px;max-width:200px}
+.lists-filters #listsSearch{min-width:220px}
+.lists-pages{display:flex;align-items:center;justify-content:flex-end;gap:12px}
+.lists-pages span{font-size:12px;color:#657f8e}
+#listsBody tr[data-list-index]{cursor:pointer}
+#listsBody tr[data-list-index]:hover{background:#f1faf7}
+.lists-entry-detail{padding:8px 18px 22px;max-height:65vh;overflow:auto}
+#listEntryDialog{width:min(820px,96vw)}
+@media(max-width:800px){.lists-toolbar label,.lists-toolbar select{width:100%}.lists-filters input,.lists-filters select{max-width:100%;width:100%}.lists-pages{justify-content:space-between}}
