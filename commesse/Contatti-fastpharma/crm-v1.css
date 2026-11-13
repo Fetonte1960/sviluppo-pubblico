@@ -129,3 +129,57 @@
 
 /* V1.0.12 — titolo per organizzazione leggibile anche con ragioni sociali lunghe. */
 .detail-hero h2,.dialog-title h2{overflow-wrap:anywhere}
+
+
+/* V1.0.14 — Importa da Liste: testata, conferma ed errori sempre visibili.
+   Solo il corpo della finestra scorre, indipendentemente dalla lista dei risultati. */
+.org-import-dialog{
+  height:min(850px,calc(100dvh - 28px));
+  max-height:calc(100dvh - 28px);
+  padding:0;
+  overflow:hidden;
+}
+.org-import-dialog[open]{display:flex;flex-direction:column}
+.org-import-dialog > .dialog-title{
+  flex:0 0 auto;
+  padding:20px 24px 14px;
+  margin:0;
+  border-bottom:1px solid #edf1f4;
+}
+.org-import-dialog .org-import-content{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-gutter:stable;
+  padding:14px 24px 12px;
+}
+.org-import-dialog .org-import-list{max-height:30dvh;min-height:140px}
+.org-import-dialog .org-import-preview{margin:12px 0 4px}
+.org-import-dialog > .dialog-actions{
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  margin:0;
+  padding:13px 24px 16px;
+  border-top:1px solid #dce8ed;
+  background:#fff;
+  box-shadow:0 -5px 14px rgba(30,64,78,.06);
+}
+.org-import-dialog > .dialog-actions #orgImportError{
+  margin:0 auto 0 0;
+  max-width:50%;
+  line-height:1.4;
+}
+.org-import-dialog > .dialog-actions #orgImportError:empty{display:none}
+@media(max-width:780px){
+  .org-import-dialog{padding:0}
+  .org-import-dialog > .dialog-title{padding:15px 16px 12px}
+  .org-import-dialog .org-import-content{padding:12px 16px}
+  .org-import-dialog > .dialog-actions{padding:12px 16px;flex-wrap:wrap}
+  .org-import-dialog > .dialog-actions #orgImportError:not(:empty){width:100%;max-width:none}
+}
+@media(max-width:520px){
+  .org-import-dialog > .dialog-actions .primary,
+  .org-import-dialog > .dialog-actions .secondary{white-space:normal}
+}
