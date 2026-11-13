@@ -3,20 +3,20 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>FastPharma V1.0.9 — Salvataggio e ripristino archivi</title>
-  <link rel="stylesheet" href="./archivi.css?v=1.0.9">
-  <script defer src="./config.js?v=1.0.9"></script>
-  <script defer src="./archivi.js?v=1.0.9"></script>
+  <title>FastPharma V1.0.10 — Salvataggio e ripristino archivi</title>
+  <link rel="stylesheet" href="./archivi.css?v=1.0.10">
+  <script defer src="./config.js?v=1.0.10"></script>
+  <script defer src="./archivi.js?v=1.0.10"></script>
 </head>
 <body>
   <main class="archive-page">
     <section id="accessBox" class="archive-access" hidden>
-      <p>Per salvare o ripristinare l'archivio di collaudo, apri prima il CRM con la chiave TEST.
+      <p>Per salvare o ripristinare gli archivi, accedi prima a Gestione contatti.
       Se hai aperto direttamente questa pagina, inserisci la chiave qui.</p>
       <form id="accessForm" autocomplete="off">
-        <label for="accessKey">Chiave archivio TEST</label>
+        <label for="accessKey">Chiave di accesso agli archivi</label>
         <div class="inline-fields">
-          <input type="password" id="accessKey" autocomplete="off" placeholder="Chiave di collaudo">
+          <input type="password" id="accessKey" autocomplete="off" placeholder="Chiave di accesso">
           <button type="submit" id="accessButton">Accedi</button>
         </div>
       </form>
@@ -47,7 +47,7 @@
         </label>
         <div class="button-row">
           <button id="prepareFile" class="secondary" type="button" disabled>Verifica backup selezionato</button>
-          <button id="prepareCloud" class="secondary" type="button" disabled>Recupera copia da Neon TEST</button>
+          <button id="prepareCloud" class="secondary" type="button" disabled>Recupera copia dal cloud</button>
         </div>
         <div id="restorePreview" class="preview" hidden>
           <h3>Anteprima del ripristino</h3>
@@ -62,7 +62,7 @@
 
       <p id="restoreCloudUnavailable" class="help" hidden>
         Il ripristino automatico è disponibile soltanto nell'installazione locale.
-        Nell'ambiente cloud TEST puoi effettuare il backup; non è abilitata la sostituzione del database Neon.
+        Da questa pagina puoi scaricare una copia degli archivi; il ripristino è disponibile solo sull'installazione locale autorizzata.
       </p>
       <p id="restoreStatus" class="operation-status" role="status" aria-live="polite"></p>
     </section>
