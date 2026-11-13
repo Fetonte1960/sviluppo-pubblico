@@ -37,6 +37,13 @@
  let data=structuredClone(demo),key=desktop?window.CONTATTI_DESKTOP.key:"",authenticated=false;
  let module="dashboard",screen="dashboard",activeId=null,tab="summary",editId=null,sortBy="",desc=false;
  let formModule="contacts",formContext=null;
+ // La scelta nasce solo dall'apertura del dettaglio Organizzazione (V1.0.13).
+ let selectedOrganizationId=null;
+ const selectedOrganization=()=>selectedOrganizationId&&getRecord("organizations",selectedOrganizationId);
+ const commercial=k=>k==="activities"||k==="deals";
+ const belongsToOrganization=(r,id)=>String(r.organization_id||"")===String(id)||
+  (!r.organization_id&&!!r.contact_id&&String(getRecord("contacts",r.contact_id)?.organization_id||"")===String(id));
+ const clearOrganization=()=>{selectedOrganizationId=null;};
  const getRecord=(kind,id)=>(data[kind]||[]).find(r=>String(r.id)===String(id));
  const name=(kind,id)=>{const r=getRecord(kind,id);return r?models[kind].titleOf(r):""};
  // V1.0.12 — nome dell'organizzazione: collegamento diretto o tramite il referente.
@@ -99,36 +106,42 @@
  });
  function openArchives(){
   if(!authenticated)return; // Pannello amministrativo accessibile solo dopo autenticazione.
-  module="archives";screen="archives";activeId=null;
+  clearOrganization();module="archives";screen="archives";activeId=null;
   render();
   if(!archivesInitialized){
    archivesInitialized=true;
-   archivesFrame.src="./laboratorio.html?v=1.0.11";
+   archivesFrame.src="./laboratorio.html?v=1.0.13";
   }else shareArchiveSession();
  }
  function openModule(next){
   if(!authenticated && next!=="dashboard")return;
-  if(next==="lists"){module="lists";screen="lists";activeId=null;render();return;}
+  if(commercial(next)&&!selectedOrganization())return;
+  if(next==="lists"){clearOrganization();module="lists";screen="lists";activeId=null;render();return;}
   if(next!=="dashboard"&&!models[next])return;
+  if(!commercial(next))clearOrganization();
   module=next;screen=next==="dashboard"?"dashboard":"list";activeId=null;sortBy="";desc=false;
   $("#recordSearch").value="";$("#recordFilter").value="";render();
  }
  function render(){
   // Dashboard: unico percorso d'accesso prima della verifica della chiave.
   if(!authenticated && screen!=="dashboard"){
-   module="dashboard";screen="dashboard";activeId=null;
+   clearOrganization();module="dashboard";screen="dashboard";activeId=null;
+  }
+  if(selectedOrganizationId&&!selectedOrganization())clearOrganization();
+  if(commercial(module)&&!selectedOrganization()){
+   module="organizations";screen="list";activeId=null;
   }
   $$(".navlink").forEach(b=>{
    const requiresAccess=b.dataset.module!=="dashboard";
-   b.disabled=requiresAccess && !authenticated;
+   b.disabled=(requiresAccess&&!authenticated)||(commercial(b.dataset.module)&&!selectedOrganization());
    b.setAttribute("aria-disabled",String(b.disabled));
    b.classList.toggle("is-active",b.dataset.module===module);
   });
   $("#archivesNav").disabled=!authenticated;
   $("#archivesNav").setAttribute("aria-disabled",String(!authenticated));
   $$("[data-jump]").forEach(b=>{
-   b.disabled=!authenticated;
-   b.setAttribute("aria-disabled",String(!authenticated));
+   b.disabled=!authenticated||(commercial(b.dataset.jump)&&!selectedOrganization());
+   b.setAttribute("aria-disabled",String(b.disabled));
   });
   $(".main")?.classList.toggle("is-locked",!authenticated);
   $("#dashboard").hidden=screen!=="dashboard";
@@ -140,9 +153,11 @@
   $("#archivesNav").classList.toggle("is-active",screen==="archives");
   const m=models[module];
   $("#breadcrumb").textContent=screen==="lists"?"CRM / Anagrafiche / Liste":screen==="archives"?"CRM / Amministrazione / Archivi":m?`CRM / ${m.group} / ${m.title}`:"CRM / Panoramica";
-  $("#pageTitle").textContent=screen==="lists"?"Liste":screen==="archives"?"Salvataggio e ripristino archivi":m?m.title:"Dashboard";
+  $("#pageTitle").textContent=screen==="lists"?"Liste":screen==="archives"?"Salvataggio e ripristino archivi":
+   commercial(module)&&selectedOrganization()?
+   (module==="activities"?"Attività di: ":"Trattative di: ")+selectedOrganization().name:m?m.title:"Dashboard";
   $("#pageSubtitle").textContent=screen==="lists"?"Elenchi esterni di enti pubblici e privati, separati dalle Organizzazioni.":screen==="archives"?"Backup e ripristino guidato dei soli dati Contatti.":m?m.desc:"Un unico punto per contatti, aziende e attività commerciali.";
-  $("#newRecord").hidden=!m;$("#newRecord").disabled=!authenticated;
+  $("#newRecord").hidden=!m;$("#newRecord").disabled=!authenticated||(commercial(module)&&!selectedOrganization());
   $("#importFromLists").hidden=!(module==="organizations" && screen==="list");
   $("#importFromLists").disabled=!authenticated;
   $("#newRecord").textContent=m?"+ Aggiungi "+m.single:"+ Aggiungi";
@@ -151,7 +166,8 @@
   if(screen==="lists")window.FastPharmaLists?.open({key:authenticated?key:"",base});
  }
  function list(){
-  const m=models[module],raw=data[module].slice();
+  const m=models[module],raw=data[module].filter(r=>!commercial(module)||
+   (selectedOrganization()&&belongsToOrganization(r,selectedOrganizationId)));
   const filterField=module==="organizations"?"type":module==="deals"?"stage":"status";
   const old=$("#recordFilter").value,filterValues=[...new Set(raw.map(r=>r[filterField]).filter(Boolean))].sort();
   $("#recordFilter").innerHTML='<option value="">Tutti gli stati / tipi</option>'+filterValues.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join("");
@@ -160,15 +176,24 @@
   let filtered=raw.filter(r=>(!$("#recordFilter").value||r[filterField]===$("#recordFilter").value)&&
     (!q||Object.values(r).join(" ").toLowerCase().includes(q)||[name("contacts",r.contact_id),name("organizations",r.organization_id)].join(" ").toLowerCase().includes(q)));
   if(sortBy)filtered.sort((a,b)=>String(val(sortBy,a[sortBy])).localeCompare(String(val(sortBy,b[sortBy])),"it",{numeric:true})*(desc?-1:1));
-  $("#listTitle").textContent=m.title+" · List View";
+  $("#listTitle").textContent=commercial(module)&&selectedOrganization()?
+   (module==="activities"?"Attività di: ":"Trattative di: ")+selectedOrganization().name:m.title+" · List View";
   $("#recordCount").textContent=filtered.length+" record · "+(authenticated?"Archivio collegato":"Accesso richiesto");
   $("#recordsHead").innerHTML="<tr>"+m.cols.map(([field,label])=>`<th><button type="button" data-sort="${field}">${esc(label)} ${sortBy===field?(desc?"↓":"↑"):""}</button></th>`).join("")+"</tr>";
   $("#recordsBody").innerHTML=filtered.length?filtered.map(r=>`<tr tabindex="0" data-id="${esc(r.id)}">`+m.cols.map(([field],i)=>`<td class="${i===0?"primary-cell":""}">${esc(display(field,r)||"—")}</td>`).join("")+"</tr>").join(""):`<tr><td colspan="${m.cols.length}" class="empty-row">Nessun record trovato.</td></tr>`;
  }
- function openRecord(id){if(!authenticated||!getRecord(module,id))return;activeId=id;tab="summary";screen="detail";render()}
+ function openRecord(id){
+  if(!authenticated||!getRecord(module,id))return;
+  if(module==="organizations")selectedOrganizationId=id;
+  if(commercial(module)&&(!selectedOrganization()||
+   !belongsToOrganization(getRecord(module,id),selectedOrganizationId)))return;
+  activeId=id;tab="summary";screen="detail";render();
+ }
  function detail(){
   const m=models[module],r=getRecord(module,activeId);
-  if(!r){screen="list";render();return}
+  if(!r||(commercial(module)&&!belongsToOrganization(r,selectedOrganizationId))){
+   screen="list";render();return;
+  }
   $("#detailCaption").textContent=m.single+" · "+(authenticated?"Archivio collegato":"Accesso richiesto");
   const hasOrganizationTitle=module==="activities"||module==="deals";
   $("#detailTitle").textContent=hasOrganizationTitle?associatedTitle(module,r):m.titleOf(r);
@@ -176,7 +201,7 @@
    [m.titleOf(r),m.subtitle(r)].filter(Boolean).join(" · "):m.subtitle(r);
   $("#editRecord").disabled=!authenticated;
   $("#deleteRecord").disabled=!authenticated;
-  const canAddActivity=module==="contacts"||module==="organizations";
+  const canAddActivity=module==="organizations";
   for(const action of ["#logCall","#planFollowup"]){
    $(action).hidden=!canAddActivity;
    $(action).disabled=!authenticated;
@@ -195,7 +220,7 @@
  }
  function activityTimeline(kind,recordId){
   const history=data.activities.filter(activity=>
-   kind==="contacts"?activity.contact_id===recordId:activity.organization_id===recordId
+   kind==="contacts"?activity.contact_id===recordId:belongsToOrganization(activity,recordId)
   ).sort((a,b)=>String(b.due_at||b.created_at||"").localeCompare(String(a.due_at||a.created_at||"")));
   return '<section class="activity-history">'+
    '<div class="history-title"><h3>Storico attività ('+history.length+')</h3>'+
@@ -211,7 +236,7 @@
    '</section>';
  }
  function startActivityFromSheet(type){
-  if(!authenticated || screen!=="detail" || !["contacts","organizations"].includes(module))return;
+  if(!authenticated || screen!=="detail" || module!=="organizations" || !selectedOrganization())return;
   const source=getRecord(module,activeId);
   if(!source)return;
   const context={module,id:activeId,
@@ -230,7 +255,7 @@
    else if(kind==="contacts")linked[kind]=data.contacts.filter(c=>module==="organizations"?c.organization_id===r.id:c.id===r.contact_id);
    else linked[kind]=data[kind].filter(x=>{
     if(module==="contacts")return x.contact_id===r.id;
-    if(module==="organizations")return x.organization_id===r.id;
+    if(module==="organizations")return belongsToOrganization(x,r.id);
     return (!!r.contact_id&&x.contact_id===r.contact_id)||(!!r.organization_id&&x.organization_id===r.organization_id);
    });
   }
@@ -258,6 +283,9 @@
  function showForm(id=null,settings={}){
   if(!authenticated){showNotice("Accedi agli archivi per apportare modifiche.",true);return}
   formModule=settings.target||module;
+  if(commercial(formModule)&&!selectedOrganization()){
+   showNotice("Apri prima il dettaglio di un'Organizzazione.",true);return;
+  }
   formContext=settings.context||null;
   editId=id;
   const m=models[formModule],r=id?getRecord(formModule,id):null;
@@ -267,10 +295,12 @@
   const defaults=context?{
    contact_id:context.contactId||"",organization_id:context.organizationId||"",
    ...context.defaults,
-   subject:(context.defaults.type==="Richiamo"?"Richiamare: ":"Telefonata: ")+
-     (home?models[context.module].titleOf(home):"")
-  }:{};
-  const selectedOrg=r?.organization_id??defaults.organization_id??"";
+   ...(formModule==="activities"&&context.defaults.type?{
+     subject:(context.defaults.type==="Richiamo"?"Richiamare: ":"Telefonata: ")+
+       (home?models[context.module].titleOf(home):"")
+   }:{})
+  }:commercial(formModule)?{organization_id:selectedOrganizationId}:{};
+  const selectedOrg=commercial(formModule)?selectedOrganizationId:(r?.organization_id??defaults.organization_id??"");
   $("#dialogHeading").textContent=(id?"Modifica ":(["activities","organizations","deals"].includes(formModule)?"Nuova ":"Nuovo "))+m.single;
   $("#dialogError").textContent="";
   $("#formFields").innerHTML=m.fields.map(([field,label,type,required])=>{
@@ -285,13 +315,10 @@
    else input=`<input type="${type==="email"?"email":type==="tel"?"tel":"text"}" ${attr} maxlength="${field==="email"?254:field==="name"||field==="address"?field==="name"?300:400:field==="subject"?200:field==="company"?180:field==="region"||field==="province"||field==="city"?150:field==="postal_code"?20:field==="vat_number"?50:120}" value="${esc(value)}">`;
    return `<label class="${type==="textarea"?"wide":""}" for="f_${field}">${esc(label)}${required?" *":""}${input}</label>`;
   }).join("");
-  if(formModule==="activities"){
-   if(context?.module==="contacts"){
-    $("#f_contact_id").disabled=true;
-    $("#f_organization_id").disabled=true;
-   }else if(context?.module==="organizations"){
-    $("#f_organization_id").disabled=true;
-   }
+  if(commercial(formModule)){
+   $("#f_organization_id").value=selectedOrganizationId;
+   $("#f_organization_id").disabled=true;
+   if(formModule==="activities"&&context?.module==="contacts")$("#f_contact_id").disabled=true;
   }
   updateFormOrganizationTitle();
   $("#recordDialog").showModal();
@@ -302,7 +329,7 @@
   $("#dialogHeading").textContent=associatedTitle(formModule,r);
  }
  function syncActivityLinks(event){
-  if(formModule!=="activities")return;
+  if(!commercial(formModule))return;
   const org=$("#f_organization_id"),contact=$("#f_contact_id");
   if(!org||!contact)return;
   if(event.target===contact){
@@ -413,11 +440,20 @@
   event.preventDefault();if(!authenticated)return;
   const payload={};
   const target=formModule;
+  if(commercial(target)&&!selectedOrganization()){
+   $("#dialogError").textContent="Organizzazione di lavoro non più disponibile.";return;
+  }
   for(const [field,,type] of models[target].fields){
    let value=$("#f_"+field)?.value.trim()||"";
    if(type==="datetime-local"&&value)value=new Date(value).toISOString();
    if(field==="value"&&!value)value="0";
    payload[field]=value||null;
+  }
+  if(commercial(target)){
+   payload.organization_id=selectedOrganizationId;
+   if(payload.contact_id&&String(getRecord("contacts",payload.contact_id)?.organization_id||"")!==String(selectedOrganizationId)){
+    $("#dialogError").textContent="Il contatto scelto non appartiene all'organizzazione selezionata.";return;
+   }
   }
   const url="/api/v1/"+target+(editId?"/"+encodeURIComponent(editId):"");
   $("#submitRecord").disabled=true;$("#dialogError").textContent="";
@@ -429,7 +465,7 @@
    $("#recordDialog").close();
    const originalContext=formContext;
    formContext=null;
-   if(originalContext){
+   if(originalContext&&originalContext.returnTo!==false){
     module=originalContext.module;
     activeId=originalContext.id;
    }else{
@@ -614,15 +650,23 @@
    if(token!==deleteRequestId||!deleteDialog.open)return;
    deletePreview=result;
    const linked=Object.entries(result.linked||{}).filter(([,count])=>Number(count)>0);
-   if(linked.length){
-    $("#deleteDependencyStatus").textContent=
-      "Cancellazione non consentita: "+linked.map(([kind,count])=>count+" "+kind).join(", ")+
+   if(result.cascade){
+    $("#deleteDependencyStatus").textContent="La cancellazione comprenderà questa Organizzazione e "+
+     (linked.length?linked.map(([kind,count])=>count+" "+kind).join(", ")+" collegati. ":"nessun altro record. ")+
+     "Le Liste ministeriali resteranno intatte.";
+    $("#deleteConfirmText").textContent=
+     "Confermo di cancellare definitivamente l'organizzazione con tutti i Contatti, le Attività e le Trattative collegati.";
+    deleteCheck.disabled=false;
+   }else if(linked.length){
+    $("#deleteDependencyStatus").textContent="Cancellazione non consentita: "+
+      linked.map(([kind,count])=>count+" "+kind).join(", ")+
       " collegati. Eliminali o riassegnali prima di riprovare.";
     deleteCheck.checked=false;deleteCheck.disabled=true;
    }else{
     $("#deleteDependencyStatus").textContent=
       "Nessun collegamento bloccante. Verrà eliminata soltanto questa scheda; "+
       "le Liste ministeriali resteranno intatte.";
+    $("#deleteConfirmText").textContent="Confermo di voler cancellare definitivamente questo singolo record.";
     deleteCheck.disabled=false;
    }
    syncDeleteButton();
@@ -643,19 +687,26 @@
    const response=await fetch(base+"/api/v1/"+encodeURIComponent(target.module)+"/"+
      encodeURIComponent(target.id),{
       method:"DELETE",
-      headers:{"X-Demo-Key":key,"X-Confirm-Delete":"true"},
+      headers:{"X-Demo-Key":key,"X-Confirm-Delete":"true",
+       ...(target.module==="organizations"?{"X-Confirm-Cascade":"true"}:{})},
       signal:AbortSignal.timeout(20000)
    });
    const result=await response.json().catch(()=>({}));
    if(!response.ok)throw new Error(result.error||"Cancellazione non riuscita (HTTP "+response.status+").");
    // Il server ha confermato la DELETE. Non riprovare se il refresh rete fallisce.
    deleteDialog.close();resetDelete();
+   if(target.module==="organizations")clearOrganization();
    module=target.module;activeId=null;screen="list";
    data[target.module]=data[target.module].filter(r=>String(r.id)!==String(target.id));
    render();
-   showNotice(target.title+" eliminato dall'archivio "+models[target.module].title+".");
+   showNotice(target.title+" eliminato dall'archivio "+models[target.module].title+
+    (target.module==="organizations"?" con i record collegati.":"."));
    try{
-    data[target.module]=await get("/api/v1/"+target.module);
+    if(target.module==="organizations"){
+     const kinds=Object.keys(models);
+     const incoming=await Promise.all(kinds.map(k=>get("/api/v1/"+k)));
+     data=Object.fromEntries(kinds.map((k,i)=>[k,incoming[i]]));
+    }else data[target.module]=await get("/api/v1/"+target.module);
     if(module===target.module&&screen==="list")render();
    }catch(error){
     showNotice("Cancellazione eseguita; elenco non aggiornato dal server: "+error.message,true);
@@ -694,8 +745,16 @@
  $$(".navlink[data-module]").forEach(b=>b.addEventListener("click",()=>openModule(b.dataset.module)));
  $("#archivesNav").addEventListener("click",openArchives);
  $$("[data-jump]").forEach(b=>b.addEventListener("click",()=>openModule(b.dataset.jump)));
- $("#newRecord").addEventListener("click",()=>showForm());
- $("#backToList").addEventListener("click",()=>{screen="list";activeId=null;render()});
+ $("#newRecord").addEventListener("click",()=>{
+  if(commercial(module)&&selectedOrganization())
+   showForm(null,{context:{module:"organizations",id:selectedOrganizationId,
+    organizationId:selectedOrganizationId,returnTo:false,defaults:{}}});
+  else showForm();
+ });
+ $("#backToList").addEventListener("click",()=>{
+  if(module==="organizations")clearOrganization();
+  screen="list";activeId=null;render();
+ });
  $("#editRecord").addEventListener("click",()=>showForm(activeId));
  $("#logCall").addEventListener("click",()=>startActivityFromSheet("Telefonata"));
  $("#planFollowup").addEventListener("click",()=>startActivityFromSheet("Richiamo"));
@@ -708,6 +767,9 @@
  $$(".tab").forEach(b=>b.addEventListener("click",()=>{tab=b.dataset.tab;detail()}));
  $("#detailContent").addEventListener("click",e=>{
   const b=e.target.closest("button[data-kind]");if(!b)return;
+  if(b.dataset.kind==="organizations")selectedOrganizationId=b.dataset.id;
+  if(commercial(b.dataset.kind)&&(!selectedOrganization()||
+   !belongsToOrganization(getRecord(b.dataset.kind,b.dataset.id)||{},selectedOrganizationId)))return;
   module=b.dataset.kind;activeId=b.dataset.id;screen="detail";tab="summary";render();
  });
  $("#recordForm").addEventListener("submit",save);
