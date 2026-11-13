@@ -96,7 +96,7 @@
   render();
   if(!archivesInitialized){
    archivesInitialized=true;
-   archivesFrame.src="./laboratorio.html?v=1.0.3";
+   archivesFrame.src="./laboratorio.html?v=1.0.4";
   }else shareArchiveSession();
  }
  function openModule(next){
@@ -297,7 +297,9 @@
    $("#accessSection").classList.add("connected");
    $("#accessMessage").textContent="Archivio PostgreSQL TEST collegato. Non inserire dati personali reali.";
    $("#connectionBadge").textContent="Archivio TEST collegato";$("#connectionBadge").classList.add("connected");
-   $("#demoKey").value="";
+   // Mantieni il campo nel form ora nascosto: Chrome può riconoscere
+   // l'accesso riuscito e proporre il salvataggio nel proprio gestore password.
+   // La web app non scrive alcun segreto in storage o cookie.
    loginStatus("Accesso riuscito: archivio TEST collegato.");
    showNotice("Accesso riuscito: ora visualizzi i dati del database TEST.",false);
    shareArchiveSession();render();
