@@ -37,7 +37,8 @@
  let data=structuredClone(demo),key=desktop?window.CONTATTI_DESKTOP.key:"",authenticated=false;
  let module="dashboard",screen="dashboard",activeId=null,tab="summary",editId=null,sortBy="",desc=false;
  let formModule="contacts",formContext=null;
- // La scelta nasce solo dall'apertura del dettaglio Organizzazione (V1.0.16).
+ let remindersRows=[],remindersLoadSerial=0,reminderActionBusy=false;
+ // La scelta nasce solo dall'apertura del dettaglio Organizzazione (V1.0.17).
  let selectedOrganizationId=null;
  const selectedOrganization=()=>selectedOrganizationId&&getRecord("organizations",selectedOrganizationId);
  const commercial=k=>k==="contacts"||k==="activities"||k==="deals";
@@ -47,7 +48,7 @@
  const clearOrganization=()=>{selectedOrganizationId=null;};
  const getRecord=(kind,id)=>(data[kind]||[]).find(r=>String(r.id)===String(id));
  const name=(kind,id)=>{const r=getRecord(kind,id);return r?models[kind].titleOf(r):""};
- // V1.0.16 — nome dell’organizzazione: collegamento diretto o tramite il referente.
+ // V1.0.17 — nome dell’organizzazione: collegamento diretto o tramite il referente.
  const organizationOf=r=>{
   const direct=r.organization_id&&getRecord("organizations",r.organization_id);
   if(direct?.name)return direct.name;
@@ -111,7 +112,7 @@
   render();
   if(!archivesInitialized){
    archivesInitialized=true;
-   archivesFrame.src="./laboratorio.html?v=1.0.16";
+   archivesFrame.src="./laboratorio.html?v=1.0.17";
   }else shareArchiveSession();
  }
  function openModule(next){
@@ -123,6 +124,113 @@
   module=next;screen=next==="dashboard"?"dashboard":"list";activeId=null;sortBy="";desc=false;
   $("#recordSearch").value="";$("#recordFilter").value="";render();
  }
+ // Promemoria è un modulo globale: non richiede organizzazione selezionata.
+ function openReminders(){
+  if(!authenticated)return;
+  clearOrganization();
+  module="reminders";screen="reminders";activeId=null;
+  render();
+  void loadReminders();
+ }
+
+ function drawReminders(){
+  const rows=remindersRows.filter(r=>r.status==="Da fare");
+  $("#remindersCount").textContent=rows.length+" attività da completare · Tutte le organizzazioni";
+  $("#remindersRows").innerHTML=rows.length?rows.map(r=>{
+   const org=String(r.resolved_organization_id||r.organization_id||"");
+   const contactName=String(r.contact_name||name("contacts",r.contact_id)||"");
+   return '<tr data-reminder-id="'+esc(r.id)+'">'+
+    '<td class="primary-cell">'+esc(r.organization_name||organizationOf(r))+'</td>'+
+    '<td>'+esc(r.subject||"—")+'</td>'+
+    '<td>'+esc(r.type||"—")+'</td>'+
+    '<td>'+esc(fmt(r.due_at)||"—")+'</td>'+
+    '<td>'+esc(contactName||"—")+'</td>'+
+    '<td><div class="reminder-actions">'+
+    '<button type="button" class="primary" data-reminder-action="complete" data-id="'+esc(r.id)+'">Fatto</button>'+
+    '<button type="button" class="secondary" data-reminder-action="select" data-id="'+esc(r.id)+'" data-org="'+esc(org)+'" '+(!org?'disabled title="Organizzazione non disponibile"':'')+'>Seleziona</button>'+
+    '</div></td></tr>';
+  }).join(""):'<tr><td colspan="6" class="empty-row">Nessuna attività in stato «Da fare».</td></tr>';
+ }
+ async function loadReminders(){
+  if(!authenticated||screen!=="reminders")return;
+  const serial=++remindersLoadSerial;
+  $("#remindersRefresh").disabled=true;
+  $("#remindersError").textContent="";
+  $("#remindersCount").textContent="Aggiornamento promemoria…";
+  $("#remindersRows").innerHTML='<tr><td colspan="6" class="empty-row">Caricamento attività…</td></tr>';
+  try{
+   const incoming=await get("/api/v1/reminders/pending");
+   if(serial!==remindersLoadSerial||screen!=="reminders")return;
+   remindersRows=incoming;
+   drawReminders();
+  }catch(e){
+   if(serial!==remindersLoadSerial||screen!=="reminders")return;
+   $("#remindersError").textContent="Impossibile caricare i promemoria: "+e.message;
+   $("#remindersCount").textContent="Elenco non disponibile";
+   $("#remindersRows").innerHTML='<tr><td colspan="6" class="empty-row">Aggiorna per riprovare.</td></tr>';
+  }finally{
+   if(serial===remindersLoadSerial&&screen==="reminders")
+    $("#remindersRefresh").disabled=false;
+  }
+ }
+ async function handleReminderClick(event){
+  const button=event.target.closest("button[data-reminder-action]");
+  if(!button||!authenticated||reminderActionBusy||screen!=="reminders")return;
+  const id=button.dataset.id,action=button.dataset.reminderAction;
+  const record=remindersRows.find(r=>String(r.id)===String(id));
+  if(!record)return;
+  const orgId=String(record.resolved_organization_id||record.organization_id||"");
+  if(action==="select"&&!orgId)return;
+  reminderActionBusy=true;
+  const buttons=[...button.closest("tr").querySelectorAll("button")];
+  buttons.forEach(b=>{b.disabled=true});
+  $("#remindersError").textContent="";
+  try{
+   if(action==="complete"){
+    const response=await fetch(base+"/api/v1/reminders/"+encodeURIComponent(id)+"/complete",{
+     method:"PUT",headers:{"X-Demo-Key":key},signal:AbortSignal.timeout(20000)
+    });
+    if(!response.ok){
+     const failure=await response.json().catch(()=>({}));
+     throw new Error(failure.error||"Aggiornamento non riuscito (HTTP "+response.status+")");
+    }
+    const cached=getRecord("activities",id);
+    if(cached)cached.status="Completata";
+    remindersRows=remindersRows.filter(r=>String(r.id)!==String(id));
+    drawReminders();dashboard();
+    showNotice("Attività completata e conservata nello storico dell'Organizzazione.");
+   }else if(action==="select"){
+    // Recupero puntuale: le normali liste CRM sono limitate a 500 record.
+    const [org,activity]=await Promise.all([
+     get("/api/v1/organizations/"+encodeURIComponent(orgId)),
+     get("/api/v1/activities/"+encodeURIComponent(id))
+    ]);
+    if(activity.organization_id&&String(activity.organization_id)!==orgId)
+     throw new Error("L'attività è stata riassegnata: aggiorna i promemoria.");
+    const saveCache=(kind,entry)=>{
+     const items=data[kind],at=items.findIndex(x=>String(x.id)===String(entry.id));
+     if(at>=0)items[at]=entry;else items.push(entry);
+    };
+    saveCache("organizations",org);
+    // Il legame indiretto tramite contatto è risolto nella query dei Promemoria.
+    // Lo usiamo nella cache, senza cambiare l'organizzazione salvata in PostgreSQL.
+    saveCache("activities",{
+     ...activity,organization_id:activity.organization_id||orgId
+    });
+    selectedOrganizationId=orgId;module="activities";screen="detail";activeId=id;tab="summary";
+    render();
+    showNotice("Organizzazione e Attività selezionate.");
+   }
+  }catch(e){
+   $("#remindersError").textContent=e.message;
+   if(action==="complete"&&/non è più in stato Da fare|non esiste/i.test(e.message))
+    void loadReminders();
+  }finally{
+   reminderActionBusy=false;
+   if(screen==="reminders")buttons.forEach(b=>{b.disabled=false});
+  }
+ }
+
  function render(){
   // Dashboard: unico percorso d'accesso prima della verifica della chiave.
   if(!authenticated && screen!=="dashboard"){
@@ -140,6 +248,9 @@
   });
   $("#archivesNav").disabled=!authenticated;
   $("#archivesNav").setAttribute("aria-disabled",String(!authenticated));
+  $("#remindersNav").disabled=!authenticated;
+  $("#remindersNav").setAttribute("aria-disabled",String(!authenticated));
+  $("#remindersNav").classList.toggle("is-active",screen==="reminders");
   $$("[data-jump]").forEach(b=>{
    b.disabled=!authenticated||(commercial(b.dataset.jump)&&!selectedOrganization());
    b.setAttribute("aria-disabled",String(b.disabled));
@@ -150,14 +261,15 @@
   $("#detailScreen").hidden=screen!=="detail";
   $("#archivesScreen").hidden=screen!=="archives";
   $("#listsScreen").hidden=screen!=="lists";
+  $("#remindersScreen").hidden=screen!=="reminders";
   $("#accessSection").hidden=screen!=="dashboard";
   $("#archivesNav").classList.toggle("is-active",screen==="archives");
   const m=models[module];
-  $("#breadcrumb").textContent=screen==="lists"?"CRM / Anagrafiche / Liste":screen==="archives"?"CRM / Amministrazione / Archivi":m?`CRM / ${m.group} / ${m.title}`:"CRM / Panoramica";
-  $("#pageTitle").textContent=screen==="lists"?"Liste":screen==="archives"?"Salvataggio e ripristino archivi":
+  $("#breadcrumb").textContent=screen==="reminders"?"CRM / Promemoria / Attività da completare":screen==="lists"?"CRM / Anagrafiche / Liste":screen==="archives"?"CRM / Amministrazione / Archivi":m?`CRM / ${m.group} / ${m.title}`:"CRM / Panoramica";
+  $("#pageTitle").textContent=screen==="reminders"?"Attività da completare":screen==="lists"?"Liste":screen==="archives"?"Salvataggio e ripristino archivi":
    commercial(module)&&selectedOrganization()?
    commercialTitle(module)+selectedOrganization().name:m?m.title:"Dashboard";
-  $("#pageSubtitle").textContent=screen==="lists"?"Elenchi esterni di enti pubblici e privati, separati dalle Organizzazioni.":screen==="archives"?"Backup e ripristino guidato dei soli dati Contatti.":m?m.desc:"Un unico punto per contatti, aziende e attività commerciali.";
+  $("#pageSubtitle").textContent=screen==="reminders"?"Tutte le attività in stato «Da fare», indipendentemente dall'Organizzazione.":screen==="lists"?"Elenchi esterni di enti pubblici e privati, separati dalle Organizzazioni.":screen==="archives"?"Backup e ripristino guidato dei soli dati Contatti.":m?m.desc:"Un unico punto per contatti, aziende e attività commerciali.";
   $("#newRecord").hidden=!m;$("#newRecord").disabled=!authenticated||(commercial(module)&&!selectedOrganization());
   $("#importFromLists").hidden=!(module==="organizations" && screen==="list");
   $("#importFromLists").disabled=!authenticated;
@@ -750,6 +862,9 @@
 
  $$(".navlink[data-module]").forEach(b=>b.addEventListener("click",()=>openModule(b.dataset.module)));
  $("#archivesNav").addEventListener("click",openArchives);
+ $("#remindersNav").addEventListener("click",openReminders);
+ $("#remindersRefresh").addEventListener("click",()=>{void loadReminders();});
+ $("#remindersRows").addEventListener("click",event=>{void handleReminderClick(event);});
  $$("[data-jump]").forEach(b=>b.addEventListener("click",()=>openModule(b.dataset.jump)));
  $("#newRecord").addEventListener("click",()=>{
   if(commercial(module)&&selectedOrganization())
