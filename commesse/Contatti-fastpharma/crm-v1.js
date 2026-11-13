@@ -16,7 +16,7 @@
    titleOf:r=>[r.first_name,r.last_name].filter(Boolean).join(" "),subtitle:r=>r.email||r.company||"Persona / referente"},
   organizations:{title:"Organizzazioni",single:"Organizzazione",group:"Anagrafiche",desc:"Farmacie, aziende e partner collegati ai contatti.",
    cols:[["name","Organizzazione"],["type","Tipo"],["city","Città"],["phone","Telefono"],["email","Email"]],
-   fields:[["name","Ragione sociale / Nome","text",true],["type","Tipo","orgType"],["city","Città","text"],["phone","Telefono","tel"],["email","Email","email"],["notes","Note","textarea"]],
+   fields:[["name","Ragione sociale / Nome","text",true],["type","Tipo","orgType"],["city","Città","text"],["phone","Telefono","tel"],["email","Email","email"],["address","Indirizzo","text"],["postal_code","CAP","text"],["province","Provincia","text"],["region","Regione","text"],["vat_number","Partita IVA","text"],["notes","Note","textarea"]],
    titleOf:r=>r.name,subtitle:r=>[r.city,r.type].filter(Boolean).join(" · ")},
   activities:{title:"Attività",single:"Attività",group:"Commerciale",desc:"Telefonate, richiami e appuntamenti da completare.",
    cols:[["subject","Oggetto"],["type","Tipo"],["due_at","Scadenza"],["status","Stato"],["contact_id","Contatto"]],
@@ -96,7 +96,7 @@
   render();
   if(!archivesInitialized){
    archivesInitialized=true;
-   archivesFrame.src="./laboratorio.html?v=1.0.6";
+   archivesFrame.src="./laboratorio.html?v=1.0.8";
   }else shareArchiveSession();
  }
  function openModule(next){
@@ -119,6 +119,8 @@
   $("#pageTitle").textContent=screen==="lists"?"Liste":screen==="archives"?"Salvataggio e ripristino archivi":m?m.title:"Dashboard";
   $("#pageSubtitle").textContent=screen==="lists"?"Elenchi esterni di enti pubblici e privati, separati dalle Organizzazioni.":screen==="archives"?"Backup e ripristino guidato dei soli dati Contatti.":m?m.desc:"Un unico punto per contatti, aziende e attività commerciali.";
   $("#newRecord").hidden=!m;$("#newRecord").disabled=!authenticated;
+  $("#importFromLists").hidden=!(module==="organizations" && screen==="list");
+  $("#importFromLists").disabled=!authenticated;
   $("#newRecord").textContent=m?"+ Aggiungi "+m.single:"+ Aggiungi";
   dashboard();
   if(screen==="list")list();if(screen==="detail")detail();
@@ -154,7 +156,13 @@
   $$(".tab").forEach(b=>{let on=b.dataset.tab===tab;b.classList.toggle("is-active",on);b.setAttribute("aria-selected",on?"true":"false")});
   if(tab==="oneview"){related(r);return}
   const fields=tab==="summary"?m.fields.slice(0,5):m.fields;
+  const provenance=module==="organizations" && r.source_key ?
+   '<div class="org-source"><strong>Provenienza: '+esc(r.source_title||"Lista esterna")+
+   '</strong><span>Codice nella fonte: '+esc(r.source_key)+
+   (r.source_category?' · Tipologia: '+esc(r.source_category):'')+
+   '</span></div>' : "";
   $("#detailContent").innerHTML='<div class="fieldgrid">'+fields.map(([field,label])=>`<div class="fieldpair"><span>${esc(label)}</span><strong>${esc(display(field,r)||"—")}</strong></div>`).join("")+"</div>"+
+   provenance+
    (tab==="summary"&&(module==="contacts"||module==="organizations")?activityTimeline(module,r.id):"");
  }
  function activityTimeline(kind,recordId){
@@ -246,7 +254,7 @@
     input=`<select ${attr}>${optionHtml(type,value,type==="contact"?selectedOrg:"")}</select>`;
    else if(type==="datetime-local")input=`<input type="datetime-local" ${attr} value="${esc(localDate(value))}">`;
    else if(type==="number")input=`<input type="number" min="0" step="0.01" ${attr} value="${esc(value||0)}">`;
-   else input=`<input type="${type==="email"?"email":type==="tel"?"tel":"text"}" ${attr} maxlength="${field==="email"?254:field==="name"||field==="subject"?200:field==="company"?180:120}" value="${esc(value)}">`;
+   else input=`<input type="${type==="email"?"email":type==="tel"?"tel":"text"}" ${attr} maxlength="${field==="email"?254:field==="name"||field==="address"?field==="name"?300:400:field==="subject"?200:field==="company"?180:field==="region"||field==="province"||field==="city"?150:field==="postal_code"?20:field==="vat_number"?50:120}" value="${esc(value)}">`;
    return `<label class="${type==="textarea"?"wide":""}" for="f_${field}">${esc(label)}${required?" *":""}${input}</label>`;
   }).join("");
   if(formModule==="activities"){
@@ -400,6 +408,158 @@
    render();
   }catch(e){$("#dialogError").textContent=e.message}finally{$("#submitRecord").disabled=false}
  }
+
+ // Importa una sola organizzazione da una Lista esterna, con conferma esplicita.
+ let orgImportLists=[],orgImportListId="",orgImportItems=[],orgImportOffset=0,orgImportTotal=0;
+ let orgImportSelected=null,orgImportPreview=null,orgImportSerial=0,orgImportTimer=null,orgImportBusy=false;
+ const orgImportLimit=25;
+ const orgImportEl=id=>document.getElementById(id);
+ const orgImportError=(message="")=>{orgImportEl("orgImportError").textContent=message;};
+ const orgImportOptions=(id,values,label)=>{
+  orgImportEl(id).innerHTML='<option value="">'+esc(label)+'</option>'+
+   values.map(v=>'<option value="'+esc(v)+'">'+esc(v)+'</option>').join("");
+ };
+ function resetOrgImportSelection(){
+  orgImportSelected=null;orgImportPreview=null;
+  orgImportEl("orgImportPreview").hidden=true;
+  orgImportEl("orgImportConfirm").disabled=true;
+  orgImportError();
+ }
+ async function importListFacets(){
+  const facets=await get("/api/v1/lists/"+encodeURIComponent(orgImportListId)+"/facets");
+  orgImportOptions("orgImportRegion",facets.region||[],"Tutte le regioni");
+  orgImportOptions("orgImportProvince",facets.province||[],"Tutte le province");
+ }
+ async function findImportEntries(){
+  if(!authenticated || !orgImportListId)return;
+  const request=++orgImportSerial;
+  resetOrgImportSelection();
+  orgImportEl("orgImportRows").innerHTML='<tr><td colspan="6" class="empty-row">Ricerca in corso…</td></tr>';
+  const query=new URLSearchParams({offset:String(orgImportOffset),limit:String(orgImportLimit)});
+  for(const [name,id] of [["q","orgImportSearch"],["region","orgImportRegion"],["province","orgImportProvince"],["city","orgImportCity"]]){
+   const val=orgImportEl(id).value.trim();
+   if(val)query.set(name,val);
+  }
+  try{
+   const response=await get("/api/v1/lists/"+encodeURIComponent(orgImportListId)+"/entries?"+query);
+   if(request!==orgImportSerial)return;
+   orgImportItems=response.entries||[];orgImportTotal=response.total||0;
+   orgImportEl("orgImportCount").textContent=orgImportTotal.toLocaleString("it-IT")+
+      " risultati · scegli una sola farmacia";
+   orgImportEl("orgImportRows").innerHTML=orgImportItems.length?orgImportItems.map(item=>
+    '<tr><td>'+esc(item.code)+'</td><td>'+esc(item.name)+'</td><td>'+esc(item.city)+'</td>'+
+    '<td>'+esc(item.province)+'</td><td>'+esc(item.region)+'</td>'+
+    '<td><button type="button" class="secondary" data-org-import-code="'+esc(item.code)+'">Seleziona</button></td></tr>'
+   ).join(""):'<tr><td colspan="6" class="empty-row">Nessuna farmacia trovata con questi filtri.</td></tr>';
+   orgImportEl("orgImportPageInfo").textContent=orgImportTotal?
+    (orgImportOffset+1).toLocaleString("it-IT")+"–"+
+    (orgImportOffset+orgImportItems.length).toLocaleString("it-IT")+" di "+
+    orgImportTotal.toLocaleString("it-IT"):"0 di 0";
+   orgImportEl("orgImportPrev").disabled=orgImportOffset===0;
+   orgImportEl("orgImportNext").disabled=orgImportOffset+orgImportLimit>=orgImportTotal;
+  }catch(e){if(request===orgImportSerial)orgImportError(e.message);}
+ }
+ function scheduleOrgImportSearch(){
+  orgImportOffset=0;clearTimeout(orgImportTimer);
+  orgImportTimer=setTimeout(()=>{void findImportEntries();},280);
+ }
+ async function openOrgImporter(){
+  if(!authenticated || module!=="organizations"){showNotice("Collega l'archivio TEST e apri Organizzazioni.",true);return;}
+  const dialog=orgImportEl("orgImportDialog");
+  orgImportError();resetOrgImportSelection();
+  orgImportOffset=0;orgImportLists=[];orgImportListId="";
+  for(const id of ["orgImportSearch","orgImportCity"])orgImportEl(id).value="";
+  dialog.showModal();
+  try{
+   orgImportLists=await get("/api/v1/lists");
+   if(!dialog.open)return;
+   orgImportEl("orgImportList").innerHTML=orgImportLists.map(l=>
+    '<option value="'+esc(l.id)+'">'+esc(l.title)+'</option>').join("");
+   const first=orgImportLists.find(l=>l.slug==="farmacie-ministero-salute")||orgImportLists[0];
+   if(!first){orgImportError("Nessuna Lista esterna disponibile.");return;}
+   orgImportListId=first.id;orgImportEl("orgImportList").value=first.id;
+   await importListFacets();
+   await findImportEntries();
+  }catch(e){orgImportError("Impossibile aprire le Liste: "+e.message);}
+ }
+ async function previewOrgImport(code){
+  if(!orgImportListId || !code || orgImportBusy)return;
+  orgImportSelected=code;orgImportPreview=null;
+  orgImportEl("orgImportConfirm").disabled=true;
+  orgImportError();
+  orgImportEl("orgImportPreview").hidden=false;
+  orgImportEl("orgImportPreviewContent").textContent="Verifica duplicati in corso…";
+  orgImportEl("orgImportMatches").textContent="";
+  try{
+   const preview=await get("/api/v1/lists/"+encodeURIComponent(orgImportListId)+
+     "/entries/"+encodeURIComponent(code)+"/organization-preview");
+   if(orgImportSelected!==code)return;
+   orgImportPreview=preview;
+   const item=preview.entry;
+   orgImportEl("orgImportPreviewContent").innerHTML=
+    '<strong>'+esc(item.name)+'</strong>'+
+    '<p>Codice ministeriale: '+esc(item.code)+' · '+esc(item.source_title)+'</p>'+
+    '<p>'+esc([item.address,item.postal_code,item.city,item.province,item.region].filter(Boolean).join(", "))+'</p>'+
+    '<p>Partita IVA: '+esc(item.vat_number||"Non indicata")+'</p>';
+   const matches=preview.matches||[];
+   orgImportEl("orgImportMatches").innerHTML=matches.length?
+    '<h4>Corrispondenze rilevate</h4>'+matches.map(m=>
+      '<div class="org-import-match '+(m.blocking?'org-import-blocking':'')+'">'+
+      '<strong>'+esc(m.name)+'</strong> · '+esc(m.city||"")+
+      '<small>'+esc(m.reason)+'</small></div>').join("")+
+     (preview.can_import?'<p class="hint">La stessa partita IVA può appartenere a più sedi: verifica prima di importare.</p>':''):
+     '<p class="hint">Nessuna organizzazione corrispondente trovata.</p>';
+   orgImportEl("orgImportConfirm").disabled=!preview.can_import;
+   if(!preview.can_import)orgImportError("Importazione bloccata: questa farmacia risulta già presente.");
+  }catch(e){orgImportError(e.message);}
+ }
+ async function confirmOrgImport(){
+  if(orgImportBusy || !orgImportPreview?.can_import || !orgImportSelected || !authenticated)return;
+  const entry=orgImportPreview.entry;
+  if(!window.confirm("Importare in Organizzazioni solo «"+entry.name+"»?"))return;
+  orgImportBusy=true;orgImportEl("orgImportConfirm").disabled=true;orgImportError();
+  try{
+   const url=base+"/api/v1/lists/"+encodeURIComponent(orgImportListId)+
+     "/entries/"+encodeURIComponent(orgImportSelected)+"/import-organization";
+   const response=await fetch(url,{
+    method:"POST",headers:{"X-Demo-Key":key},signal:AbortSignal.timeout(30000)
+   });
+   const result=await response.json().catch(()=>({}));
+   if(!response.ok)throw new Error(result.error||"Importazione non riuscita (HTTP "+response.status+").");
+   data.organizations=await get("/api/v1/organizations");
+   orgImportEl("orgImportDialog").close();
+   module="organizations";activeId=result.id;screen="detail";tab="summary";
+   render();
+   showNotice("Farmacia «"+result.name+"» importata in Organizzazioni. Completa i dati commerciali dalla scheda.");
+  }catch(e){
+   orgImportError(e.message);
+  }finally{
+   orgImportBusy=false;
+   orgImportEl("orgImportConfirm").disabled=!orgImportPreview?.can_import;
+  }
+ }
+ function closeOrgImporter(){
+  orgImportSerial++;clearTimeout(orgImportTimer);
+  orgImportEl("orgImportDialog").close();
+ }
+ $("#importFromLists").addEventListener("click",()=>{void openOrgImporter();});
+ orgImportEl("orgImportClose").addEventListener("click",closeOrgImporter);
+ orgImportEl("orgImportCancel").addEventListener("click",closeOrgImporter);
+ orgImportEl("orgImportList").addEventListener("change",async()=>{
+  orgImportListId=orgImportEl("orgImportList").value;orgImportOffset=0;
+  for(const id of ["orgImportRegion","orgImportProvince","orgImportSearch","orgImportCity"])orgImportEl(id).value="";
+  try{await importListFacets();await findImportEntries();}catch(e){orgImportError(e.message);}
+ });
+ for(const id of ["orgImportSearch","orgImportCity"])orgImportEl(id).addEventListener("input",scheduleOrgImportSearch);
+ for(const id of ["orgImportRegion","orgImportProvince"])orgImportEl(id).addEventListener("change",scheduleOrgImportSearch);
+ orgImportEl("orgImportPrev").addEventListener("click",()=>{orgImportOffset=Math.max(0,orgImportOffset-orgImportLimit);void findImportEntries();});
+ orgImportEl("orgImportNext").addEventListener("click",()=>{if(orgImportOffset+orgImportLimit<orgImportTotal){orgImportOffset+=orgImportLimit;void findImportEntries();}});
+ orgImportEl("orgImportRows").addEventListener("click",e=>{
+  const code=e.target.closest("button[data-org-import-code]")?.dataset.orgImportCode;
+  if(code!==undefined)void previewOrgImport(code);
+ });
+ orgImportEl("orgImportConfirm").addEventListener("click",()=>{void confirmOrgImport();});
+
  $$(".navlink[data-module]").forEach(b=>b.addEventListener("click",()=>openModule(b.dataset.module)));
  $("#archivesNav").addEventListener("click",openArchives);
  $$("[data-jump]").forEach(b=>b.addEventListener("click",()=>openModule(b.dataset.jump)));
