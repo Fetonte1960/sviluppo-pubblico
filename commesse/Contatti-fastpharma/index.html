@@ -3,18 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Gestione contatti FastPharma — V1.0.13</title>
-  <link rel="stylesheet" href="./crm-v1.css?v=1.0.13">
-  <script defer src="./config.js?v=1.0.13"></script>
-  <script defer src="./version.js?v=1.0.13"></script>
-  <script defer src="./lists.js?v=1.0.13"></script>
-  <script defer src="./crm-v1.js?v=1.0.13"></script>
+  <title>Gestione contatti FastPharma — V1.0.14</title>
+  <link rel="stylesheet" href="./crm-v1.css?v=1.0.14">
+  <script defer src="./config.js?v=1.0.14"></script>
+  <script defer src="./version.js?v=1.0.14"></script>
+  <script defer src="./lists.js?v=1.0.14"></script>
+  <script defer src="./crm-v1.js?v=1.0.14"></script>
 </head>
 <body>
   <header class="appbar">
-    <div class="logo"><span class="logo-icon">F</span><div><strong>Gestione contatti FastPharma</strong><small>Anagrafiche e attività commerciali · <strong id="appVersion">V1.0.13</strong></small></div></div>
+    <div class="logo"><span class="logo-icon">F</span><div><strong>Gestione contatti FastPharma</strong><small>Anagrafiche e attività commerciali · <strong id="appVersion">V1.0.14</strong></small></div></div>
     <div class="top-actions">
-      <span id="releaseVersion" class="release-version">V1.0.13</span>
+      <span id="releaseVersion" class="release-version">V1.0.14</span>
       <span id="connectionBadge" class="connection-badge">Accesso richiesto</span>
     </div>
   </header>
@@ -149,7 +149,7 @@
         </div>
         <div class="surface detail-content" id="detailContent"></div>
       </section>
-      <footer>Gestione contatti FastPharma · V1.0.13</footer>
+      <footer>Gestione contatti FastPharma · V1.0.14</footer>
     </main>
   </div>
   <dialog id="recordDialog" class="record-dialog">
@@ -194,6 +194,7 @@
       </div>
       <button id="orgImportClose" class="iconbutton" type="button" aria-label="Chiudi importazione">×</button>
     </div>
+    <div class="org-import-content">
     <div class="org-import-filters">
       <label>Elenco di provenienza
         <select id="orgImportList" aria-label="Elenco da importare"></select>
@@ -227,8 +228,9 @@
       <div id="orgImportPreviewContent"></div>
       <div id="orgImportMatches"></div>
     </section>
-    <p id="orgImportError" class="dialog-error" role="alert" aria-live="polite"></p>
+    </div>
     <div class="dialog-actions">
+      <p id="orgImportError" class="dialog-error" role="alert" aria-live="polite"></p>
       <button id="orgImportCancel" class="secondary" type="button">Annulla</button>
       <button id="orgImportConfirm" class="primary" type="button" disabled>Importa questa farmacia</button>
     </div>
