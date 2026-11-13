@@ -72,7 +72,7 @@
         sessionKey = "";
         authorized = false;
         loginBox.hidden = false;
-        report($("#backupStatus"), "Chiave TEST non valida. Riapri l'archivio.", true);
+        report($("#backupStatus"), "Chiave di accesso non valida. Riapri gli archivi.", true);
       } else if (!response.ok) {
         authorized = false;
         loginBox.hidden = false;
@@ -119,7 +119,7 @@
     e.preventDefault();
     const candidate = $("#accessKey").value.trim();
     if (!candidate) {
-      report($("#backupStatus"), "Inserisci la chiave TEST.", true);
+      report($("#backupStatus"), "Inserisci la chiave di accesso.", true);
       return;
     }
     $("#accessButton").disabled = true;
@@ -195,7 +195,7 @@
       " · Record nel backup: " + result.incomingCount +
       " · Migrazioni nell'archivio: " + result.incomingMigrations +
       ". Il ripristino SOSTITUIRÀ lo schema Contatti locale.";
-    report($("#restoreStatus"), "Backup verificato in un database di prova. Nessun dato locale modificato.");
+    report($("#restoreStatus"), "Backup verificato su una copia isolata. Nessun dato dell'archivio è stato modificato.");
     updateControls();
   }
   async function prepare(fromCloud) {
