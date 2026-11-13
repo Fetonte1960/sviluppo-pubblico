@@ -9,12 +9,12 @@
  const controls=["listsCollection","listsRefresh","listsFile","listsSearch","listsRegion","listsProvince","listsCity","listsCategory"];
  function feedback(text,error=false){$("listsProgress").textContent=text;$("listsError").textContent=error?text:"";}
  async function api(path,options={}){
-  if(!key)throw Error("Collega prima l'archivio TEST.");
+  if(!key)throw Error("Accedi agli archivi per continuare.");
   const res=await fetch(base+path,{
    ...options,headers:{"X-Demo-Key":key,...(options.headers||{})},
    cache:"no-store",signal:AbortSignal.timeout(options.method==="POST"?300000:30000)
   });
-  if(res.status===401)throw Error("Chiave TEST non riconosciuta.");
+  if(res.status===401)throw Error("Chiave di accesso non riconosciuta.");
   const body=await res.json().catch(()=>({}));
   if(!res.ok)throw Error(body.error||"Richiesta non riuscita: HTTP "+res.status);
   return body;
@@ -157,8 +157,8 @@
   const k=String(newKey||""),b=String(newBase||"").replace(/\/$/,"");
   const changed=signature!==b+"|"+k;key=k;base=b;signature=b+"|"+k;
   if(!key){
-   enabled(false);$("listsCount").textContent="Collega l'archivio TEST per consultare le Liste.";
-   feedback("Inserisci la chiave di collaudo.");return;
+   enabled(false);$("listsCount").textContent="Accedi per consultare le Liste.";
+   feedback("Inserisci la chiave di accesso.");return;
   }
   enabled(true);
   if(changed||!lists.length){
