@@ -38,7 +38,7 @@
  let module="dashboard",screen="dashboard",activeId=null,tab="summary",editId=null,sortBy="",desc=false;
  let formModule="contacts",formContext=null;
  let remindersRows=[],remindersLoadSerial=0,reminderActionBusy=false;
- // La scelta nasce solo dall'apertura del dettaglio Organizzazione (V1.0.17).
+ // La scelta nasce solo dall'apertura del dettaglio Organizzazione (V1.0.18).
  let selectedOrganizationId=null;
  const selectedOrganization=()=>selectedOrganizationId&&getRecord("organizations",selectedOrganizationId);
  const commercial=k=>k==="contacts"||k==="activities"||k==="deals";
@@ -48,7 +48,7 @@
  const clearOrganization=()=>{selectedOrganizationId=null;};
  const getRecord=(kind,id)=>(data[kind]||[]).find(r=>String(r.id)===String(id));
  const name=(kind,id)=>{const r=getRecord(kind,id);return r?models[kind].titleOf(r):""};
- // V1.0.17 — nome dell’organizzazione: collegamento diretto o tramite il referente.
+ // V1.0.18 — nome dell’organizzazione: collegamento diretto o tramite il referente.
  const organizationOf=r=>{
   const direct=r.organization_id&&getRecord("organizations",r.organization_id);
   if(direct?.name)return direct.name;
@@ -112,7 +112,7 @@
   render();
   if(!archivesInitialized){
    archivesInitialized=true;
-   archivesFrame.src="./laboratorio.html?v=1.0.17";
+   archivesFrame.src="./laboratorio.html?v=1.0.18";
   }else shareArchiveSession();
  }
  function openModule(next){
