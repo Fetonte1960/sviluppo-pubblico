@@ -96,7 +96,7 @@
   render();
   if(!archivesInitialized){
    archivesInitialized=true;
-   archivesFrame.src="./laboratorio.html?v=1.0.5";
+   archivesFrame.src="./laboratorio.html?v=1.0.6";
   }else shareArchiveSession();
  }
  function openModule(next){
@@ -288,7 +288,8 @@
   if(!r.ok)throw new Error("Archivio non disponibile (HTTP "+r.status+").");
   return await r.json();
  }
- const chromeCredentialId="FastPharma-TEST";
+ const chromeCredentialId="Gestione contatti";
+ const previousChromeCredentialId="FastPharma-TEST";
  let chromeStorePending=false;
  // Chrome gestisce la credenziale nel proprio Password Manager. Mai in localStorage,
  // sessionStorage, cookie o PostgreSQL; la chiave resta solo nella sessione RAM del CRM.
@@ -310,7 +311,7 @@
    // Chromium non sempre riconosce come login un form AJAX senza navigazione.
    // L'API dedicata richiede direttamente al browser di gestire questa credenziale.
    const credential=new window.PasswordCredential({
-    id:chromeCredentialId,password:key,name:"FastPharma CRM TEST"
+    id:chromeCredentialId,password:key,name:"Gestione contatti"
    });
    await navigator.credentials.store(credential);
    $("#chromePasswordStatus").textContent=
@@ -329,7 +330,7 @@
    const stored=await navigator.credentials.get({password:true,mediation:"required"});
    // Su GitHub Pages altre applicazioni possono condividere l'origin:
    // accettare esclusivamente il profilo esatto di FastPharma.
-   if(stored?.type==="password" && stored.id===chromeCredentialId && typeof stored.password==="string"){
+   if(stored?.type==="password" && (stored.id===chromeCredentialId || stored.id===previousChromeCredentialId) && typeof stored.password==="string"){
     $("#demoKey").value=stored.password;
     loginStatus("Chiave recuperata dal browser. Premi «Verifica e apri».");
    }else{
