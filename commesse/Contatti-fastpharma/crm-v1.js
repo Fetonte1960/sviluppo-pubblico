@@ -96,7 +96,7 @@
   render();
   if(!archivesInitialized){
    archivesInitialized=true;
-   archivesFrame.src="./laboratorio.html?v=1.0.8";
+   archivesFrame.src="./laboratorio.html?v=1.0.9";
   }else shareArchiveSession();
  }
  function openModule(next){
@@ -148,6 +148,7 @@
   $("#detailCaption").textContent=m.single+" · "+(authenticated?"Archivio TEST":"Esempio inventato");
   $("#detailTitle").textContent=m.titleOf(r);$("#detailSubtitle").textContent=m.subtitle(r);
   $("#editRecord").disabled=!authenticated;
+  $("#deleteRecord").disabled=!authenticated;
   const canAddActivity=module==="contacts"||module==="organizations";
   for(const action of ["#logCall","#planFollowup"]){
    $(action).hidden=!canAddActivity;
@@ -542,6 +543,103 @@
   orgImportSerial++;clearTimeout(orgImportTimer);
   orgImportEl("orgImportDialog").close();
  }
+ // V1.0.9 — cancella una sola scheda per volta e solo senza collegamenti.
+ let deleteTarget=null,deletePreview=null,deleteBusy=false,deleteRequestId=0;
+ const deleteDialog=$("#deleteRecordDialog");
+ const deleteCheck=$("#deleteConfirmCheck");
+ const deleteButton=$("#deleteDialogConfirm");
+ function syncDeleteButton(){
+  deleteButton.disabled=deleteBusy || !authenticated || !deleteTarget ||
+   !deletePreview?.can_delete || !deleteCheck.checked;
+ }
+ function resetDelete(){
+  deleteRequestId++;
+  deleteTarget=null;deletePreview=null;deleteBusy=false;
+  deleteCheck.checked=false;deleteCheck.disabled=true;syncDeleteButton();
+  $("#deleteDialogError").textContent="";
+ }
+ function closeDeleteDialog(){
+  if(deleteBusy)return;
+  deleteDialog.close();resetDelete();
+ }
+ async function openDeleteDialog(){
+  if(!authenticated||screen!=="detail"||!models[module]||!activeId){
+   showNotice("Apri una scheda dell'archivio TEST per cancellarla.",true);return;
+  }
+  resetDelete();
+  const record=getRecord(module,activeId);
+  if(!record)return;
+  deleteTarget={module,id:record.id,title:models[module].titleOf(record)};
+  $("#deleteDialogTitle").textContent="Cancella "+models[module].single.toLowerCase();
+  $("#deleteRecordName").textContent=deleteTarget.title;
+  $("#deleteDependencyStatus").textContent="Controllo dei collegamenti sul database in corso…";
+  deleteDialog.showModal();
+  const token=++deleteRequestId;
+  try{
+   const result=await get("/api/v1/"+encodeURIComponent(deleteTarget.module)+"/"+
+     encodeURIComponent(deleteTarget.id)+"/delete-preview");
+   if(token!==deleteRequestId||!deleteDialog.open)return;
+   deletePreview=result;
+   const linked=Object.entries(result.linked||{}).filter(([,count])=>Number(count)>0);
+   if(linked.length){
+    $("#deleteDependencyStatus").textContent=
+      "Cancellazione non consentita: "+linked.map(([kind,count])=>count+" "+kind).join(", ")+
+      " collegati. Eliminali o riassegnali prima di riprovare.";
+    deleteCheck.checked=false;deleteCheck.disabled=true;
+   }else{
+    $("#deleteDependencyStatus").textContent=
+      "Nessun collegamento bloccante. Verrà eliminata soltanto questa scheda; "+
+      "le Liste ministeriali resteranno intatte.";
+    deleteCheck.disabled=false;
+   }
+   syncDeleteButton();
+  }catch(error){
+   if(token===deleteRequestId){
+    $("#deleteDialogError").textContent="Impossibile verificare il record: "+error.message;
+    deleteCheck.checked=false;deleteCheck.disabled=true;syncDeleteButton();
+   }
+  }
+ }
+ async function confirmDelete(){
+  if(deleteBusy||!deleteTarget||!deletePreview?.can_delete||
+     !deleteCheck.checked||!authenticated)return;
+  const target={...deleteTarget};
+  deleteBusy=true;syncDeleteButton();
+  $("#deleteDialogError").textContent="";
+  try{
+   const response=await fetch(base+"/api/v1/"+encodeURIComponent(target.module)+"/"+
+     encodeURIComponent(target.id),{
+      method:"DELETE",
+      headers:{"X-Demo-Key":key,"X-Confirm-Delete":"true"},
+      signal:AbortSignal.timeout(20000)
+   });
+   const result=await response.json().catch(()=>({}));
+   if(!response.ok)throw new Error(result.error||"Cancellazione non riuscita (HTTP "+response.status+").");
+   // Il server ha confermato la DELETE. Non riprovare se il refresh rete fallisce.
+   deleteDialog.close();resetDelete();
+   module=target.module;activeId=null;screen="list";
+   data[target.module]=data[target.module].filter(r=>String(r.id)!==String(target.id));
+   render();
+   showNotice(target.title+" eliminato dall'archivio "+models[target.module].title+".");
+   try{
+    data[target.module]=await get("/api/v1/"+target.module);
+    if(module===target.module&&screen==="list")render();
+   }catch(error){
+    showNotice("Cancellazione eseguita; elenco non aggiornato dal server: "+error.message,true);
+   }
+  }catch(error){
+   $("#deleteDialogError").textContent=error.message;
+  }finally{
+   deleteBusy=false;syncDeleteButton();
+  }
+ }
+ $("#deleteRecord").addEventListener("click",()=>{void openDeleteDialog();});
+ $("#deleteDialogClose").addEventListener("click",closeDeleteDialog);
+ $("#deleteDialogCancel").addEventListener("click",closeDeleteDialog);
+ deleteCheck.addEventListener("change",syncDeleteButton);
+ deleteButton.addEventListener("click",()=>{void confirmDelete();});
+ deleteDialog.addEventListener("close",()=>{if(!deleteBusy)resetDelete();});
+
  $("#importFromLists").addEventListener("click",()=>{void openOrgImporter();});
  orgImportEl("orgImportClose").addEventListener("click",closeOrgImporter);
  orgImportEl("orgImportCancel").addEventListener("click",closeOrgImporter);
