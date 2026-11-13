@@ -96,7 +96,7 @@
   render();
   if(!archivesInitialized){
    archivesInitialized=true;
-   archivesFrame.src="./laboratorio.html?v=1.0.4";
+   archivesFrame.src="./laboratorio.html?v=1.0.5";
   }else shareArchiveSession();
  }
  function openModule(next){
@@ -288,6 +288,57 @@
   if(!r.ok)throw new Error("Archivio non disponibile (HTTP "+r.status+").");
   return await r.json();
  }
+ const chromeCredentialId="FastPharma-TEST";
+ let chromeStorePending=false;
+ // Chrome gestisce la credenziale nel proprio Password Manager. Mai in localStorage,
+ // sessionStorage, cookie o PostgreSQL; la chiave resta solo nella sessione RAM del CRM.
+ function hasChromePasswordStore(){
+  return !desktop && typeof window.PasswordCredential==="function" &&
+   typeof navigator.credentials?.store==="function";
+ }
+ function showChromePasswordUi(){
+  $("#chromeLoadKey").hidden=desktop || !(typeof navigator.credentials?.get==="function");
+  $("#chromePasswordActions").hidden=!authenticated || !hasChromePasswordStore();
+ }
+ async function saveToChromePasswordManager(){
+  if(!authenticated || !key || !hasChromePasswordStore() || chromeStorePending)return;
+  chromeStorePending=true;
+  const button=$("#chromeSaveKey");
+  button.disabled=true;
+  $("#chromePasswordStatus").textContent="Richiesta di salvataggio inviata a Chrome…";
+  try{
+   // Chromium non sempre riconosce come login un form AJAX senza navigazione.
+   // L'API dedicata richiede direttamente al browser di gestire questa credenziale.
+   const credential=new window.PasswordCredential({
+    id:chromeCredentialId,password:key,name:"FastPharma CRM TEST"
+   });
+   await navigator.credentials.store(credential);
+   $("#chromePasswordStatus").textContent=
+    "Chrome ha gestito la richiesta. Verifica la voce in Gestore delle password; il browser può non mostrare una finestra.";
+  }catch(error){
+   $("#chromePasswordStatus").textContent=
+    "Chrome non ha completato il salvataggio. Verifica le impostazioni del Gestore delle password oppure riprova.";
+  }finally{button.disabled=false;chromeStorePending=false;}
+ }
+ async function loadFromChromePasswordManager(){
+  if(desktop || typeof navigator.credentials?.get!=="function")return;
+  const button=$("#chromeLoadKey");
+  button.disabled=true;
+  loginStatus("Ricerca della credenziale FastPharma nel Gestore delle password di Chrome…");
+  try{
+   const stored=await navigator.credentials.get({password:true,mediation:"required"});
+   // Su GitHub Pages altre applicazioni possono condividere l'origin:
+   // accettare esclusivamente il profilo esatto di FastPharma.
+   if(stored?.type==="password" && stored.id===chromeCredentialId && typeof stored.password==="string"){
+    $("#demoKey").value=stored.password;
+    loginStatus("Chiave recuperata dal browser. Premi «Verifica e apri».");
+   }else{
+    loginStatus("Nessuna chiave FastPharma selezionata in Chrome. Puoi inserirla manualmente.",true);
+   }
+  }catch(error){
+   loginStatus("Chrome non ha restituito una password. Puoi inserirla manualmente.",true);
+  }finally{button.disabled=false;}
+ }
  async function connect(candidate){
   if(!hasApi)throw new Error("API di collaudo non configurata");
   key=candidate;
@@ -303,12 +354,16 @@
    loginStatus("Accesso riuscito: archivio TEST collegato.");
    showNotice("Accesso riuscito: ora visualizzi i dati del database TEST.",false);
    shareArchiveSession();render();
+   showChromePasswordUi();
+   // Tentativo esplicito dopo il login riuscito; senza bloccare l'apertura del CRM.
+   // L'utente può anche riprovare con il pulsante visibile dopo l'accesso.
+   if(hasChromePasswordStore())void saveToChromePasswordManager();
   }catch(e){
    key="";authenticated=false;data=structuredClone(demo);
    $("#accessSection").classList.remove("connected");
    $("#connectionBadge").textContent="Archivio non collegato";
    $("#connectionBadge").classList.remove("connected");
-   shareArchiveSession();render();throw e;
+   shareArchiveSession();render();showChromePasswordUi();throw e;
   }
  }
  async function save(event){
@@ -366,6 +421,8 @@
  $("#recordForm").addEventListener("submit",save);
  $("#closeDialog").addEventListener("click",()=>$("#recordDialog").close());
  $("#cancelDialog").addEventListener("click",()=>$("#recordDialog").close());
+ $("#chromeLoadKey").addEventListener("click",loadFromChromePasswordManager);
+ $("#chromeSaveKey").addEventListener("click",()=>{void saveToChromePasswordManager();});
  $("#loginForm").addEventListener("submit",async e=>{
   e.preventDefault();const candidate=$("#demoKey").value.trim();if(!candidate){showNotice("Inserisci la chiave di collaudo.",true);return}
   const b=$("#connectButton");
@@ -386,6 +443,7 @@
   }
  });
  render();
+ showChromePasswordUi();
  window.__FASTPHARMA_CRM_READY__=true;
  if(desktop){
   $("#loginForm").hidden=true;showNotice("Collegamento al database Windows in corso…");
