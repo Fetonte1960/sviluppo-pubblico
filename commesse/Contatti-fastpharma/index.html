@@ -3,19 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>FastPharma CRM — V1.0.4 TEST</title>
-  <link rel="stylesheet" href="./crm-v1.css?v=1.0.4">
-  <script defer src="./config.js?v=1.0.4"></script>
-  <script defer src="./version.js?v=1.0.4"></script>
-  <script defer src="./lists.js?v=1.0.4"></script>
-  <script defer src="./crm-v1.js?v=1.0.4"></script>
+  <title>FastPharma CRM — V1.0.5 TEST</title>
+  <link rel="stylesheet" href="./crm-v1.css?v=1.0.5">
+  <script defer src="./config.js?v=1.0.5"></script>
+  <script defer src="./version.js?v=1.0.5"></script>
+  <script defer src="./lists.js?v=1.0.5"></script>
+  <script defer src="./crm-v1.js?v=1.0.5"></script>
 </head>
 <body>
   <header class="appbar">
-    <div class="logo"><span class="logo-icon">F</span><div><strong>FastPharma CRM</strong><small>CRM simil-Vtiger · <strong id="appVersion">V1.0.4</strong></small></div></div>
+    <div class="logo"><span class="logo-icon">F</span><div><strong>FastPharma CRM</strong><small>CRM simil-Vtiger · <strong id="appVersion">V1.0.5</strong></small></div></div>
     <div class="top-actions">
       <span class="testflag">AMBIENTE TEST · NON USARE DATI REALI</span>
-      <span id="releaseVersion" class="release-version">V1.0.4</span>
+      <span id="releaseVersion" class="release-version">V1.0.5</span>
       <span id="connectionBadge" class="connection-badge">Demo dimostrativa</span>
     </div>
   </header>
@@ -41,7 +41,8 @@
       </div>
       <section class="access" id="accessSection">
         <div><strong>Archivio di collaudo</strong><p id="accessMessage">Sono visualizzati esempi inventati. Per salvare sul database TEST serve la chiave già utilizzata nella V0.</p></div>
-        <form id="loginForm" autocomplete="on"><label class="sr-only" for="loginUsername">Profilo di accesso</label><input id="loginUsername" name="username" type="text" autocomplete="username" value="FastPharma-TEST" class="sr-only" tabindex="-1" aria-label="Profilo di collaudo FastPharma"><label class="sr-only" for="demoKey">Chiave TEST</label><input id="demoKey" name="password" type="password" placeholder="Chiave di collaudo" autocomplete="current-password" aria-describedby="loginFeedback"><button id="connectButton" type="submit" class="primary">Verifica e apri</button><p id="loginFeedback" class="login-feedback" role="status" aria-live="polite">Incolla la chiave e premi «Verifica e apri».</p></form>
+        <form id="loginForm" autocomplete="on"><label class="sr-only" for="loginUsername">Profilo di accesso</label><input id="loginUsername" name="username" type="text" autocomplete="username" value="FastPharma-TEST" class="sr-only" tabindex="-1" aria-label="Profilo di collaudo FastPharma"><label class="sr-only" for="demoKey">Chiave TEST</label><input id="demoKey" name="password" type="password" placeholder="Chiave di collaudo" autocomplete="current-password" aria-describedby="loginFeedback"><button id="connectButton" type="submit" class="primary">Verifica e apri</button><button id="chromeLoadKey" class="secondary" type="button" hidden>Usa password salvata in Chrome</button><p id="loginFeedback" class="login-feedback" role="status" aria-live="polite">Incolla la chiave e premi «Verifica e apri».</p></form>
+        <div id="chromePasswordActions" class="chrome-password-actions" hidden><button type="button" id="chromeSaveKey" class="secondary">Salva la chiave in Chrome</button><span id="chromePasswordStatus" role="status" aria-live="polite"></span></div>
       </section>
       <p id="notice" class="notice" role="status" aria-live="polite"></p>
       <section id="dashboard" class="screen">
@@ -139,7 +140,7 @@
         </div>
         <div class="surface detail-content" id="detailContent"></div>
       </section>
-      <footer>Contatti FastPharma V1.0.4 · TEST con dati sintetici · Sviluppo cloud / Windows con codice condiviso</footer>
+      <footer>Contatti FastPharma V1.0.5 · TEST con dati sintetici · Sviluppo cloud / Windows con codice condiviso</footer>
     </main>
   </div>
   <dialog id="recordDialog" class="record-dialog">
