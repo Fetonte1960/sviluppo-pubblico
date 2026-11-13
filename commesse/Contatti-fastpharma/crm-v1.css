@@ -55,3 +55,11 @@
 .lists-entry-detail{padding:8px 18px 22px;max-height:65vh;overflow:auto}
 #listEntryDialog{width:min(820px,96vw)}
 @media(max-width:800px){.lists-toolbar label,.lists-toolbar select{width:100%}.lists-filters input,.lists-filters select{max-width:100%;width:100%}.lists-pages{justify-content:space-between}}
+
+/* V1.0.5: login AJAX con salvataggio affidato al Password Manager del browser. */
+.access form{flex-wrap:wrap}
+.access .chrome-password-actions{display:flex;align-items:center;gap:12px;max-width:520px;flex-wrap:wrap}
+.access .chrome-password-actions[hidden],#chromeLoadKey[hidden]{display:none!important}
+.chrome-password-actions #chromePasswordStatus{font-size:12px;color:#536b7a;line-height:1.5;max-width:350px}
+#chromeLoadKey{max-width:230px;white-space:normal}
+@media(max-width:800px){.access .chrome-password-actions{width:100%}}
