@@ -126,3 +126,6 @@
 }
 .main.is-locked #dashboard button[data-jump]{cursor:not-allowed;pointer-events:none}
 .main.is-locked #dashboard .kpi:hover{box-shadow:none;border-color:#e3e9ef}
+
+/* V1.0.12 — titolo per organizzazione leggibile anche con ragioni sociali lunghe. */
+.detail-hero h2,.dialog-title h2{overflow-wrap:anywhere}
