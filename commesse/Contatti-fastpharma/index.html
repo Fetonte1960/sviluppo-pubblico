@@ -3,19 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>FastPharma CRM — V1.0.6 TEST</title>
-  <link rel="stylesheet" href="./crm-v1.css?v=1.0.6">
-  <script defer src="./config.js?v=1.0.6"></script>
-  <script defer src="./version.js?v=1.0.6"></script>
-  <script defer src="./lists.js?v=1.0.6"></script>
-  <script defer src="./crm-v1.js?v=1.0.6"></script>
+  <title>FastPharma CRM — V1.0.8 TEST</title>
+  <link rel="stylesheet" href="./crm-v1.css?v=1.0.8">
+  <script defer src="./config.js?v=1.0.8"></script>
+  <script defer src="./version.js?v=1.0.8"></script>
+  <script defer src="./lists.js?v=1.0.8"></script>
+  <script defer src="./crm-v1.js?v=1.0.8"></script>
 </head>
 <body>
   <header class="appbar">
-    <div class="logo"><span class="logo-icon">F</span><div><strong>FastPharma CRM</strong><small>CRM simil-Vtiger · <strong id="appVersion">V1.0.6</strong></small></div></div>
+    <div class="logo"><span class="logo-icon">F</span><div><strong>FastPharma CRM</strong><small>CRM simil-Vtiger · <strong id="appVersion">V1.0.8</strong></small></div></div>
     <div class="top-actions">
       <span class="testflag">AMBIENTE TEST · NON USARE DATI REALI</span>
-      <span id="releaseVersion" class="release-version">V1.0.6</span>
+      <span id="releaseVersion" class="release-version">V1.0.8</span>
       <span id="connectionBadge" class="connection-badge">Demo dimostrativa</span>
     </div>
   </header>
@@ -37,7 +37,10 @@
     <main class="main">
       <div class="pagetop">
         <div><p class="eyebrow" id="breadcrumb">CRM / Panoramica</p><h1 id="pageTitle">Dashboard</h1><p class="subtitle" id="pageSubtitle">Un unico punto per contatti, aziende e attività commerciali.</p></div>
-        <button id="newRecord" type="button" class="primary" hidden disabled>+ Aggiungi</button>
+        <div class="page-actions">
+          <button id="importFromLists" type="button" class="secondary" hidden disabled>Importa da Liste</button>
+          <button id="newRecord" type="button" class="primary" hidden disabled>+ Aggiungi</button>
+        </div>
       </div>
       <section class="access" id="accessSection">
         <div><strong>Archivio di collaudo</strong><p id="accessMessage">Sono visualizzati esempi inventati. Per salvare sul database TEST serve la chiave già utilizzata nella V0.</p></div>
@@ -95,7 +98,13 @@
             </div>
           </div>
           <p id="listsError" class="dialog-error" role="alert"></p>
-          <div class="table-scroll">
+          <div class="tablefoot lists-pages lists-pages-top" aria-label="Navigazione pagine farmacie">
+            <span class="lists-pages-help">50 farmacie per pagina · scorri nella tabella</span>
+            <button id="listsPrevTop" class="secondary" type="button" disabled>← Precedenti</button>
+            <span id="listsPageInfoTop">—</span>
+            <button id="listsNextTop" class="secondary" type="button" disabled>Successive →</button>
+          </div>
+          <div id="listsScroll" class="table-scroll lists-table-scroll" role="region" aria-label="Farmacie, scorrimento verticale" tabindex="0">
             <table><thead><tr><th>Codice</th><th>Farmacia / ragione sociale</th><th>Località</th><th>Regione</th><th>Tipologia</th><th>Partita IVA</th></tr></thead>
               <tbody id="listsBody"><tr><td colspan="6" class="empty-row">Elenco non ancora caricato.</td></tr></tbody>
             </table>
@@ -140,7 +149,7 @@
         </div>
         <div class="surface detail-content" id="detailContent"></div>
       </section>
-      <footer>Contatti FastPharma V1.0.6 · TEST con dati sintetici · Sviluppo cloud / Windows con codice condiviso</footer>
+      <footer>Contatti FastPharma V1.0.8 · TEST con dati sintetici · Sviluppo cloud / Windows con codice condiviso</footer>
     </main>
   </div>
   <dialog id="recordDialog" class="record-dialog">
@@ -156,6 +165,53 @@
       <button type="button" class="iconbutton" id="closeListEntry" aria-label="Chiudi">×</button></div>
     <div id="listEntryDetails" class="lists-entry-detail"></div>
     <div class="dialog-actions"><button id="dismissListEntry" type="button" class="secondary">Chiudi</button></div>
+  </dialog>
+  <dialog id="orgImportDialog" class="record-dialog org-import-dialog" aria-labelledby="orgImportHeading">
+    <div class="dialog-title">
+      <div><p class="eyebrow">ANAGRAFICHE · ORGANIZZAZIONI</p>
+        <h2 id="orgImportHeading">Importa una farmacia da Liste</h2>
+        <p class="hint">Un solo elemento per volta. Le organizzazioni esistenti non vengono modificate.</p>
+      </div>
+      <button id="orgImportClose" class="iconbutton" type="button" aria-label="Chiudi importazione">×</button>
+    </div>
+    <div class="org-import-filters">
+      <label>Elenco di provenienza
+        <select id="orgImportList" aria-label="Elenco da importare"></select>
+      </label>
+      <label>Cerca nome, codice, partita IVA
+        <input type="search" id="orgImportSearch" placeholder="Inserisci farmacia o codice ministeriale">
+      </label>
+      <label>Regione
+        <select id="orgImportRegion"><option value="">Tutte le regioni</option></select>
+      </label>
+      <label>Provincia
+        <select id="orgImportProvince"><option value="">Tutte le province</option></select>
+      </label>
+      <label>Comune
+        <input id="orgImportCity" type="search" placeholder="Comune">
+      </label>
+    </div>
+    <p id="orgImportCount" class="hint">Cerca una farmacia per iniziare.</p>
+    <div class="org-import-list table-scroll">
+      <table><thead><tr><th>Codice</th><th>Farmacia</th><th>Comune</th><th>Provincia</th><th>Regione</th><th></th></tr></thead>
+        <tbody id="orgImportRows"><tr><td colspan="6" class="empty-row">Nessun risultato.</td></tr></tbody>
+      </table>
+    </div>
+    <div class="org-import-pager">
+      <button id="orgImportPrev" class="secondary" type="button" disabled>← Precedenti</button>
+      <span id="orgImportPageInfo">—</span>
+      <button id="orgImportNext" class="secondary" type="button" disabled>Successive →</button>
+    </div>
+    <section id="orgImportPreview" class="org-import-preview" hidden>
+      <h3>Farmacia selezionata</h3>
+      <div id="orgImportPreviewContent"></div>
+      <div id="orgImportMatches"></div>
+    </section>
+    <p id="orgImportError" class="dialog-error" role="alert" aria-live="polite"></p>
+    <div class="dialog-actions">
+      <button id="orgImportCancel" class="secondary" type="button">Annulla</button>
+      <button id="orgImportConfirm" class="primary" type="button" disabled>Importa questa farmacia</button>
+    </div>
   </dialog>
   </body>
 </html>
