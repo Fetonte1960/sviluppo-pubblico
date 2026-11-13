@@ -88,27 +88,45 @@
   }
  });
  function openArchives(){
+  if(!authenticated)return; // Pannello amministrativo accessibile solo dopo autenticazione.
   module="archives";screen="archives";activeId=null;
   render();
   if(!archivesInitialized){
    archivesInitialized=true;
-   archivesFrame.src="./laboratorio.html?v=1.0.10";
+   archivesFrame.src="./laboratorio.html?v=1.0.11";
   }else shareArchiveSession();
  }
  function openModule(next){
+  if(!authenticated && next!=="dashboard")return;
   if(next==="lists"){module="lists";screen="lists";activeId=null;render();return;}
   if(next!=="dashboard"&&!models[next])return;
   module=next;screen=next==="dashboard"?"dashboard":"list";activeId=null;sortBy="";desc=false;
   $("#recordSearch").value="";$("#recordFilter").value="";render();
  }
  function render(){
-  $$(".navlink").forEach(b=>b.classList.toggle("is-active",b.dataset.module===module));
+  // Dashboard: unico percorso d'accesso prima della verifica della chiave.
+  if(!authenticated && screen!=="dashboard"){
+   module="dashboard";screen="dashboard";activeId=null;
+  }
+  $$(".navlink").forEach(b=>{
+   const requiresAccess=b.dataset.module!=="dashboard";
+   b.disabled=requiresAccess && !authenticated;
+   b.setAttribute("aria-disabled",String(b.disabled));
+   b.classList.toggle("is-active",b.dataset.module===module);
+  });
+  $("#archivesNav").disabled=!authenticated;
+  $("#archivesNav").setAttribute("aria-disabled",String(!authenticated));
+  $$("[data-jump]").forEach(b=>{
+   b.disabled=!authenticated;
+   b.setAttribute("aria-disabled",String(!authenticated));
+  });
+  $(".main")?.classList.toggle("is-locked",!authenticated);
   $("#dashboard").hidden=screen!=="dashboard";
   $("#recordsScreen").hidden=screen!=="list";
   $("#detailScreen").hidden=screen!=="detail";
   $("#archivesScreen").hidden=screen!=="archives";
   $("#listsScreen").hidden=screen!=="lists";
-  $("#accessSection").hidden=screen==="archives";
+  $("#accessSection").hidden=screen!=="dashboard";
   $("#archivesNav").classList.toggle("is-active",screen==="archives");
   const m=models[module];
   $("#breadcrumb").textContent=screen==="lists"?"CRM / Anagrafiche / Liste":screen==="archives"?"CRM / Amministrazione / Archivi":m?`CRM / ${m.group} / ${m.title}`:"CRM / Panoramica";
@@ -137,7 +155,7 @@
   $("#recordsHead").innerHTML="<tr>"+m.cols.map(([field,label])=>`<th><button type="button" data-sort="${field}">${esc(label)} ${sortBy===field?(desc?"↓":"↑"):""}</button></th>`).join("")+"</tr>";
   $("#recordsBody").innerHTML=filtered.length?filtered.map(r=>`<tr tabindex="0" data-id="${esc(r.id)}">`+m.cols.map(([field],i)=>`<td class="${i===0?"primary-cell":""}">${esc(display(field,r)||"—")}</td>`).join("")+"</tr>").join(""):`<tr><td colspan="${m.cols.length}" class="empty-row">Nessun record trovato.</td></tr>`;
  }
- function openRecord(id){if(!getRecord(module,id))return;activeId=id;tab="summary";screen="detail";render()}
+ function openRecord(id){if(!authenticated||!getRecord(module,id))return;activeId=id;tab="summary";screen="detail";render()}
  function detail(){
   const m=models[module],r=getRecord(module,activeId);
   if(!r){screen="list";render();return}
@@ -539,7 +557,7 @@
   orgImportSerial++;clearTimeout(orgImportTimer);
   orgImportEl("orgImportDialog").close();
  }
- // V1.0.10 — cancella una sola scheda per volta e solo senza collegamenti.
+ // V1.0.11 — cancella una sola scheda per volta e solo senza collegamenti.
  let deleteTarget=null,deletePreview=null,deleteBusy=false,deleteRequestId=0;
  const deleteDialog=$("#deleteRecordDialog");
  const deleteCheck=$("#deleteConfirmCheck");
