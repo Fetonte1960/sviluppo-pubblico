@@ -1,6 +1,6 @@
 "use strict";
 // FastPharma CRM V1: logica client, codice indipendente da Vtiger.
-// Chiave TEST esclusivamente in memoria, nessun dato personale reale.
+// Chiave di accesso custodita soltanto nella memoria della sessione JS.
 (() => {
  const cfg=window.CONTATTI_CONFIG||{},base=String(cfg.apiBase||"").replace(/\/$/,"");
  const desktop=cfg.desktop===true&&!!window.CONTATTI_DESKTOP?.key;
@@ -12,7 +12,7 @@
  const models={
   contacts:{title:"Contatti",single:"Contatto",group:"Anagrafiche",desc:"Persone, referenti e contatti commerciali.",
    cols:[["first_name","Nome"],["last_name","Cognome"],["company","Azienda"],["email","Email"],["phone","Telefono"],["status","Stato"]],
-   fields:[["first_name","Nome","text",true],["last_name","Cognome","text",true],["organization_id","Organizzazione","org"],["company","Azienda (testo V0)","text"],["email","Email","email"],["phone","Telefono","tel"],["status","Stato","contactStatus"],["notes","Note","textarea"]],
+   fields:[["first_name","Nome","text",true],["last_name","Cognome","text",true],["organization_id","Organizzazione","org"],["company","Azienda (descrizione)","text"],["email","Email","email"],["phone","Telefono","tel"],["status","Stato","contactStatus"],["notes","Note","textarea"]],
    titleOf:r=>[r.first_name,r.last_name].filter(Boolean).join(" "),subtitle:r=>r.email||r.company||"Persona / referente"},
   organizations:{title:"Organizzazioni",single:"Organizzazione",group:"Anagrafiche",desc:"Farmacie, aziende e partner collegati ai contatti.",
    cols:[["name","Organizzazione"],["type","Tipo"],["city","Città"],["phone","Telefono"],["email","Email"]],
@@ -32,12 +32,8 @@
   activityType:["Telefonata","Richiamo","Appuntamento","Visita","Altro"],
   activityStatus:["Da fare","In corso","Completata","Annullata"],
   stage:["Qualificazione","Primo contatto","Proposta","Negoziazione","Vinta","Persa"]};
- const demo={
-  organizations:[{id:"demo-o1",name:"Farmacia Dimostrativa",type:"Farmacia",city:"Reggio Calabria",email:"farmacia@example.invalid"},{id:"demo-o2",name:"Partner Esempio",type:"Partner",city:"Lodi",email:"partner@example.invalid"}],
-  contacts:[{id:"demo-c1",first_name:"Anna",last_name:"Esempio",company:"Farmacia Dimostrativa",organization_id:"demo-o1",email:"anna@example.invalid",status:"Da contattare"},{id:"demo-c2",first_name:"Marco",last_name:"Prova",company:"Partner Esempio",organization_id:"demo-o2",email:"marco@example.invalid",status:"Attivo"}],
-  activities:[{id:"demo-a1",subject:"Richiamo dimostrativo",type:"Richiamo",status:"Da fare",due_at:"2026-11-12T09:30:00Z",contact_id:"demo-c1",organization_id:"demo-o1"},{id:"demo-a2",subject:"Presentazione servizi",type:"Appuntamento",status:"In corso",due_at:"2026-11-16T11:00:00Z",contact_id:"demo-c2",organization_id:"demo-o2"}],
-  deals:[{id:"demo-d1",name:"Servizio dimostrativo",stage:"Proposta",value:250,contact_id:"demo-c1",organization_id:"demo-o1"},{id:"demo-d2",name:"Accordo partner demo",stage:"Qualificazione",value:500,contact_id:"demo-c2",organization_id:"demo-o2"}]
- };
+ // Nessun dato fittizio nel gestionale: prima dell'accesso gli archivi sono vuoti.
+ const demo={contacts:[],organizations:[],activities:[],deals:[]};
  let data=structuredClone(demo),key=desktop?window.CONTATTI_DESKTOP.key:"",authenticated=false;
  let module="dashboard",screen="dashboard",activeId=null,tab="summary",editId=null,sortBy="",desc=false;
  let formModule="contacts",formContext=null;
@@ -96,7 +92,7 @@
   render();
   if(!archivesInitialized){
    archivesInitialized=true;
-   archivesFrame.src="./laboratorio.html?v=1.0.9";
+   archivesFrame.src="./laboratorio.html?v=1.0.10";
   }else shareArchiveSession();
  }
  function openModule(next){
@@ -137,7 +133,7 @@
     (!q||Object.values(r).join(" ").toLowerCase().includes(q)||[name("contacts",r.contact_id),name("organizations",r.organization_id)].join(" ").toLowerCase().includes(q)));
   if(sortBy)filtered.sort((a,b)=>String(val(sortBy,a[sortBy])).localeCompare(String(val(sortBy,b[sortBy])),"it",{numeric:true})*(desc?-1:1));
   $("#listTitle").textContent=m.title+" · List View";
-  $("#recordCount").textContent=filtered.length+" record · "+(authenticated?"Archivio PostgreSQL TEST":"Esempi inventati");
+  $("#recordCount").textContent=filtered.length+" record · "+(authenticated?"Archivio collegato":"Accesso richiesto");
   $("#recordsHead").innerHTML="<tr>"+m.cols.map(([field,label])=>`<th><button type="button" data-sort="${field}">${esc(label)} ${sortBy===field?(desc?"↓":"↑"):""}</button></th>`).join("")+"</tr>";
   $("#recordsBody").innerHTML=filtered.length?filtered.map(r=>`<tr tabindex="0" data-id="${esc(r.id)}">`+m.cols.map(([field],i)=>`<td class="${i===0?"primary-cell":""}">${esc(display(field,r)||"—")}</td>`).join("")+"</tr>").join(""):`<tr><td colspan="${m.cols.length}" class="empty-row">Nessun record trovato.</td></tr>`;
  }
@@ -145,7 +141,7 @@
  function detail(){
   const m=models[module],r=getRecord(module,activeId);
   if(!r){screen="list";render();return}
-  $("#detailCaption").textContent=m.single+" · "+(authenticated?"Archivio TEST":"Esempio inventato");
+  $("#detailCaption").textContent=m.single+" · "+(authenticated?"Archivio collegato":"Accesso richiesto");
   $("#detailTitle").textContent=m.titleOf(r);$("#detailSubtitle").textContent=m.subtitle(r);
   $("#editRecord").disabled=!authenticated;
   $("#deleteRecord").disabled=!authenticated;
@@ -229,7 +225,7 @@
   return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
  }
  function showForm(id=null,settings={}){
-  if(!authenticated){showNotice("Collega l'archivio TEST per modificare.",true);return}
+  if(!authenticated){showNotice("Accedi agli archivi per apportare modifiche.",true);return}
   formModule=settings.target||module;
   formContext=settings.context||null;
   editId=id;
@@ -292,8 +288,8 @@
  }
  async function get(path){
   const r=await fetch(base+path,{headers:{"X-Demo-Key":key},cache:"no-store",signal:AbortSignal.timeout(20000)});
-  if(r.status===401)throw new Error("Chiave TEST non riconosciuta. Verifica la chiave e riprova.");
-  if(r.status===503)throw new Error("Server o database TEST non ancora disponibile. Riprova.");
+  if(r.status===401)throw new Error("Chiave di accesso non riconosciuta. Verifica la chiave e riprova.");
+  if(r.status===503)throw new Error("Server o archivio non disponibile. Riprova.");
   if(!r.ok)throw new Error("Archivio non disponibile (HTTP "+r.status+").");
   return await r.json();
  }
@@ -350,19 +346,19 @@
   }finally{button.disabled=false;}
  }
  async function connect(candidate){
-  if(!hasApi)throw new Error("API di collaudo non configurata");
+  if(!hasApi)throw new Error("Servizio di accesso agli archivi non configurato");
   key=candidate;
   try{
    const kinds=Object.keys(models),incoming=await Promise.all(kinds.map(k=>get("/api/v1/"+k)));
    data=Object.fromEntries(kinds.map((k,i)=>[k,incoming[i]]));authenticated=true;
    $("#accessSection").classList.add("connected");
-   $("#accessMessage").textContent="Archivio PostgreSQL TEST collegato. Non inserire dati personali reali.";
-   $("#connectionBadge").textContent="Archivio TEST collegato";$("#connectionBadge").classList.add("connected");
+   $("#accessMessage").textContent="Archivio collegato. Puoi consultare e aggiornare i dati.";
+   $("#connectionBadge").textContent="Archivio collegato";$("#connectionBadge").classList.add("connected");
    // Mantieni il campo nel form ora nascosto: Chrome può riconoscere
    // l'accesso riuscito e proporre il salvataggio nel proprio gestore password.
    // La web app non scrive alcun segreto in storage o cookie.
-   loginStatus("Accesso riuscito: archivio TEST collegato.");
-   showNotice("Accesso riuscito: ora visualizzi i dati del database TEST.",false);
+   loginStatus("Accesso riuscito: archivio collegato.");
+   showNotice("Accesso riuscito: ora puoi consultare gli archivi.",false);
    shareArchiveSession();render();
    showChromePasswordUi();
    // Tentativo esplicito dopo il login riuscito; senza bloccare l'apertura del CRM.
@@ -405,7 +401,7 @@
    }
    screen="detail";tab="summary";
    showNotice(models[target].single+(editId?" aggiornata":" creata")+
-    (originalContext?" e aggiunta allo storico della scheda.":" nell'archivio TEST."));
+    (originalContext?" e aggiunta allo storico della scheda.":" nell'archivio."));
    render();
   }catch(e){$("#dialogError").textContent=e.message}finally{$("#submitRecord").disabled=false}
  }
@@ -465,7 +461,7 @@
   orgImportTimer=setTimeout(()=>{void findImportEntries();},280);
  }
  async function openOrgImporter(){
-  if(!authenticated || module!=="organizations"){showNotice("Collega l'archivio TEST e apri Organizzazioni.",true);return;}
+  if(!authenticated || module!=="organizations"){showNotice("Accedi agli archivi e apri Organizzazioni.",true);return;}
   const dialog=orgImportEl("orgImportDialog");
   orgImportError();resetOrgImportSelection();
   orgImportOffset=0;orgImportLists=[];orgImportListId="";
@@ -543,7 +539,7 @@
   orgImportSerial++;clearTimeout(orgImportTimer);
   orgImportEl("orgImportDialog").close();
  }
- // V1.0.9 — cancella una sola scheda per volta e solo senza collegamenti.
+ // V1.0.10 — cancella una sola scheda per volta e solo senza collegamenti.
  let deleteTarget=null,deletePreview=null,deleteBusy=false,deleteRequestId=0;
  const deleteDialog=$("#deleteRecordDialog");
  const deleteCheck=$("#deleteConfirmCheck");
@@ -564,7 +560,7 @@
  }
  async function openDeleteDialog(){
   if(!authenticated||screen!=="detail"||!models[module]||!activeId){
-   showNotice("Apri una scheda dell'archivio TEST per cancellarla.",true);return;
+   showNotice("Apri una scheda per cancellare il record selezionato.",true);return;
   }
   resetDelete();
   const record=getRecord(module,activeId);
@@ -683,17 +679,17 @@
  $("#chromeLoadKey").addEventListener("click",loadFromChromePasswordManager);
  $("#chromeSaveKey").addEventListener("click",()=>{void saveToChromePasswordManager();});
  $("#loginForm").addEventListener("submit",async e=>{
-  e.preventDefault();const candidate=$("#demoKey").value.trim();if(!candidate){showNotice("Inserisci la chiave di collaudo.",true);return}
+  e.preventDefault();const candidate=$("#demoKey").value.trim();if(!candidate){showNotice("Inserisci la chiave di accesso.",true);return}
   const b=$("#connectButton");
   b.disabled=true;
   b.textContent="Verifica in corso…";
-  loginStatus("Connessione al server TEST e verifica della chiave…");
+  loginStatus("Connessione al server e verifica della chiave…");
   showNotice("Verifica accesso in corso…");
   try{
    await connect(candidate);
   }catch(error){
-   const message=error?.name==="TimeoutError"?"Timeout del server TEST: riprova fra poco.":
-     error instanceof TypeError?"Server non raggiungibile o comunicazione bloccata dal browser. Riprova su Render TEST.":error.message;
+   const message=error?.name==="TimeoutError"?"Tempo di risposta del server superato: riprova.":
+     error instanceof TypeError?"Server non raggiungibile o comunicazione bloccata dal browser. Riprova.":error.message;
    loginStatus(message,true);
    showNotice("Accesso non riuscito: "+message,true);
   }finally{
@@ -707,5 +703,5 @@
  if(desktop){
   $("#loginForm").hidden=true;showNotice("Collegamento al database Windows in corso…");
   connect(key).catch(e=>showNotice("Archivio Windows non pronto: "+e.message,true));
- }else if(!hasApi)showNotice("Demo statica: API non configurata.");
+ }else if(!hasApi)showNotice("Servizio non configurato.");
 })();
