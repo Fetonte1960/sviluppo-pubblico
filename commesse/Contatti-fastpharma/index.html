@@ -3,18 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Gestione contatti FastPharma — V1.0.10</title>
-  <link rel="stylesheet" href="./crm-v1.css?v=1.0.10">
-  <script defer src="./config.js?v=1.0.10"></script>
-  <script defer src="./version.js?v=1.0.10"></script>
-  <script defer src="./lists.js?v=1.0.10"></script>
-  <script defer src="./crm-v1.js?v=1.0.10"></script>
+  <title>Gestione contatti FastPharma — V1.0.11</title>
+  <link rel="stylesheet" href="./crm-v1.css?v=1.0.11">
+  <script defer src="./config.js?v=1.0.11"></script>
+  <script defer src="./version.js?v=1.0.11"></script>
+  <script defer src="./lists.js?v=1.0.11"></script>
+  <script defer src="./crm-v1.js?v=1.0.11"></script>
 </head>
 <body>
   <header class="appbar">
-    <div class="logo"><span class="logo-icon">F</span><div><strong>Gestione contatti FastPharma</strong><small>Anagrafiche e attività commerciali · <strong id="appVersion">V1.0.10</strong></small></div></div>
+    <div class="logo"><span class="logo-icon">F</span><div><strong>Gestione contatti FastPharma</strong><small>Anagrafiche e attività commerciali · <strong id="appVersion">V1.0.11</strong></small></div></div>
     <div class="top-actions">
-      <span id="releaseVersion" class="release-version">V1.0.10</span>
+      <span id="releaseVersion" class="release-version">V1.0.11</span>
       <span id="connectionBadge" class="connection-badge">Accesso richiesto</span>
     </div>
   </header>
@@ -23,14 +23,14 @@
       <div class="navgroup">PANORAMICA</div>
       <button class="navlink is-active" data-module="dashboard" type="button"><span>▦</span> Dashboard</button>
       <div class="navgroup">ANAGRAFICHE</div>
-      <button class="navlink" data-module="lists" type="button"><span>☷</span> Liste</button>
-      <button class="navlink" data-module="contacts" type="button"><span>♙</span> Contatti</button>
-      <button class="navlink" data-module="organizations" type="button"><span>▤</span> Organizzazioni</button>
+      <button class="navlink" data-module="lists" type="button" disabled aria-disabled="true"><span>☷</span> Liste</button>
+      <button class="navlink" data-module="contacts" type="button" disabled aria-disabled="true"><span>♙</span> Contatti</button>
+      <button class="navlink" data-module="organizations" type="button" disabled aria-disabled="true"><span>▤</span> Organizzazioni</button>
       <div class="navgroup">COMMERCIALE</div>
-      <button class="navlink" data-module="activities" type="button"><span>◷</span> Attività</button>
-      <button class="navlink" data-module="deals" type="button"><span>◇</span> Trattative</button>
+      <button class="navlink" data-module="activities" type="button" disabled aria-disabled="true"><span>◷</span> Attività</button>
+      <button class="navlink" data-module="deals" type="button" disabled aria-disabled="true"><span>◇</span> Trattative</button>
       <div class="navgroup">AMMINISTRAZIONE</div>
-      <button class="navlink" id="archivesNav" type="button"><span>⤓</span> Salvataggio e ripristino archivi</button>
+      <button class="navlink" id="archivesNav" type="button" disabled aria-disabled="true"><span>⤓</span> Salvataggio e ripristino archivi</button>
       <div class="navbottom"><p>Gestione contatti FastPharma</p></div>
     </aside>
     <main class="main">
@@ -49,14 +49,14 @@
       <p id="notice" class="notice" role="status" aria-live="polite"></p>
       <section id="dashboard" class="screen">
         <div class="kpis">
-          <button class="kpi" type="button" data-jump="contacts"><span>Contatti</span><strong id="metricContacts">0</strong><small>Persone in rubrica</small></button>
-          <button class="kpi" type="button" data-jump="organizations"><span>Organizzazioni</span><strong id="metricOrganizations">0</strong><small>Aziende / farmacie</small></button>
-          <button class="kpi" type="button" data-jump="activities"><span>Attività aperte</span><strong id="metricActivities">0</strong><small>Da fare o in corso</small></button>
-          <button class="kpi" type="button" data-jump="deals"><span>Trattative</span><strong id="metricDeals">0</strong><small>Opportunità commerciali</small></button>
+          <button class="kpi" type="button" data-jump="contacts" disabled aria-disabled="true"><span>Contatti</span><strong id="metricContacts">0</strong><small>Persone in rubrica</small></button>
+          <button class="kpi" type="button" data-jump="organizations" disabled aria-disabled="true"><span>Organizzazioni</span><strong id="metricOrganizations">0</strong><small>Aziende / farmacie</small></button>
+          <button class="kpi" type="button" data-jump="activities" disabled aria-disabled="true"><span>Attività aperte</span><strong id="metricActivities">0</strong><small>Da fare o in corso</small></button>
+          <button class="kpi" type="button" data-jump="deals" disabled aria-disabled="true"><span>Trattative</span><strong id="metricDeals">0</strong><small>Opportunità commerciali</small></button>
         </div>
         <div class="dashgrid">
           <section class="surface">
-            <div class="surface-head"><h2>Prossime attività</h2><button class="text-button" data-jump="activities" type="button">Apri tutte</button></div>
+            <div class="surface-head"><h2>Prossime attività</h2><button class="text-button" data-jump="activities" type="button" disabled aria-disabled="true">Apri tutte</button></div>
             <div id="upcoming" class="upcoming"></div>
           </section>
           <section class="surface">
@@ -64,7 +64,7 @@
             <div class="welcome">
               <p>Consulta anagrafiche, organizzazioni, attività e trattative in un unico archivio.</p>
               <p>Puoi organizzare i contatti, programmare richiami e importare singole farmacie dalle Liste.</p>
-              <button class="secondary" data-jump="contacts" type="button">Vai alla lista contatti</button>
+              <button class="secondary" data-jump="contacts" type="button" disabled aria-disabled="true">Vai alla lista contatti</button>
             </div>
           </section>
         </div>
@@ -149,7 +149,7 @@
         </div>
         <div class="surface detail-content" id="detailContent"></div>
       </section>
-      <footer>Gestione contatti FastPharma · V1.0.10</footer>
+      <footer>Gestione contatti FastPharma · V1.0.11</footer>
     </main>
   </div>
   <dialog id="recordDialog" class="record-dialog">
