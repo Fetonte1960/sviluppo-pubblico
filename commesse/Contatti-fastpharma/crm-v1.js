@@ -640,6 +640,9 @@
   if(!record)return;
   deleteTarget={module,id:record.id,title:models[module].titleOf(record)};
   $("#deleteDialogTitle").textContent="Cancella "+models[module].single.toLowerCase();
+  $("#deleteDialogHelp").textContent=module==="organizations"?
+   "Eliminando l'Organizzazione saranno rimossi anche tutti i Contatti, le Attività e le Trattative collegati. La cancellazione non è annullabile dalla schermata.":
+   "Verrà eliminato solo questo record, purché non abbia collegamenti bloccanti.";
   $("#deleteRecordName").textContent=deleteTarget.title;
   $("#deleteDependencyStatus").textContent="Controllo dei collegamenti sul database in corso…";
   deleteDialog.showModal();
