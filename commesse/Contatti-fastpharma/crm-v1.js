@@ -37,7 +37,7 @@
  let data=structuredClone(demo),key=desktop?window.CONTATTI_DESKTOP.key:"",authenticated=false;
  let module="dashboard",screen="dashboard",activeId=null,tab="summary",editId=null,sortBy="",desc=false;
  let formModule="contacts",formContext=null;
- // La scelta nasce solo dall'apertura del dettaglio Organizzazione (V1.0.14).
+ // La scelta nasce solo dall'apertura del dettaglio Organizzazione (V1.0.15).
  let selectedOrganizationId=null;
  const selectedOrganization=()=>selectedOrganizationId&&getRecord("organizations",selectedOrganizationId);
  const commercial=k=>k==="activities"||k==="deals";
@@ -110,7 +110,7 @@
   render();
   if(!archivesInitialized){
    archivesInitialized=true;
-   archivesFrame.src="./laboratorio.html?v=1.0.14";
+   archivesFrame.src="./laboratorio.html?v=1.0.15";
   }else shareArchiveSession();
  }
  function openModule(next){
@@ -598,8 +598,10 @@
    if(!response.ok)throw new Error(result.error||"Importazione non riuscita (HTTP "+response.status+").");
    data.organizations=await get("/api/v1/organizations");
    orgImportEl("orgImportDialog").close();
-   module="organizations";activeId=result.id;screen="detail";tab="summary";
-   render();
+   // Come il click su una riga Organizzazioni: apre il dettaglio e rende
+   // questa farmacia il contesto di lavoro per Attività e Trattative.
+   module="organizations";
+   openRecord(result.id);
    showNotice("Farmacia «"+result.name+"» importata in Organizzazioni. Completa i dati commerciali dalla scheda.");
   }catch(e){
    orgImportError(e.message);
