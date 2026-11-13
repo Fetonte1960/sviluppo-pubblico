@@ -1,6 +1,6 @@
 "use strict";
 // Unica dichiarazione applicativa della versione visibile, sempre incrementata a ogni incarico.
-window.FASTPHARMA_VERSION = Object.freeze({major:1,minor:0,patch:17,label:"V1.0.17",channel:"Gestione"});
+window.FASTPHARMA_VERSION = Object.freeze({major:1,minor:0,patch:18,label:"V1.0.18",channel:"Gestione"});
 document.addEventListener("DOMContentLoaded", () => {
   const label = window.FASTPHARMA_VERSION.label;
   for (const id of ["appVersion", "releaseVersion"]) {
