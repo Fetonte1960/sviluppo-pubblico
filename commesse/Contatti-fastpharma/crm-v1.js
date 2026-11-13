@@ -96,10 +96,11 @@
   render();
   if(!archivesInitialized){
    archivesInitialized=true;
-   archivesFrame.src="./laboratorio.html?v=1.0.2";
+   archivesFrame.src="./laboratorio.html?v=1.0.3";
   }else shareArchiveSession();
  }
  function openModule(next){
+  if(next==="lists"){module="lists";screen="lists";activeId=null;render();return;}
   if(next!=="dashboard"&&!models[next])return;
   module=next;screen=next==="dashboard"?"dashboard":"list";activeId=null;sortBy="";desc=false;
   $("#recordSearch").value="";$("#recordFilter").value="";render();
@@ -110,16 +111,18 @@
   $("#recordsScreen").hidden=screen!=="list";
   $("#detailScreen").hidden=screen!=="detail";
   $("#archivesScreen").hidden=screen!=="archives";
+  $("#listsScreen").hidden=screen!=="lists";
   $("#accessSection").hidden=screen==="archives";
   $("#archivesNav").classList.toggle("is-active",screen==="archives");
   const m=models[module];
-  $("#breadcrumb").textContent=screen==="archives"?"CRM / Amministrazione / Archivi":m?`CRM / ${m.group} / ${m.title}`:"CRM / Panoramica";
-  $("#pageTitle").textContent=screen==="archives"?"Salvataggio e ripristino archivi":m?m.title:"Dashboard";
-  $("#pageSubtitle").textContent=screen==="archives"?"Backup e ripristino guidato dei soli dati Contatti.":m?m.desc:"Un unico punto per contatti, aziende e attività commerciali.";
+  $("#breadcrumb").textContent=screen==="lists"?"CRM / Anagrafiche / Liste":screen==="archives"?"CRM / Amministrazione / Archivi":m?`CRM / ${m.group} / ${m.title}`:"CRM / Panoramica";
+  $("#pageTitle").textContent=screen==="lists"?"Liste":screen==="archives"?"Salvataggio e ripristino archivi":m?m.title:"Dashboard";
+  $("#pageSubtitle").textContent=screen==="lists"?"Elenchi esterni di enti pubblici e privati, separati dalle Organizzazioni.":screen==="archives"?"Backup e ripristino guidato dei soli dati Contatti.":m?m.desc:"Un unico punto per contatti, aziende e attività commerciali.";
   $("#newRecord").hidden=!m;$("#newRecord").disabled=!authenticated;
   $("#newRecord").textContent=m?"+ Aggiungi "+m.single:"+ Aggiungi";
   dashboard();
   if(screen==="list")list();if(screen==="detail")detail();
+  if(screen==="lists")window.FastPharmaLists?.open({key:authenticated?key:"",base});
  }
  function list(){
   const m=models[module],raw=data[module].slice();
