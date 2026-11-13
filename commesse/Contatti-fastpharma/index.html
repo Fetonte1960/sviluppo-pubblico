@@ -3,18 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>FastPharma CRM — V1.0.2 TEST</title>
-  <link rel="stylesheet" href="./crm-v1.css?v=1.0.2">
-  <script defer src="./config.js?v=1.0.2"></script>
-  <script defer src="./version.js?v=1.0.2"></script>
-  <script defer src="./crm-v1.js?v=1.0.2"></script>
+  <title>FastPharma CRM — V1.0.3 TEST</title>
+  <link rel="stylesheet" href="./crm-v1.css?v=1.0.3">
+  <script defer src="./config.js?v=1.0.3"></script>
+  <script defer src="./version.js?v=1.0.3"></script>
+  <script defer src="./lists.js?v=1.0.3"></script>
+  <script defer src="./crm-v1.js?v=1.0.3"></script>
 </head>
 <body>
   <header class="appbar">
-    <div class="logo"><span class="logo-icon">F</span><div><strong>FastPharma CRM</strong><small>CRM simil-Vtiger · <strong id="appVersion">V1.0.2</strong></small></div></div>
+    <div class="logo"><span class="logo-icon">F</span><div><strong>FastPharma CRM</strong><small>CRM simil-Vtiger · <strong id="appVersion">V1.0.3</strong></small></div></div>
     <div class="top-actions">
       <span class="testflag">AMBIENTE TEST · NON USARE DATI REALI</span>
-      <span id="releaseVersion" class="release-version">V1.0.2</span>
+      <span id="releaseVersion" class="release-version">V1.0.3</span>
       <span id="connectionBadge" class="connection-badge">Demo dimostrativa</span>
     </div>
   </header>
@@ -23,6 +24,7 @@
       <div class="navgroup">PANORAMICA</div>
       <button class="navlink is-active" data-module="dashboard" type="button"><span>▦</span> Dashboard</button>
       <div class="navgroup">ANAGRAFICHE</div>
+      <button class="navlink" data-module="lists" type="button"><span>☷</span> Liste</button>
       <button class="navlink" data-module="contacts" type="button"><span>♙</span> Contatti</button>
       <button class="navlink" data-module="organizations" type="button"><span>▤</span> Organizzazioni</button>
       <div class="navgroup">COMMERCIALE</div>
@@ -64,6 +66,46 @@
           </section>
         </div>
       </section>
+      <section id="listsScreen" class="screen" hidden>
+        <div class="surface lists-overview">
+          <div class="surface-head"><div><h2>Elenchi di provenienza esterna</h2><p class="hint">I record delle Liste non vengono inseriti automaticamente nelle Organizzazioni commerciali.</p></div></div>
+          <div class="lists-toolbar">
+            <label for="listsCollection">Elenco
+              <select id="listsCollection"><option value="">In attesa di collegamento</option></select>
+            </label>
+            <button type="button" id="listsRefresh" class="primary" disabled>Aggiorna dal Ministero</button>
+            <label class="lists-upload" for="listsFile">Oppure carica il CSV ufficiale
+              <input id="listsFile" type="file" accept=".csv,text/csv" disabled>
+            </label>
+          </div>
+          <div id="listsMetadata" class="lists-metadata">La prima fonte è il Ministero della Salute: intero elenco nazionale delle farmacie.</div>
+          <div id="listsProgress" class="hint" role="status" aria-live="polite"></div>
+        </div>
+        <div class="surface records">
+          <div class="records-head">
+            <div><h2>Farmacie · List View</h2><p id="listsCount" class="hint">Collega l'archivio TEST per consultare.</p></div>
+            <div class="filters lists-filters">
+              <input id="listsSearch" type="search" placeholder="Nome, codice, partita IVA..." aria-label="Cerca farmacie">
+              <select id="listsRegion" aria-label="Regione"><option value="">Tutte le regioni</option></select>
+              <select id="listsProvince" aria-label="Provincia"><option value="">Tutte le province</option></select>
+              <input id="listsCity" type="search" placeholder="Comune" aria-label="Comune">
+              <select id="listsCategory" aria-label="Tipologia"><option value="">Tutte le tipologie</option></select>
+              <button id="listsClear" type="button" class="secondary">Azzera filtri</button>
+            </div>
+          </div>
+          <p id="listsError" class="dialog-error" role="alert"></p>
+          <div class="table-scroll">
+            <table><thead><tr><th>Codice</th><th>Farmacia / ragione sociale</th><th>Località</th><th>Regione</th><th>Tipologia</th><th>Partita IVA</th></tr></thead>
+              <tbody id="listsBody"><tr><td colspan="6" class="empty-row">Elenco non ancora caricato.</td></tr></tbody>
+            </table>
+          </div>
+          <div class="tablefoot lists-pages">
+            <button id="listsPrev" class="secondary" type="button" disabled>← Precedenti</button>
+            <span id="listsPageInfo">—</span>
+            <button id="listsNext" class="secondary" type="button" disabled>Successive →</button>
+          </div>
+        </div>
+      </section>
       <section id="archivesScreen" class="screen" hidden>
         <iframe id="archivesFrame" title="Salvataggio e ripristino archivi" class="archives-frame" loading="eager"></iframe>
       </section>
@@ -97,7 +139,7 @@
         </div>
         <div class="surface detail-content" id="detailContent"></div>
       </section>
-      <footer>Contatti FastPharma V1.0.2 · TEST con dati sintetici · Sviluppo cloud / Windows con codice condiviso</footer>
+      <footer>Contatti FastPharma V1.0.3 · TEST con dati sintetici · Sviluppo cloud / Windows con codice condiviso</footer>
     </main>
   </div>
   <dialog id="recordDialog" class="record-dialog">
@@ -108,5 +150,11 @@
       <div class="dialog-actions"><button type="button" class="secondary" id="cancelDialog">Annulla</button><button class="primary" type="submit" id="submitRecord">Salva</button></div>
     </form>
   </dialog>
-</body>
+<dialog id="listEntryDialog" class="record-dialog">
+    <div class="dialog-title"><div><p class="eyebrow">FONTE ESTERNA · MINISTERO DELLA SALUTE</p><h2 id="listEntryTitle">Dettaglio farmacia</h2></div>
+      <button type="button" class="iconbutton" id="closeListEntry" aria-label="Chiudi">×</button></div>
+    <div id="listEntryDetails" class="lists-entry-detail"></div>
+    <div class="dialog-actions"><button id="dismissListEntry" type="button" class="secondary">Chiudi</button></div>
+  </dialog>
+  </body>
 </html>
