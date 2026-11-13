@@ -3,19 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>FastPharma CRM — V1.0.8 TEST</title>
-  <link rel="stylesheet" href="./crm-v1.css?v=1.0.8">
-  <script defer src="./config.js?v=1.0.8"></script>
-  <script defer src="./version.js?v=1.0.8"></script>
-  <script defer src="./lists.js?v=1.0.8"></script>
-  <script defer src="./crm-v1.js?v=1.0.8"></script>
+  <title>FastPharma CRM — V1.0.9 TEST</title>
+  <link rel="stylesheet" href="./crm-v1.css?v=1.0.9">
+  <script defer src="./config.js?v=1.0.9"></script>
+  <script defer src="./version.js?v=1.0.9"></script>
+  <script defer src="./lists.js?v=1.0.9"></script>
+  <script defer src="./crm-v1.js?v=1.0.9"></script>
 </head>
 <body>
   <header class="appbar">
-    <div class="logo"><span class="logo-icon">F</span><div><strong>FastPharma CRM</strong><small>CRM simil-Vtiger · <strong id="appVersion">V1.0.8</strong></small></div></div>
+    <div class="logo"><span class="logo-icon">F</span><div><strong>FastPharma CRM</strong><small>CRM simil-Vtiger · <strong id="appVersion">V1.0.9</strong></small></div></div>
     <div class="top-actions">
       <span class="testflag">AMBIENTE TEST · NON USARE DATI REALI</span>
-      <span id="releaseVersion" class="release-version">V1.0.8</span>
+      <span id="releaseVersion" class="release-version">V1.0.9</span>
       <span id="connectionBadge" class="connection-badge">Demo dimostrativa</span>
     </div>
   </header>
@@ -138,6 +138,7 @@
           <div class="detail-action-buttons">
             <button id="logCall" class="secondary" type="button" hidden disabled>+ Registra telefonata</button>
             <button id="planFollowup" class="secondary" type="button" hidden disabled>+ Programma richiamo</button>
+            <button id="deleteRecord" class="danger-outline" type="button" disabled>Cancella</button>
             <button id="editRecord" class="primary" type="button" disabled>Modifica</button>
           </div>
         </div>
@@ -149,7 +150,7 @@
         </div>
         <div class="surface detail-content" id="detailContent"></div>
       </section>
-      <footer>Contatti FastPharma V1.0.8 · TEST con dati sintetici · Sviluppo cloud / Windows con codice condiviso</footer>
+      <footer>Contatti FastPharma V1.0.9 · TEST con dati sintetici · Sviluppo cloud / Windows con codice condiviso</footer>
     </main>
   </div>
   <dialog id="recordDialog" class="record-dialog">
@@ -165,6 +166,26 @@
       <button type="button" class="iconbutton" id="closeListEntry" aria-label="Chiudi">×</button></div>
     <div id="listEntryDetails" class="lists-entry-detail"></div>
     <div class="dialog-actions"><button id="dismissListEntry" type="button" class="secondary">Chiudi</button></div>
+  </dialog>
+  <dialog id="deleteRecordDialog" class="record-dialog delete-record-dialog" aria-labelledby="deleteDialogTitle" aria-describedby="deleteDialogHelp">
+    <div class="dialog-title">
+      <div><p class="eyebrow">ARCHIVI COMMERCIALI · CANCELLAZIONE</p>
+        <h2 id="deleteDialogTitle">Conferma cancellazione</h2>
+      </div>
+      <button id="deleteDialogClose" class="iconbutton" type="button" aria-label="Chiudi senza cancellare">×</button>
+    </div>
+    <p id="deleteDialogHelp">Si può eliminare soltanto un record alla volta. I dati cancellati non sono recuperabili dalla schermata.</p>
+    <p id="deleteRecordName" class="delete-record-name"></p>
+    <div id="deleteDependencyStatus" class="delete-dependency-status" role="status" aria-live="polite">Verifica dei collegamenti in corso…</div>
+    <label id="deleteConfirmLabel" class="delete-confirm-label">
+      <input id="deleteConfirmCheck" type="checkbox" disabled>
+      Confermo di voler cancellare definitivamente questo singolo record.
+    </label>
+    <p id="deleteDialogError" class="dialog-error" role="alert" aria-live="polite"></p>
+    <div class="dialog-actions">
+      <button id="deleteDialogCancel" class="secondary" type="button">Annulla</button>
+      <button id="deleteDialogConfirm" class="danger" type="button" disabled>Cancella definitivamente</button>
+    </div>
   </dialog>
   <dialog id="orgImportDialog" class="record-dialog org-import-dialog" aria-labelledby="orgImportHeading">
     <div class="dialog-title">
