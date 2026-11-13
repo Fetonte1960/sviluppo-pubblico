@@ -1,8 +1,8 @@
 "use strict";
 
-// Front V1.5.1 — incrementare la versione a ogni pubblicazione.
-const FRONT_VERSION = "1.5.1";
-const EXPECTED_SERVER_VERSION = "1.15.1";
+// Front V1.5.2 — incrementare la versione a ogni pubblicazione.
+const FRONT_VERSION = "1.5.2";
+const EXPECTED_SERVER_VERSION = "1.16.0";
 const DEFAULT_SERVER_URL = "https://mcp-postgree.onrender.com";
 const TOOL_NAME = "CommandToMCPPostgree";
 const PAGE_INSTRUCTIONS = "https://github.com/Fetonte1960/sviluppo-pubblico/blob/main/commesse/MCP-postgree/ISTRUZIONI.md";
