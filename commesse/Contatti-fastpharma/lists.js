@@ -88,6 +88,11 @@
    $("listsPageInfo").textContent=total?(offset+1).toLocaleString("it-IT")+"–"+(offset+rows.length).toLocaleString("it-IT")+" di "+total.toLocaleString("it-IT"):"0 di 0";
    $("listsPrev").disabled=offset===0;
    $("listsNext").disabled=offset+pageSize>=total;
+   // Stessa navigazione accessibile sopra e sotto la tabella.
+   $("listsPrevTop").disabled=$("listsPrev").disabled;
+   $("listsNextTop").disabled=$("listsNext").disabled;
+   $("listsPageInfoTop").textContent=$("listsPageInfo").textContent;
+   $("listsScroll").scrollTop=0;
    $("listsError").textContent="";
   }catch(e){
    if(ticket===requestIndex)feedback(e.message,true);
@@ -173,8 +178,10 @@
  for(const id of ["listsSearch","listsCity"])$(id).addEventListener("input",filter);
  for(const id of ["listsRegion","listsProvince","listsCategory"])$(id).addEventListener("change",filter);
  $("listsClear").addEventListener("click",()=>{clearFilters();page();});
- $("listsPrev").addEventListener("click",()=>{offset=Math.max(0,offset-pageSize);page();});
- $("listsNext").addEventListener("click",()=>{if(offset+pageSize<total){offset+=pageSize;page();}});
+ const prevPage=()=>{offset=Math.max(0,offset-pageSize);void page();};
+ const nextPage=()=>{if(offset+pageSize<total){offset+=pageSize;void page();}};
+ for(const id of ["listsPrev","listsPrevTop"])$(id).addEventListener("click",prevPage);
+ for(const id of ["listsNext","listsNextTop"])$(id).addEventListener("click",nextPage);
  $("listsRefresh").addEventListener("click",refresh);
  $("listsFile").addEventListener("change",e=>upload(e.target.files?.[0]));
  $("listsBody").addEventListener("click",e=>{const i=e.target.closest("tr[data-list-index]")?.dataset.listIndex;if(i!==undefined)showEntry(Number(i));});
