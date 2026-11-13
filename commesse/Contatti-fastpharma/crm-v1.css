@@ -111,3 +111,18 @@
 .delete-confirm-label input{margin:3px 0 0;width:18px;height:18px;flex-shrink:0;accent-color:#ad4039}
 .delete-record-dialog .dialog-error:not(:empty){margin:8px 0}
 @media(max-width:700px){.detail-action-buttons{flex-wrap:wrap}.delete-record-dialog{padding:17px}}
+
+/* V1.0.11 — la Dashboard ospita l'accesso, tutte le altre funzioni sono grayed fino al login. */
+#accessSection[hidden]{display:none!important}
+.sidenav .navlink:disabled,.sidenav #archivesNav:disabled{
+ background:#f4f6f8!important;color:#aab4be!important;
+ opacity:.55;cursor:not-allowed;border-color:transparent;box-shadow:none;
+}
+.sidenav .navlink:disabled span,.sidenav #archivesNav:disabled span{color:#b6bec6!important}
+.sidenav .navlink:disabled:hover,.sidenav #archivesNav:disabled:hover{background:#f4f6f8!important}
+.main.is-locked #dashboard .kpi,
+.main.is-locked #dashboard .dashgrid{
+ opacity:.48;filter:grayscale(1);
+}
+.main.is-locked #dashboard button[data-jump]{cursor:not-allowed;pointer-events:none}
+.main.is-locked #dashboard .kpi:hover{box-shadow:none;border-color:#e3e9ef}
