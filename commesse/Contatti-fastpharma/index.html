@@ -3,18 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Gestione contatti FastPharma — V1.0.12</title>
-  <link rel="stylesheet" href="./crm-v1.css?v=1.0.12">
-  <script defer src="./config.js?v=1.0.12"></script>
-  <script defer src="./version.js?v=1.0.12"></script>
-  <script defer src="./lists.js?v=1.0.12"></script>
-  <script defer src="./crm-v1.js?v=1.0.12"></script>
+  <title>Gestione contatti FastPharma — V1.0.13</title>
+  <link rel="stylesheet" href="./crm-v1.css?v=1.0.13">
+  <script defer src="./config.js?v=1.0.13"></script>
+  <script defer src="./version.js?v=1.0.13"></script>
+  <script defer src="./lists.js?v=1.0.13"></script>
+  <script defer src="./crm-v1.js?v=1.0.13"></script>
 </head>
 <body>
   <header class="appbar">
-    <div class="logo"><span class="logo-icon">F</span><div><strong>Gestione contatti FastPharma</strong><small>Anagrafiche e attività commerciali · <strong id="appVersion">V1.0.12</strong></small></div></div>
+    <div class="logo"><span class="logo-icon">F</span><div><strong>Gestione contatti FastPharma</strong><small>Anagrafiche e attività commerciali · <strong id="appVersion">V1.0.13</strong></small></div></div>
     <div class="top-actions">
-      <span id="releaseVersion" class="release-version">V1.0.12</span>
+      <span id="releaseVersion" class="release-version">V1.0.13</span>
       <span id="connectionBadge" class="connection-badge">Accesso richiesto</span>
     </div>
   </header>
@@ -149,7 +149,7 @@
         </div>
         <div class="surface detail-content" id="detailContent"></div>
       </section>
-      <footer>Gestione contatti FastPharma · V1.0.12</footer>
+      <footer>Gestione contatti FastPharma · V1.0.13</footer>
     </main>
   </div>
   <dialog id="recordDialog" class="record-dialog">
@@ -173,12 +173,12 @@
       </div>
       <button id="deleteDialogClose" class="iconbutton" type="button" aria-label="Chiudi senza cancellare">×</button>
     </div>
-    <p id="deleteDialogHelp">Si può eliminare soltanto un record alla volta. I dati cancellati non sono recuperabili dalla schermata.</p>
+    <p id="deleteDialogHelp">La cancellazione dell’organizzazione elimina anche tutti i Contatti, le Attività e le Trattative associati. I dati cancellati non sono recuperabili dalla schermata.</p>
     <p id="deleteRecordName" class="delete-record-name"></p>
     <div id="deleteDependencyStatus" class="delete-dependency-status" role="status" aria-live="polite">Verifica dei collegamenti in corso…</div>
     <label id="deleteConfirmLabel" class="delete-confirm-label">
       <input id="deleteConfirmCheck" type="checkbox" disabled>
-      Confermo di voler cancellare definitivamente questo singolo record.
+      <span id="deleteConfirmText">Confermo di voler cancellare definitivamente questo singolo record.</span>
     </label>
     <p id="deleteDialogError" class="dialog-error" role="alert" aria-live="polite"></p>
     <div class="dialog-actions">
