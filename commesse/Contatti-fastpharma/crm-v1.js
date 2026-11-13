@@ -39,6 +39,16 @@
  let formModule="contacts",formContext=null;
  const getRecord=(kind,id)=>(data[kind]||[]).find(r=>String(r.id)===String(id));
  const name=(kind,id)=>{const r=getRecord(kind,id);return r?models[kind].titleOf(r):""};
+ // V1.0.12 — nome dell'organizzazione: collegamento diretto o tramite il referente.
+ const organizationOf=r=>{
+  const direct=r.organization_id&&getRecord("organizations",r.organization_id);
+  if(direct?.name)return direct.name;
+  const contact=r.contact_id&&getRecord("contacts",r.contact_id);
+  const indirect=contact?.organization_id&&getRecord("organizations",contact.organization_id);
+  if(indirect?.name)return indirect.name;
+  return r.organization_id||contact?.organization_id?"Organizzazione non disponibile":"Nessuna organizzazione collegata";
+ };
+ const associatedTitle=(kind,r)=>(kind==="activities"?"Attività":"Trattativa")+" di: "+organizationOf(r);
  const val=(field,value)=>{
   if(field==="organization_id")return name("organizations",value);
   if(field==="contact_id")return name("contacts",value);
@@ -160,7 +170,10 @@
   const m=models[module],r=getRecord(module,activeId);
   if(!r){screen="list";render();return}
   $("#detailCaption").textContent=m.single+" · "+(authenticated?"Archivio collegato":"Accesso richiesto");
-  $("#detailTitle").textContent=m.titleOf(r);$("#detailSubtitle").textContent=m.subtitle(r);
+  const hasOrganizationTitle=module==="activities"||module==="deals";
+  $("#detailTitle").textContent=hasOrganizationTitle?associatedTitle(module,r):m.titleOf(r);
+  $("#detailSubtitle").textContent=hasOrganizationTitle?
+   [m.titleOf(r),m.subtitle(r)].filter(Boolean).join(" · "):m.subtitle(r);
   $("#editRecord").disabled=!authenticated;
   $("#deleteRecord").disabled=!authenticated;
   const canAddActivity=module==="contacts"||module==="organizations";
@@ -280,7 +293,13 @@
     $("#f_organization_id").disabled=true;
    }
   }
+  updateFormOrganizationTitle();
   $("#recordDialog").showModal();
+ }
+ function updateFormOrganizationTitle(){
+  if(!editId||!(formModule==="activities"||formModule==="deals"))return;
+  const r={organization_id:$("#f_organization_id")?.value||"",contact_id:$("#f_contact_id")?.value||""};
+  $("#dialogHeading").textContent=associatedTitle(formModule,r);
  }
  function syncActivityLinks(event){
   if(formModule!=="activities")return;
@@ -680,7 +699,7 @@
  $("#editRecord").addEventListener("click",()=>showForm(activeId));
  $("#logCall").addEventListener("click",()=>startActivityFromSheet("Telefonata"));
  $("#planFollowup").addEventListener("click",()=>startActivityFromSheet("Richiamo"));
- $("#formFields").addEventListener("change",syncActivityLinks);
+ $("#formFields").addEventListener("change",event=>{syncActivityLinks(event);updateFormOrganizationTitle();});
  $("#recordSearch").addEventListener("input",list);
  $("#recordFilter").addEventListener("change",list);
  $("#recordsHead").addEventListener("click",e=>{const f=e.target.closest("[data-sort]")?.dataset.sort;if(!f)return;desc=sortBy===f?!desc:false;sortBy=f;list()});
