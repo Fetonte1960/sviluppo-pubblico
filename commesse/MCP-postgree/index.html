@@ -6,17 +6,17 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https: http://localhost:* http://127.0.0.1:*; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="description" content="MCP-postgree: password OAuth permanente su Render, connessione ChatGPT e Claude e laboratorio DEMO separato">
-  <title>MCP-postgree · Laboratorio v1.4.2</title>
-  <link rel="stylesheet" href="./styles.css?v=1.4.2">
-  <script defer src="./app.js?v=1.4.2"></script>
+  <title>MCP-postgree · Laboratorio v1.5.0</title>
+  <link rel="stylesheet" href="./styles.css?v=1.5.0">
+  <script defer src="./app.js?v=1.5.0"></script>
 </head>
 <body>
   <header class="topbar">
     <div class="topinner">
       <div class="identity"><span class="mark">M</span><div><strong>MCP-postgree</strong><small>Laboratorio MCP · PostgreSQL</small></div></div>
       <div class="versions" aria-label="Versioni e stato">
-        <span class="version"><span>Frontend</span><strong id="frontVersion">V1.4.2</strong></span>
-        <span class="version"><span>Server</span><strong id="serverVersion">V1.14.1 attesa</strong></span>
+        <span class="version"><span>Frontend</span><strong id="frontVersion">V1.5.0</strong></span>
+        <span class="version"><span>Server</span><strong id="serverVersion">V1.15.0 attesa</strong></span>
         <span id="connectionStatus" class="status" data-state="idle">Non configurato</span>
       </div>
     </div>
@@ -24,7 +24,7 @@
 
   <main class="shell">
     <section class="hero">
-      <p class="eyebrow">AMBIENTE DI COLLAUDO · SENZA DATI AZIENDALI REALI</p>
+      <p class="eyebrow">LABORATORIO MCP · LE NOTE REALI SONO ACCESSIBILI SOLO AGLI AMMINISTRATORI</p>
       <h1>Un server MCP per tutti i gestionali.</h1>
       <p>Collega ChatGPT o Claude con la <strong>password OAuth permanente custodita su Render</strong>. Il simulatore dei gestionali DEMO resta disponibile separatamente, solo con dati sintetici.</p>
     </section>
@@ -286,13 +286,70 @@
           </table>
         </div>
       </section>
+
+      <section class="catalog-grid-section" id="notes-review" aria-labelledby="notesReviewTitle">
+        <div class="catalog-section-head">
+          <div>
+            <h3 id="notesReviewTitle">Note da elaborare e autorizzare</h3>
+            <p>L'elaboratore riconosce le note di annullamento usando UUID e corrispondenze testuali. L'operatore approva o respinge; non vengono modificati record dei gestionali.</p>
+          </div>
+          <div class="button-line">
+            <strong id="notesCount">0 note</strong>
+            <button id="notesReloadBtn" type="button" class="secondary">Ricarica note</button>
+          </div>
+        </div>
+        <label for="notesFilter">Visualizza</label>
+        <select id="notesFilter">
+          <option value="pending">In attesa di approvazione</option>
+          <option value="all">Tutte le note (ultime 250)</option>
+          <option value="cancellation">Note di annullamento</option>
+          <option value="approved">Approvate e annullate</option>
+        </select>
+        <p id="notesFeedback" class="hint" role="status" aria-live="polite">Collega il Registro MASTER per consultare le note.</p>
+        <div class="catalog-grid-scroll">
+          <table class="catalog-grid notes-grid">
+            <thead><tr><th scope="col">Deposito</th><th scope="col">Tipo</th><th scope="col">Titolo</th><th scope="col">Applicazione suggerita</th><th scope="col">Stato</th><th scope="col">Azione</th></tr></thead>
+            <tbody id="notesGridBody"><tr><td colspan="6">Collega il registro per caricare le note.</td></tr></tbody>
+          </table>
+        </div>
+        <div id="notesDetail" class="notes-detail" hidden>
+          <h4 id="notesSelectedTitle">Nota selezionata</h4>
+          <p id="notesSelectedMeta" class="hint"></p>
+          <div class="button-line"><button id="notesCopyIdBtn" type="button" class="secondary">Copia ID nota</button></div>
+          <div class="notes-detail-columns">
+            <div>
+              <h4>Testo originale</h4>
+              <pre id="notesOriginal" class="notes-note-text"></pre>
+            </div>
+            <div>
+              <h4>Dati strutturati depositati dall'AI</h4>
+              <pre id="notesStructured" class="notes-note-text"></pre>
+            </div>
+          </div>
+          <div id="notesTargetWrap" hidden>
+            <p id="notesResolution" class="hint">Riconoscimento deterministico</p>
+            <label for="notesCandidates">Possibili note di origine (stesso mittente e azienda)</label>
+            <select id="notesCandidates"><option value="">— Nessuna selezione —</option></select>
+            <label for="notesTargetId">ID della nota originaria (UUID; obbligatorio per approvare l'annullamento)</label>
+            <input id="notesTargetId" maxlength="36" spellcheck="false" placeholder="UUID della nota da annullare">
+            <p class="hint">L'approvazione valida che la nota appartenga allo stesso mittente e che sia precedente all'evento. Le associazioni ambigue richiedono la scelta dell'operatore.</p>
+          </div>
+          <label for="notesReviewReason">Motivazione dell'operatore (facoltativa)</label>
+          <textarea id="notesReviewReason" maxlength="500" rows="2" placeholder="Eventuale nota di revisione"></textarea>
+          <div class="button-line">
+            <button id="notesApproveBtn" type="button" class="primary">Approva</button>
+            <button id="notesRejectBtn" type="button" class="secondary">Respingi</button>
+          </div>
+          <div class="notice muted">La decisione resta in un registro append-only. L'approvazione non trasferisce automaticamente le informazioni in un gestionale né elimina la nota originaria.</div>
+        </div>
+      </section>
       </div>
     </section>
 
     </div>
 
     <footer>
-      <div><strong>MCP-postgree · Front Test V1.4.2</strong><span>Contratto: CommandToMCPPostgree(comando)</span></div>
+      <div><strong>MCP-postgree · Front Test V1.5.0</strong><span>Contratto: CommandToMCPPostgree(comando)</span></div>
       <div><a href="./ISTRUZIONI.md" target="_blank" rel="noopener noreferrer">Istruzioni</a><a href="https://github.com/Fetonte1960/sviluppo-pubblico/tree/main/commesse/MCP-postgree" target="_blank" rel="noopener noreferrer">Artefatti pubblici</a></div>
     </footer>
   </main>

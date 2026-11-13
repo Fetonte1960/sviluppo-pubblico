@@ -1,8 +1,8 @@
 "use strict";
 
-// Front V1.4.2 — incrementare la versione a ogni pubblicazione.
-const FRONT_VERSION = "1.4.2";
-const EXPECTED_SERVER_VERSION = "1.14.1";
+// Front V1.5.0 — incrementare la versione a ogni pubblicazione.
+const FRONT_VERSION = "1.5.0";
+const EXPECTED_SERVER_VERSION = "1.15.0";
 const DEFAULT_SERVER_URL = "https://mcp-postgree.onrender.com";
 const TOOL_NAME = "CommandToMCPPostgree";
 const PAGE_INSTRUCTIONS = "https://github.com/Fetonte1960/sviluppo-pubblico/blob/main/commesse/MCP-postgree/ISTRUZIONI.md";
@@ -10,7 +10,8 @@ const DEFAULT_TIMEOUT_MS = 125_000;
 const state = {baseUrl: "", wakeController: null, activeToken: "", tokenHash: "", sequence: 0,
   enterpriseToken: "", applicationTokens: Object.create(null), demoCatalog: Object.create(null),
   lastSessionPrompt: "", lastSessionExpiresAt: 0, catalogRecords: Object.create(null), catalogRevision: 0,
-  catalogSelectedCode: "", catalogLaunchBusy: false, catalogLastBootstrap: "", catalogBootstrapExpiry: 0};
+  catalogSelectedCode: "", catalogLaunchBusy: false, catalogLastBootstrap: "", catalogBootstrapExpiry: 0,
+  notesRecords: [], notesSelectedId: "", notesReviewBusy: false};
 const $ = id => document.getElementById(id);
 
 function setStatus(text, kind = "idle") {
@@ -835,6 +836,7 @@ async function loadCatalog(selectCode = null) {
     const firstConnection = !state.catalogConnected;
     setCatalogConnected(true);
     if (firstConnection) offerBrowserPasswordSave();
+    void loadNotes();
     const pick = selectCode || state.catalogSelectedCode || data.applications[0]?.appCode;
     if (pick && state.catalogRecords[pick]) {
       showCatalogItem(state.catalogRecords[pick]);
@@ -912,12 +914,179 @@ function previewCatalogBootstrap() {
 }
 
 
+// MASTER operator review; independent of application access and MCP session.attach.
+const NOTES_API_PATH = "/api/mcp-postgree/v1/notes";
+
+async function notesFetch(method, suffix = "", data = null) {
+  if (!state.catalogConnected) throw new Error("Collega prima il Pannello MCP con la password amministrativa.");
+  const password = $("catalogAdminToken").value;
+  if (!password || password.length < 32) throw new Error("Autenticazione MASTER non disponibile.");
+  const response = await fetch((state.baseUrl || DEFAULT_SERVER_URL) + NOTES_API_PATH + suffix, {
+    method, mode:"cors", cache:"no-store",
+    headers: {"Authorization":"Bearer " + password,
+      ...(data ? {"Content-Type":"application/json"} : {})},
+    ...(data ? {body:JSON.stringify(data)} : {})
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || result.ok !== true) {
+    const errors = {
+      notes_review_not_configured:"Connessione dedicata alle revisioni non configurata su Render.",
+      notes_review_unavailable:"Archivio note non raggiungibile; controlla Render.",
+      already_reviewed:"Questa nota è già stata esaminata: aggiorna l'elenco.",
+      note_not_found:"Nota non presente nell'archivio.",
+      target_required:"Per approvare un annullamento occorre identificare la nota originale.",
+      target_mismatch:"Il riferimento originale non può essere sostituito con un altro ID.",
+      target_forbidden_or_missing:"La nota di destinazione non appartiene allo stesso mittente/azienda, oppure non è una nota precedente.",
+      target_not_allowed:"Il riferimento si può indicare solo per l'approvazione di annullamenti.",
+      invalid_review:"Decisione non valida."
+    };
+    throw new Error(response.status === 401 ? "Sessione amministrativa non valida." :
+      errors[result.error] || ("Errore revisione note HTTP " + response.status));
+  }
+  return result;
+}
+
+function notesStatus(message) { feedback("notesFeedback", message); }
+function notesDate(v) { try { return new Date(v).toLocaleString("it-IT"); } catch { return String(v||""); } }
+function notesCell(row, value) {
+  const cell = row.insertCell();
+  cell.textContent = String(value == null ? "—" : value);
+  return cell;
+}
+function renderNotesGrid() {
+  const body = $("notesGridBody");
+  body.replaceChildren();
+  const filter = $("notesFilter").value;
+  const notes = state.notesRecords.filter(n => filter === "all" ||
+    filter === "pending" && n.stato === "DA_APPROVARE" ||
+    filter === "cancellation" && n.tipo === "annullamento" ||
+    filter === "approved" && ["APPROVATA","ANNULLATA","ANNULLAMENTO_APPROVATO"].includes(n.stato));
+  if (!notes.length) {
+    const row = body.insertRow();
+    const cell = row.insertCell();
+    cell.colSpan = 6;
+    cell.textContent = "Nessuna nota corrisponde al filtro selezionato.";
+    return;
+  }
+  for (const n of notes) {
+    const row = body.insertRow();
+    if (n.noteId === state.notesSelectedId) row.className = "is-selected";
+    notesCell(row, notesDate(n.createdAt));
+    notesCell(row, n.tipo);
+    notesCell(row, n.titolo);
+    notesCell(row, n.applicazioneSuggerita || "Generale");
+    notesCell(row, n.stato);
+    const cell = row.insertCell();
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "secondary";
+    btn.textContent = "Esamina";
+    btn.addEventListener("click", () => selectReviewNote(n.noteId));
+    cell.appendChild(btn);
+  }
+}
+
+function selectReviewNote(id) {
+  const note = state.notesRecords.find(n => n.noteId === id);
+  if (!note) return;
+  state.notesSelectedId = id;
+  $("notesDetail").hidden = false;
+  $("notesSelectedTitle").textContent = note.titolo + " · " + note.tipo;
+  $("notesSelectedMeta").textContent = "ID " + note.noteId + " · " + notesDate(note.createdAt) +
+    " · " + note.companyId + " · " + note.stato;
+  $("notesOriginal").textContent = note.testoOriginale || "—";
+  $("notesStructured").textContent = note.dati || "{}";
+  $("notesResolution").textContent = note.tipo === "annullamento" ?
+    "Riconoscimento: " + note.risoluzione + (note.descrizioneNotaDaAnnullare ?
+      " · " + note.descrizioneNotaDaAnnullare : "") :
+    "Nota normale: nessun annullamento da abbinare.";
+  $("notesTargetWrap").hidden = note.tipo !== "annullamento";
+  const select = $("notesCandidates");
+  select.replaceChildren(new Option("— Seleziona nota originaria, se necessario —", ""));
+  for (const c of note.candidates || []) {
+    const opt = new Option(c.titolo + " · " + (c.exact ? "corrispondenza esatta" :
+      "somiglianza " + Math.round(c.punteggio * 100) + "%"), c.noteId);
+    select.add(opt);
+  }
+  const idValue = note.targetSelezionato || "";
+  $("notesTargetId").value = idValue;
+  select.value = [...select.options].some(o => o.value === idValue) ? idValue : "";
+  $("notesReviewReason").value = "";
+  $("notesApproveBtn").disabled = note.decisione != null;
+  $("notesRejectBtn").disabled = note.decisione != null;
+  notesStatus(note.decisione ? "Questa nota ha già una decisione registrata (" + note.decisione + ")." :
+    "Verifica testo e destinazione prima di registrare una decisione irreversibile.");
+  renderNotesGrid();
+}
+
+async function loadNotes() {
+  try {
+    notesStatus("Caricamento delle note da esaminare...");
+    const result = await notesFetch("GET");
+    state.notesRecords = Array.isArray(result.notes) ? result.notes : [];
+    $("notesCount").textContent = result.count + " note · " + result.pending + " in attesa";
+    renderNotesGrid();
+    if (state.notesSelectedId && state.notesRecords.some(n => n.noteId === state.notesSelectedId))
+      selectReviewNote(state.notesSelectedId);
+    else { state.notesSelectedId = ""; $("notesDetail").hidden = true; }
+    notesStatus("Archivio note aggiornato. La revisione registra una decisione, senza modificare i dati dei gestionali.");
+  } catch (err) {
+    notesStatus("Impossibile caricare le note: " + formatError(err));
+  }
+}
+
+async function decideReview(decision) {
+  const note = state.notesRecords.find(n => n.noteId === state.notesSelectedId);
+  if (!note || note.decisione || state.notesReviewBusy) return;
+  const targetNoteId = $("notesTargetId").value.trim();
+  if (decision === "APPROVATA" && note.tipo === "annullamento" &&
+      !targetNoteId && !note.riferimentoNota) {
+    notesStatus("Per approvare l'annullamento seleziona o inserisci l'ID della nota originaria.");
+    $("notesTargetId").focus();
+    return;
+  }
+  if (targetNoteId && !/^[0-9a-fA-F-]{36}$/.test(targetNoteId)) {
+    notesStatus("L'ID della nota originaria deve essere un UUID valido.");
+    return;
+  }
+  if (!window.confirm(decision === "APPROVATA" ?
+      "Confermi l'approvazione? La decisione sarà permanente; nessun database gestionale verrà modificato." :
+      "Confermi il rifiuto della nota? La decisione sarà permanente.")) return;
+  state.notesReviewBusy = true;
+  $("notesApproveBtn").disabled = true;
+  $("notesRejectBtn").disabled = true;
+  try {
+    const payload = {decision, reason:$("notesReviewReason").value.trim(),
+      targetNoteId:decision === "APPROVATA" && note.tipo === "annullamento" && targetNoteId ? targetNoteId : null};
+    const result = await notesFetch("POST", "/" + encodeURIComponent(note.noteId) + "/decision", payload);
+    notesStatus("Decisione registrata su " + result.noteId + ": " + result.decisione +
+      ". Nessuna scrittura sui gestionali.");
+    await loadNotes();
+  } catch (err) {
+    notesStatus("Decisione NON registrata: " + formatError(err));
+    $("notesApproveBtn").disabled = false;
+    $("notesRejectBtn").disabled = false;
+  } finally {
+    state.notesReviewBusy = false;
+  }
+}
+
 function installHandlers() {
   $("catalogLoginForm").addEventListener("submit", event => {
     event.preventDefault();
     if (!state.catalogConnected) void loadCatalog();
   });
   $("catalogRefreshBtn").addEventListener("click", () => void loadCatalog());
+  $("notesReloadBtn").addEventListener("click", () => void loadNotes());
+  $("notesFilter").addEventListener("change", renderNotesGrid);
+  $("notesCandidates").addEventListener("change", () => {
+    if ($("notesCandidates").value) $("notesTargetId").value = $("notesCandidates").value;
+  });
+  $("notesApproveBtn").addEventListener("click", () => void decideReview("APPROVATA"));
+  $("notesRejectBtn").addEventListener("click", () => void decideReview("RESPINTA"));
+  $("notesCopyIdBtn").addEventListener("click", () => {
+    if (state.notesSelectedId) void copyText(state.notesSelectedId, "ID nota copiato.", "notesFeedback");
+  });
   const tabs = [["generalTabBtn", "generalTabPanel"], ["registryTabBtn", "registryTabPanel"]];
   function selectTab(index, moveFocus = false) {
     tabs.forEach(([buttonId, panelId], i) => {
