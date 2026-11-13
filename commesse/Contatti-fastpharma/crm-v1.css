@@ -63,3 +63,36 @@
 .chrome-password-actions #chromePasswordStatus{font-size:12px;color:#536b7a;line-height:1.5;max-width:350px}
 #chromeLoadKey{max-width:230px;white-space:normal}
 @media(max-width:800px){.access .chrome-password-actions{width:100%}}
+
+/* V1.0.7: Liste navigabili senza scorrere l'intera pagina per cinquanta righe. */
+#listsScreen .lists-table-scroll{max-height:56vh;min-height:260px;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
+#listsScreen .lists-table-scroll thead th{position:sticky;top:0;z-index:2;background:#f6f8fa}
+#listsScreen .lists-pages-top{border-top:1px solid #edf1f4;border-bottom:1px solid #edf1f4;padding:10px 22px;flex-wrap:wrap}
+#listsScreen .lists-pages-top .lists-pages-help{margin-right:auto;color:#657f8e;font-weight:600}
+#listsScreen .lists-table-scroll:focus-visible{outline:3px solid #6ac4da;outline-offset:0}
+@media(max-width:720px){#listsScreen .lists-table-scroll{max-height:52vh;min-height:220px}#listsScreen .lists-pages-top{justify-content:space-between}#listsScreen .lists-pages-top .lists-pages-help{width:100%}}
+
+/* V1.0.8 — importazione di un singolo record da Liste a Organizzazioni */
+.page-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.org-import-dialog{width:min(1050px,calc(100vw - 24px));padding:22px 24px;max-height:calc(100vh - 28px);overflow:auto}
+.org-import-dialog .dialog-title{margin-bottom:18px}
+.org-import-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;margin-bottom:12px}
+.org-import-filters label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:#587081}
+.org-import-filters label:first-child,.org-import-filters label:nth-child(2){grid-column:span 1}
+.org-import-filters input,.org-import-filters select{width:100%}
+.org-import-list{max-height:36vh;min-height:160px;overflow:auto;scrollbar-gutter:stable;border:1px solid #edf1f4;border-radius:9px}
+.org-import-list thead th{position:sticky;top:0;z-index:1;background:#f6f8fa}
+.org-import-list th,.org-import-list td{padding:10px 12px}
+.org-import-list td .secondary{padding:7px 10px}
+.org-import-pager{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin:11px 0;font-size:12px}
+.org-import-preview{border:1px solid #d9e8e6;border-radius:9px;background:#f7fbfa;padding:14px 16px;margin:14px 0}
+.org-import-preview h3{font-size:14px;margin:0 0 8px}
+.org-import-preview h4{font-size:12px;margin:12px 0 6px}
+.org-import-preview p{font-size:12px;color:#536b7a;margin:6px 0}
+.org-import-match{background:#fff;border:1px solid #e6ebf1;padding:8px 10px;margin:6px 0;border-radius:7px;font-size:12px}
+.org-import-match small{display:block;color:#687f8f;margin-top:4px}
+.org-import-blocking{border-color:#e3a59d;background:#fff9f6}
+.org-source{margin-top:18px;border-top:1px solid #e2e9ef;padding-top:13px;display:flex;flex-direction:column;gap:6px;font-size:12px;color:#587081}
+.org-source strong{color:#137f6f}
+@media(max-width:780px){.org-import-filters{grid-template-columns:1fr 1fr}.org-import-dialog{padding:15px}.page-actions{justify-content:flex-end}}
+@media(max-width:520px){.org-import-filters{grid-template-columns:1fr}.org-import-filters label:first-child,.org-import-filters label:nth-child(2){grid-column:auto}.org-import-pager{justify-content:space-between;flex-wrap:wrap}}
