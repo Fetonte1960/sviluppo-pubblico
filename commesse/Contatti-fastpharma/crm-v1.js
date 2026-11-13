@@ -37,7 +37,7 @@
  let data=structuredClone(demo),key=desktop?window.CONTATTI_DESKTOP.key:"",authenticated=false;
  let module="dashboard",screen="dashboard",activeId=null,tab="summary",editId=null,sortBy="",desc=false;
  let formModule="contacts",formContext=null;
- // La scelta nasce solo dall'apertura del dettaglio Organizzazione (V1.0.13).
+ // La scelta nasce solo dall'apertura del dettaglio Organizzazione (V1.0.14).
  let selectedOrganizationId=null;
  const selectedOrganization=()=>selectedOrganizationId&&getRecord("organizations",selectedOrganizationId);
  const commercial=k=>k==="activities"||k==="deals";
@@ -110,7 +110,7 @@
   render();
   if(!archivesInitialized){
    archivesInitialized=true;
-   archivesFrame.src="./laboratorio.html?v=1.0.13";
+   archivesFrame.src="./laboratorio.html?v=1.0.14";
   }else shareArchiveSession();
  }
  function openModule(next){
