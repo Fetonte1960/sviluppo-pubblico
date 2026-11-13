@@ -183,3 +183,19 @@
   .org-import-dialog > .dialog-actions .primary,
   .org-import-dialog > .dialog-actions .secondary{white-space:normal}
 }
+
+/* V1.0.17 — Promemoria: griglia trasversale con pulsanti sempre distinti. */
+#remindersNav{font-size:12px;white-space:normal;line-height:1.4}
+.reminders-scroll{max-height:64vh;min-height:230px;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
+.reminders-scroll thead th{position:sticky;top:0;z-index:2;background:#f6f8fa}
+.reminders-scroll th:last-child,.reminders-scroll td:last-child{min-width:180px}
+.reminders-scroll td{vertical-align:middle}
+.reminder-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.reminder-actions .primary,.reminder-actions .secondary{padding:8px 12px}
+.reminders-error{margin:0 22px 10px}
+.reminders-error:empty{display:none}
+@media(max-width:720px){
+ .reminders-scroll{max-height:58vh;min-height:200px}
+ .reminders-scroll th,.reminders-scroll td{padding:11px 9px}
+ .reminder-actions{min-width:140px}
+}
