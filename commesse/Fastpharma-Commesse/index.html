@@ -83,7 +83,7 @@ const testApi=location.hostname==='fetonte1960.github.io'
  ? 'https://fastpharma-commesse-api.onrender.com'
  : '';
 
-/* Gestione Commesse usa la medesima chiave del CRM, verificata server-to-server.
+/* Gestione Commesse usa la password amministrativa unica FastPharma.
    Password esclusivamente in RAM; memorizzazione facoltativa nel browser Chrome. */
 
 let authKey='';
@@ -111,7 +111,7 @@ async function loadAdminConfig(){
       credentialId=info.adminKeyName.trim();
       document.getElementById('commesse-user').value=credentialId;
      }
-     return {available:true,fromGroup:info.adminKeyNameConfigured===true};
+     return {available:true,fromGroup:info.adminKeyNameConfigured===true,sharedKeyConfigured:info.sharedKeyConfigured===true};
     }
     if(!transientStatus(resp.status))break;
    }catch(_error){/* servizio Free non pronto o rete temporaneamente assente */}
@@ -364,7 +364,7 @@ async function loadTestData(page){
    const caption=[...main.querySelectorAll('p b')].find(x=>x.textContent.includes('Imponibile:'));
    if(caption)caption.textContent='Imponibile: '+euro(total)+' — IVA: '+euro(vat)+' — Totale: '+euro(total+vat);
   }
-  note.textContent='Archivio Neon TEST collegato · dati salvati permanentemente · accesso protetto dalla chiave Contatti.';
+  note.textContent='Archivio Neon TEST collegato · dati salvati permanentemente · accesso protetto dalla password amministrativa FastPharma.';
  }catch(e){
   if(requestSerial!==renderSerial)return;
   note.textContent='Impossibile leggere l’archivio: '+(e.message||'errore')+
@@ -406,7 +406,7 @@ function decorateClienteField(page){
    alertDemo('Il browser ha bloccato la finestra di Contatti: abilita i popup per questo sito.');
   }else{
    organizationPicker.focus();
-   alertDemo('In Contatti, accedi con la chiave già utilizzata dal CRM e premi «Usa in Commesse» accanto alla farmacia.');
+   alertDemo('Nel programma Contatti, se richiesto, accedi con la password amministrativa FastPharma e premi «Usa in Commesse» accanto alla farmacia.');
   }
  });
  const open=document.createElement('a');
@@ -619,7 +619,7 @@ document.addEventListener('submit',async e=>{
   alertDemo('Salvataggio NON riuscito: '+(err.message||'errore')); 
  }finally{if(submit)submit.disabled=false;}
 });
-document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse TEST: password uguale a Contatti, salvataggi persistenti su Neon. Dati di prova sotto la responsabilità dell’operatore.');
+document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse TEST: password amministrativa FastPharma condivisa, salvataggi persistenti su Neon. Dati di prova sotto la responsabilità dell’operatore.');
 backButton.addEventListener('click',()=>goTo(parentPage[location.hash.slice(1)]||'commesse'));
 window.addEventListener('hashchange',()=>{if(authKey)show(location.hash.slice(1));});
 // Avvio chiuso: nessuna vista gestionale prima di login().
