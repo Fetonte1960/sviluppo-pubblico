@@ -292,6 +292,11 @@ async function loadTestData(page){
    if(confirm)confirm.querySelector('[name="fattura_id"]').value=String(currentInvoiceId);
    const title=main.querySelector('h1');
    if(title)title.textContent='Dettaglio fattura TEST #'+currentInvoiceId;
+   const back=main.querySelector('a[href^="/commessa"]');if(back)back.href='/commessa?id='+currentProjectId;
+   const total=lines.reduce((acc,x)=>acc+number(x.imponibile),0);
+   const vat=lines.reduce((acc,x)=>acc+number(x.iva),0);
+   const caption=[...main.querySelectorAll('p b')].find(x=>x.textContent.includes('Imponibile:'));
+   if(caption)caption.textContent='Imponibile: '+euro(total)+' — IVA: '+euro(vat)+' — Totale: '+euro(total+vat);
   }
   note.textContent='Archivio Neon TEST collegato · dati salvati permanentemente · accesso protetto dalla chiave Contatti.';
  }catch(e){
@@ -362,6 +367,17 @@ window.addEventListener('message',event=>{
  const field=view.querySelector('input[name="cliente"]'),idField=view.querySelector('input[name="farmacia_id"]');
  if(!field||!idField)return;
  field.value=d.name.trim();idField.value=d.id;
+ const form=view.querySelector('form[action="/nuova"]');
+ if(form){
+  const reference=form.querySelector('[name="preventivo_riferimento"]');
+  if(reference?.value){
+   for(const key of ['preventivo_id','preventivo_riferimento','preventivo_snapshot']){
+    const entry=form.querySelector('[name="'+key+'"]');if(entry)entry.value='';
+   }
+   const quoteNote=view.querySelector('#quote-client-note');
+   if(quoteNote)quoteNote.textContent='Farmacia modificata da Contatti: seleziona nuovamente il preventivo, se pertinente.';
+  }
+ }
  const status=view.querySelector('#crm-client-feedback');
  if(status)status.textContent='Farmacia selezionata dall’archivio Organizzazioni · ID CRM associato. La commessa sarà salvata realmente premendo «Crea commessa».';
  alertDemo('Farmacia caricata da Contatti: '+d.name.trim());
@@ -435,7 +451,10 @@ window.addEventListener('message',event=>{
  const note=view.querySelector('#quote-client-note');
  if(note)note.textContent='Preventivo '+d.reference+' acquisito (snapshot TEST). Premi «Crea commessa» per salvarlo realmente.';
  const status=view.querySelector('#crm-client-feedback');
- if(status)status.textContent='Destinatario impostato dal preventivo DEMO; puoi usare «Carica da Contatti» per associare anche l’UUID CRM.';
+ if(status)status.textContent='Destinatario impostato dal preventivo DEMO. Se diverso dalla farmacia CRM, associa nuovamente l’Organizzazione.';
+ const crmName=form.querySelector('[name="cliente"]');
+ const crmId=form.querySelector('[name="farmacia_id"]');
+ if(crmId&&crmId.value)crmId.value='';
  preventiviNonce='';preventiviPicker=null;
  alertDemo('Preventivo '+d.reference+' caricato: dati pronti per il salvataggio.');
 });
