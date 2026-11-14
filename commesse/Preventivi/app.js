@@ -14,6 +14,32 @@ if(!demoSession || !/^[0-9a-f-]{36}$/i.test(demoSession)){
   localStorage.setItem("preventivi-demo-session",demoSession);
 }
 let companyId = "", quote = null, catalog = [], prices = [], batches = [], allQuotes = [], dossier = [];
+
+/* Selettore opzionale per Gestione Commesse: restituisce solo snapshot COMMERCIALE.
+   Nessuna chiave, costo interno o credenziale viene trasferito. */
+const importParams=new URLSearchParams(location.search);
+const commesseNonce=importParams.get('nonce')||'';
+const selectForCommesse=importParams.get('picker')==='commesse' &&
+ /^[a-f0-9]{32}$/.test(commesseNonce) &&
+ /^https:\/\/fetonte1960\.github\.io\/sviluppo-pubblico\/commesse\/Fastpharma-Commesse\//.test(document.referrer) &&
+ Boolean(window.opener);
+async function chooseForCommesse(id){
+ if(!selectForCommesse||!window.opener||window.opener.closed)return;
+ const q=await request('/api/quotes/'+encodeURIComponent(id)+'?companyId='+encodeURIComponent(companyId));
+ const t=await request('/api/quotes/'+encodeURIComponent(id)+'/totals?companyId='+encodeURIComponent(companyId));
+ const recipient=(q.draft?.recipient?.name||'').trim();
+ const subject=String(q.draft?.subject||q.subject||'').trim();
+ const taxable=Number(t.taxable??t.totalExcludingVat??0);
+ if(!recipient||!subject||!Number.isFinite(taxable)||taxable<0)
+   throw Error('Dati commerciali incompleti: verificare il preventivo e il destinatario.');
+ const snapshot={id:String(q.id),reference:String(q.reference||''),subject,
+  recipientName:recipient,taxable,source:'Preventivi-DEMO',partial:!!t.partial};
+ window.opener.postMessage({type:'fastpharma-commesse.quote-selected',
+   nonce:commesseNonce,...snapshot},location.origin);
+ status('Preventivo inviato a Gestione Commesse; puoi chiudere questa finestra.');
+ window.close();
+}
+
 let companies = [], creatingIssuer = false, issuerFormBaseline = "";
 let recipients = [], recipientId = "", creatingRecipient = false, recipientFormBaseline = "";
 let chapterTemplates = [], templateId = "", creatingTemplate = false, templateBaseline = "";
@@ -466,7 +492,8 @@ async function refresh(){
   if(!recipients.some(r=>r.id===recipientId))recipientId=recipients[0]?.id||"";
   renderRecipientForm();
   $("quoteList").innerHTML=allQuotes.map(q=>
-    '<button data-open="'+q.id+'">'+escapeHtml(q.reference+" — "+q.subject)+" (r"+q.revisions+")</button>").join("");
+    '<button data-open="'+q.id+'">'+escapeHtml(q.reference+" — "+q.subject)+" (r"+q.revisions+")</button>" +
+    (selectForCommesse?' <button type="button" data-pick-commesse="'+escapeHtml(q.id)+'">Usa in Commesse</button>':'')).join("");
   $("batch").innerHTML=batches.map(b=>'<option value="'+escapeHtml(b.batchId)+'">'+escapeHtml(b.sourceProjectId+" / "+b.sourceRevision)+"</option>").join("");
   $("demoInfo").textContent=allQuotes.length+" preventivi di esempio · "+catalog.length+
     " voci consultabili · "+batches.length+" lotti disponibili.";
@@ -733,7 +760,10 @@ $("newQuote").onclick=()=>guard(async()=>{
   $("newSubject").value="";
   showStep("chapters");
 });
-$("quoteList").onclick=e=>{const b=e.target.closest("[data-open]");if(b)guard(async()=>{
+$("quoteList").onclick=e=>{
+ const selected=e.target.closest("[data-pick-commesse]");
+ if(selected){guard(()=>chooseForCommesse(selected.dataset.pickCommesse));return;}
+ const b=e.target.closest("[data-open]");if(b)guard(async()=>{
   if(issuerIsDirty()||recipientIsDirty())
     throw Error("Salva le anagrafiche prima di aprire un preventivo");
   await openQuote(b.dataset.open);
