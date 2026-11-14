@@ -495,7 +495,7 @@
  const previousChromeCredentialIds=["Gestione contatti","FastPharma-TEST"];
  let chromeNameLookup=null;
  async function loadAdminCredentialName(){
-  if(desktop || !base)return;
+  if(desktop)return;
   if(chromeNameLookup)return chromeNameLookup;
   chromeNameLookup=(async()=>{
    try{
@@ -512,7 +512,7 @@
        if(loginName)loginName.value=chromeCredentialId;
      }
    }catch(_error){/* Render Free non pronto: fallback non segreto FastPharma */}
-  })();
+  })().finally(()=>{chromeNameLookup=null;});
   return chromeNameLookup;
  }
  let chromeStorePending=false;
@@ -970,7 +970,12 @@
  });
  render();
  showChromePasswordUi();
- if(!desktop)void loadAdminCredentialName();
+ if(!desktop){
+  void loadAdminCredentialName();
+  // Se il primo fetch fallisce durante il cold start di Render Free,
+  // rileggere ADMINKEYNAME quando l'utente torna sulla pagina.
+  window.addEventListener("focus",()=>{void loadAdminCredentialName();});
+ }
  window.__FASTPHARMA_CRM_READY__=true;
  if(desktop){
   $("#loginForm").hidden=true;showNotice("Collegamento al database Windows in corso…");
