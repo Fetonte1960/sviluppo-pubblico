@@ -39,6 +39,13 @@ input[name="farmacia_id"][readonly]{background:#edf3f4;color:#395466}
 .auth-box .auth-state{font-size:13px;min-height:24px;line-height:1.5;color:#36576b}
 .auth-box .auth-error{color:#b31b30}
 
+/* Cancellazione TEST: comando distinto dalle azioni e riconoscibile. */
+.delete-record-button{background:#fff0ef;color:#a72b23;border:1px solid #e3aaa7;border-radius:6px;font-weight:700;padding:7px 10px;font-size:12px;cursor:pointer}
+.delete-record-button:hover{background:#f9d5d1}
+.delete-record-button:disabled{opacity:.5;cursor:wait}
+.delete-collection-panel{margin:14px 0;padding:12px;border:1px solid #d5e2e7;border-radius:8px}
+.delete-collection-panel h3{margin-top:0}
+
 </style></head><body>
 
 <div id="commesse-auth">
@@ -237,17 +244,23 @@ let renderSerial=0;
 const number=x=>Number(x??0);
 const valueText=x=>String(x??'—');
 async function readList(path){return (await apiCall(path)).json();}
-function renderRows(table,rows){
+function renderRows(table,rows,deleteKind='',recordIds=[]){
  if(!table)return;
  const head=table.querySelector('tr');
  table.replaceChildren();
- if(head)table.appendChild(head);
+ if(head){
+  // Le intestazioni provengono dalla schermata V4, ma le righe dal database.
+  if(deleteKind){
+   const th=document.createElement('th');th.textContent='Elimina';head.appendChild(th);
+  }
+  table.appendChild(head);
+ }
  if(!rows.length){
   const tr=document.createElement('tr'),td=document.createElement('td');
   td.colSpan=head?.children.length||1;td.textContent='Nessun elemento registrato nel database.';
   tr.appendChild(td);table.appendChild(tr);return;
  }
- for(const row of rows){
+ for(const [index,row] of rows.entries()){
   const tr=document.createElement('tr');
   for(const cell of row){
    const td=document.createElement('td');
@@ -260,6 +273,20 @@ function renderRows(table,rows){
     if(cell.filename)action.dataset.filename=String(cell.filename);
     td.appendChild(action);
    } else td.textContent=valueText(cell);
+   tr.appendChild(td);
+  }
+  if(deleteKind){
+   const td=document.createElement('td');
+   const id=Number(recordIds[index]);
+   if(Number.isSafeInteger(id)&&id>0){
+    const button=document.createElement('button');
+    button.type='button';button.className='delete-record-button';
+    button.textContent='Elimina';button.dataset.action='delete';
+    button.dataset.kind=deleteKind;button.dataset.id=String(id);
+    button.dataset.label=row.slice(0,2).map(c=>typeof c==='object'?valueText(c.label):valueText(c)).join(' · ').slice(0,170);
+    button.title='Cancella questo elemento dall’archivio TEST dopo conferma';
+    td.appendChild(button);
+   }
    tr.appendChild(td);
   }
   table.appendChild(tr);
@@ -295,6 +322,21 @@ function fillProjectForms(voci,offers,affidamenti,fornitori,passive,active){
  setSelect(view.querySelector('form[action="/incasso-attivo"] select[name="fattura_id"]'),activeItems);
  setSelect(view.querySelector('form[action="/costo"] select[name="voce_id"]'),voceItems,true);
 }
+
+function addMovementTable(kind,records,headers,cells,afterForm){
+ if(!afterForm)return;
+ const panel=document.createElement('div');panel.className='delete-collection-panel';
+ const title=document.createElement('h3');
+ title.textContent=kind==='pagamento'?'Pagamenti registrati':'Incassi registrati';
+ panel.appendChild(title);
+ const table=document.createElement('table');
+ const head=document.createElement('tr');
+ for(const name of headers){const th=document.createElement('th');th.textContent=name;head.appendChild(th);}
+ table.appendChild(head);panel.appendChild(table);
+ afterForm.after(panel);
+ renderRows(table,records.map(cells),kind,records.map(x=>x.id));
+}
+
 async function loadTestData(page){
  if(!authKey)return;
  const requestSerial=++renderSerial;
@@ -307,11 +349,12 @@ async function loadTestData(page){
    if(requestSerial!==renderSerial)return;
    renderRows(main.querySelector('table'),data.map(x=>[
     {href:'/commessa?id='+x.id,label:x.codice},x.cliente,x.titolo,x.stato,euro(x.margineStimato)
-   ]));
+   ]),'commessa',data.map(x=>x.id));
   }else if(page==='fornitori'){
    const data=await readList('/api/fornitori');
    if(requestSerial!==renderSerial)return;
-   renderRows(main.querySelector('table'),data.map(x=>[x.nome,x.categoria,x.email||'']));
+   renderRows(main.querySelector('table'),data.map(x=>[x.nome,x.categoria,x.email||'']),
+    'fornitore',data.map(x=>x.id));
   }else if(page==='commessa'){
    const base='/api/commesse/'+currentProjectId;
    const quadro=(await readList(base+'/quadro'))[0];
@@ -321,11 +364,12 @@ async function loadTestData(page){
    const extra=['/api/fornitori','/api/v4/commesse/'+currentProjectId+'/affidamenti',
     '/api/v4/commesse/'+currentProjectId+'/pagamenti',
     '/api/v4/commesse/'+currentProjectId+'/costi',
+    '/api/v4/commesse/'+currentProjectId+'/incassi',
     '/api/v4/commesse/'+currentProjectId+'/files'];
    const items=await Promise.all([...paths.map(p=>readList(base+p)),...extra.map(readList)]);
    if(requestSerial!==renderSerial)return;
-   const [voci,offerte,varianti,sal,passive,active,attivita,_docs,
-      fornitori,affidamenti,pagamenti,costi,files]=items;
+   const [voci,offerte,varianti,sal,passive,active,attivita,docs,
+      fornitori,affidamenti,pagamenti,costi,incassi,files]=items;
    const header=main.querySelector('h1');
    if(header)header.textContent=quadro.codice+' — '+quadro.titolo;
    const metrics=main.querySelectorAll('.metric b');
@@ -334,33 +378,46 @@ async function loadTestData(page){
     number(quadro.ricaviPrevisti)-number(quadro.costoFinaleStimato)];
    metrics.forEach((m,i)=>{if(i<figures.length)m.textContent=euro(figures[i]);});
    const tables=[...main.querySelectorAll('table')];
-   renderRows(tables[0],voci.map(x=>[x.codice,x.descrizione,x.categoria,euro(x.budget)]));
+   renderRows(tables[0],voci.map(x=>[x.codice,x.descrizione,x.categoria,euro(x.budget)]),'voce',voci.map(x=>x.id));
    renderRows(tables[1],offerte.map(x=>[
      x.fornitore,euro(x.prezzo),euro(x.scostamento),x.stato,x.esclusioni,
      x.affidato!=null?'Affidata':{label:'Affida offerta',action:'affida',id:x.id}
-   ]));
-   renderRows(tables[2],varianti.map(x=>[x.descrizione,euro(x.costo),euro(x.ricavo),x.stato,x.approvataIl||'—']));
-   renderRows(tables[3],affidamenti.map(x=>[x.fornitore,x.descrizione,euro(x.importo),'—','—','—']));
-   renderRows(tables[4],sal.map(x=>[x.fornitore,x.riferimento,euro(x.importoProgressivo)]));
-   renderRows(tables[5],passive.map(x=>[x.fornitore,x.riferimento,euro(x.imponibile),euro(x.pagato)]));
+   ]),'offerta',offerte.map(x=>x.id));
+   renderRows(tables[2],varianti.map(x=>[x.descrizione,euro(x.costo),euro(x.ricavo),x.stato,x.approvataIl||'—']),'variante',varianti.map(x=>x.id));
+   renderRows(tables[3],affidamenti.map(x=>[x.fornitore,x.descrizione,euro(x.importo),'—','—','—']),'affidamento',affidamenti.map(x=>x.id));
+   renderRows(tables[4],sal.map(x=>[x.fornitore,x.riferimento,euro(x.importoProgressivo)]),'sal',sal.map(x=>x.id));
+   renderRows(tables[5],passive.map(x=>[x.fornitore,x.riferimento,euro(x.imponibile),euro(x.pagato)]),'fattura-passiva',passive.map(x=>x.id));
    renderRows(tables[6],[]);renderRows(tables[7],[]);
-   renderRows(tables[8],costi.map(x=>[x.descrizione,euro(x.importo),x.origine]));
+   renderRows(tables[8],costi.map(x=>[x.descrizione,euro(x.importo),x.origine]),'costo',costi.map(x=>x.id));
    renderRows(tables[9],active.map(x=>[x.numero,x.stato,euro(x.imponibile),euro(x.iva),
     euro(number(x.imponibile)+number(x.iva)),euro(x.incassato),
-    {href:'/fattura-attiva?id='+x.id,label:'Dettaglio / righe'}]));
+    {href:'/fattura-attiva?id='+x.id,label:'Dettaglio / righe'}]),'fattura-attiva',active.map(x=>x.id));
    renderRows(tables[10],passive.map(x=>[x.riferimento,euro(x.imponibile),
     x.iva==null?'DA VERIFICARE':euro(x.iva),x.iva==null?'DA VERIFICARE':euro(number(x.imponibile)+number(x.iva)),
-    euro(x.pagato),x.iva==null?'Da verificare':'Indicata']));
-   renderRows(tables[11],attivita.map(x=>[x.tipo,x.descrizione,x.scadenza||'',x.stato]));
-   renderRows(tables[12],files.map(x=>[x.categoria,x.titolo,x.nomeFile,
-    {label:'Scarica',action:'download',id:x.id,filename:x.nomeFile}]));
+    euro(x.pagato),x.iva==null?'Da verificare':'Indicata']),'fattura-passiva',passive.map(x=>x.id));
+   renderRows(tables[11],attivita.map(x=>[x.tipo,x.descrizione,x.scadenza||'',x.stato]),'attivita',attivita.map(x=>x.id));
+   const fileMap=new Map(files.map(x=>[Number(x.id),x]));
+   renderRows(tables[12],docs.map(x=>[
+    x.categoria,x.titolo,x.nomeFile,
+    fileMap.has(Number(x.id))
+     ?{label:'Scarica',action:'download',id:x.id,filename:x.nomeFile}
+     :'Solo scheda documento'
+   ]),'documento',docs.map(x=>x.id));
    fillProjectForms(voci,offerte,affidamenti,fornitori,passive,active);
+   addMovementTable('pagamento',pagamenti,
+    ['Documento','Riferimento','Importo','Data'],
+    x=>[x.fatturaId,x.riferimento,euro(x.importo),x.dataPagamento||'—'],
+    main.querySelector('form[action="/pagamento"]'));
+   addMovementTable('incasso',incassi,
+    ['Fattura','Riferimento','Importo','Data'],
+    x=>[x.fatturaId,x.riferimento,euro(x.importo),x.dataIncasso||'—'],
+    main.querySelector('form[action="/incasso-attivo"]'));
   }else if(page==='fattura'){
    const lines=await readList('/api/fatture-attive/'+currentInvoiceId+'/righe');
    if(requestSerial!==renderSerial)return;
    const table=main.querySelector('table');
    renderRows(table,lines.map(x=>[x.descrizione,euro(x.imponibile),
-    x.aliquota+'% / '+x.trattamento+' '+x.natura,euro(x.iva)]));
+    x.aliquota+'% / '+x.trattamento+' '+x.natura,euro(x.iva)]),'fattura-attiva-riga',lines.map(x=>x.id));
    const form=main.querySelector('form[action="/fattura-attiva-riga"]');
    if(form)form.querySelector('[name="fattura_id"]').value=String(currentInvoiceId);
    const confirm=main.querySelector('form[action="/fattura-attiva-conferma"]');
@@ -575,7 +632,24 @@ document.getElementById('page').addEventListener('click',async e=>{
  const action=button.dataset.action;
  button.disabled=true;
  try{
-  if(action==='affida'){
+  if(action==='delete'){
+   const kind=button.dataset.kind||'',id=Number(button.dataset.id);
+   if(!/^[a-z-]{3,30}$/.test(kind)||!Number.isSafeInteger(id)||id<=0)
+    throw Error('Identificativo dell’elemento non valido.');
+   const label=button.dataset.label||('ID '+id);
+   const extra=kind==='documento'?' Verrà eliminato anche il contenuto del file, se presente.':'';
+   if(!confirm('Cancellare DEFINITIVAMENTE da Neon TEST l’elemento:\n'+
+      label+'\n\nL’operazione non è annullabile.'+extra+
+      '\nI record collegati impediscono la cancellazione automatica.'))return;
+   // Non ripetere mai automaticamente una DELETE: l'operazione potrebbe essere riuscita.
+   const response=await apiCall('/api/v4/records/'+encodeURIComponent(kind)+'/'+id,{
+    method:'DELETE',headers:{'X-Confirm-Delete':'true'}
+   });
+   const result=await response.json();
+   if(!result.deleted)throw Error('Il server non ha confermato la cancellazione.');
+   alertDemo('Elemento cancellato da Neon TEST · ID '+id+'.');
+   show(location.hash.slice(1)||'commesse',false);
+  }else if(action==='affida'){
    if(!confirm('Confermi l’affidamento TEST di questa offerta? Il salvataggio sarà reale su Neon.'))return;
    const resp=await apiCall('/api/v4/save/affida',{
     method:'POST',headers:{'Content-Type':'application/json'},
