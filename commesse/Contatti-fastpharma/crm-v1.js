@@ -7,6 +7,25 @@
  // API in same-origin sul backend Render/Windows; su Pages config.js imposta apiBase.
  const hasApi=true;
  const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+
+ // Selezione di Organizzazioni per Gestione Commesse, solo dopo login CRM.
+ const pickerParams=new URLSearchParams(location.search);
+ const pickerNonce=pickerParams.get("nonce")||"";
+ const pickerEnabled=pickerParams.get("picker")==="commesse" &&
+  /^[a-f0-9]{32}$/.test(pickerNonce) &&
+  /^https:\/\/fetonte1960\.github\.io\/sviluppo-pubblico\/commesse\/Fastpharma-Commesse\//.test(document.referrer) &&
+  Boolean(window.opener);
+ function returnOrganizationToCommesse(id){
+  if(!pickerEnabled || !authenticated || !window.opener || window.opener.closed)return;
+  const org=getRecord("organizations",id);
+  if(!org?.id || !org?.name)return;
+  window.opener.postMessage({
+   type:"fastpharma-commesse.organization-selected",nonce:pickerNonce,
+   id:String(org.id),name:String(org.name)
+  },location.origin);
+  showNotice("Organizzazione selezionata e comunicata a Gestione Commesse.");
+  window.close();
+ }
  const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
  const fmt=v=>{if(!v)return "";let d=new Date(v);return Number.isFinite(d.getTime())?d.toLocaleString("it-IT",{dateStyle:"short",timeStyle:"short"}):String(v)};
  const models={
@@ -292,8 +311,9 @@
   $("#listTitle").textContent=commercial(module)&&selectedOrganization()?
    commercialTitle(module)+selectedOrganization().name:m.title+" · List View";
   $("#recordCount").textContent=filtered.length+" record · "+(authenticated?"Archivio collegato":"Accesso richiesto");
-  $("#recordsHead").innerHTML="<tr>"+m.cols.map(([field,label])=>`<th><button type="button" data-sort="${field}">${esc(label)} ${sortBy===field?(desc?"↓":"↑"):""}</button></th>`).join("")+"</tr>";
-  $("#recordsBody").innerHTML=filtered.length?filtered.map(r=>`<tr tabindex="0" data-id="${esc(r.id)}">`+m.cols.map(([field],i)=>`<td class="${i===0?"primary-cell":""}">${esc(display(field,r)||"—")}</td>`).join("")+"</tr>").join(""):`<tr><td colspan="${m.cols.length}" class="empty-row">Nessun record trovato.</td></tr>`;
+  const canPick=pickerEnabled && authenticated && module==="organizations";
+  $("#recordsHead").innerHTML="<tr>"+m.cols.map(([field,label])=>`<th><button type="button" data-sort="${field}">${esc(label)} ${sortBy===field?(desc?"↓":"↑"):""}</button></th>`).join("")+(canPick?"<th>Gestione Commesse</th>":"")+"</tr>";
+  $("#recordsBody").innerHTML=filtered.length?filtered.map(r=>`<tr tabindex="0" data-id="${esc(r.id)}">`+m.cols.map(([field],i)=>`<td class="${i===0?"primary-cell":""}">${esc(display(field,r)||"—")}</td>`).join("")+(canPick?`<td><button class="primary" type="button" data-pick-org="${esc(r.id)}">Usa in Commesse</button></td>`:"")+"</tr>").join(""):`<tr><td colspan="${m.cols.length+(canPick?1:0)}" class="empty-row">Nessun record trovato.</td></tr>`;
  }
  function openRecord(id){
   if(!authenticated||!getRecord(module,id))return;
@@ -536,7 +556,10 @@
    // La web app non scrive alcun segreto in storage o cookie.
    loginStatus("Accesso riuscito: archivio collegato.");
    showNotice("Accesso riuscito: ora puoi consultare gli archivi.",false);
-   shareArchiveSession();render();
+   shareArchiveSession();
+   if(pickerEnabled){module="organizations";screen="list";activeId=null;sortBy="";desc=false;}
+   render();
+   if(pickerEnabled)showNotice("Seleziona «Usa in Commesse» accanto alla farmacia desiderata.");
    showChromePasswordUi();
    // Tentativo esplicito dopo il login riuscito; senza bloccare l'apertura del CRM.
    // L'utente può anche riprovare con il pulsante visibile dopo l'accesso.
@@ -883,7 +906,11 @@
  $("#recordSearch").addEventListener("input",list);
  $("#recordFilter").addEventListener("change",list);
  $("#recordsHead").addEventListener("click",e=>{const f=e.target.closest("[data-sort]")?.dataset.sort;if(!f)return;desc=sortBy===f?!desc:false;sortBy=f;list()});
- $("#recordsBody").addEventListener("click",e=>{const id=e.target.closest("tr[data-id]")?.dataset.id;if(id)openRecord(id)});
+ $("#recordsBody").addEventListener("click",e=>{
+  const pick=e.target.closest("button[data-pick-org]");
+  if(pick){e.stopPropagation();returnOrganizationToCommesse(pick.dataset.pickOrg);return;}
+  const id=e.target.closest("tr[data-id]")?.dataset.id;if(id)openRecord(id);
+ });
  $("#recordsBody").addEventListener("keydown",e=>{if(e.key==="Enter"){const id=e.target.closest("tr[data-id]")?.dataset.id;if(id)openRecord(id)}});
  $$(".tab").forEach(b=>b.addEventListener("click",()=>{tab=b.dataset.tab;detail()}));
  $("#detailContent").addEventListener("click",e=>{
