@@ -44,12 +44,12 @@ input[name="farmacia_id"][readonly]{background:#edf3f4;color:#395466}
 <div id="commesse-auth">
   <section class="auth-box" aria-label="Accesso a Gestione Commesse">
     <h1>FastPharma · Gestione Commesse</h1>
-    <p>Accesso richiesto prima di visualizzare il gestionale. Usa la stessa chiave di <b>Contatti-fastpharma</b>. I dati saranno salvati nell'archivio Neon TEST.</p>
+    <p>Accesso amministrativo FastPharma richiesto prima di visualizzare il gestionale. I dati saranno salvati nell'archivio Neon TEST.</p>
     <form id="commesse-login" autocomplete="on">
       <label for="commesse-user">Profilo</label>
-      <input id="commesse-user" name="username" autocomplete="username" value="Gestione contatti" readonly>
+      <input id="commesse-user" name="username" autocomplete="username" value="FastPharma" readonly>
       <label for="commesse-password">Password</label>
-      <input id="commesse-password" name="password" type="password" required autocomplete="current-password" placeholder="Chiave di accesso Contatti">
+      <input id="commesse-password" name="password" type="password" required autocomplete="current-password" placeholder="Password amministrativa FastPharma">
       <button id="commesse-connect" type="submit">Verifica e apri</button>
       <button id="commesse-chrome" type="button">Usa password salvata in Chrome</button>
       <button id="commesse-store" type="button" hidden>Salva la password in Chrome</button>
@@ -85,21 +85,58 @@ const testApi=location.hostname==='fetonte1960.github.io'
 
 /* Gestione Commesse usa la medesima chiave del CRM, verificata server-to-server.
    Password esclusivamente in RAM; memorizzazione facoltativa nel browser Chrome. */
+
 let authKey='';
-const credentialId='Gestione contatti';
+let credentialId='FastPharma'; // fallback di presentazione; ADMINKEYNAME arriva dall'API.
+let adminConfigPromise=null;
 const authState=document.getElementById('commesse-auth-status');
 const authFeedback=(message,error=false)=>{
  authState.textContent=message;authState.classList.toggle('auth-error',error);
 };
+const pause=(ms)=>new Promise(resolve=>setTimeout(resolve,ms));
+function transientStatus(code){return [429,502,503,504].includes(code);}
+async function loadAdminConfig(){
+ if(adminConfigPromise)return adminConfigPromise;
+ adminConfigPromise=(async()=>{
+  // Il primo caricamento di /api/meta risveglia Commesse senza inviare password.
+  const delays=[0,6000,10000,15000,22000,28000];
+  for(let attempt=0;attempt<delays.length;attempt++){
+   if(delays[attempt])await pause(delays[attempt]);
+   try{
+    const resp=await fetch(testApi+'/api/meta',{cache:'no-store'});
+    if(resp.ok){
+     const info=await resp.json();
+     if(typeof info.adminKeyName==='string' && info.adminKeyName.trim().length>0 &&
+        info.adminKeyName.length<=120 && !/[\x00-\x1f\x7f]/.test(info.adminKeyName)){
+      credentialId=info.adminKeyName.trim();
+      document.getElementById('commesse-user').value=credentialId;
+     }
+     return {available:true,fromGroup:info.adminKeyNameConfigured===true};
+    }
+    if(!transientStatus(resp.status))break;
+   }catch(_error){/* servizio Free non pronto o rete temporaneamente assente */}
+  }
+  return {available:false,fromGroup:false};
+ })();
+ return adminConfigPromise;
+}
 async function apiCall(path,options={}){
  if(!authKey)throw Error('Accesso richiesto');
  const headers=new Headers(options.headers||{});
  headers.set('X-Demo-Key',authKey);
  const response=await fetch(testApi+path,{...options,headers,cache:'no-store'});
- if(response.status===401)throw Error('Chiave non valida o sessione scaduta. Accedi nuovamente.');
+ if(response.status===401){
+  const error=Error('Password non valida. Verifica la password amministrativa FastPharma.');
+  error.status=401;throw error;
+ }
  if(!response.ok){
   const body=await response.json().catch(()=>({}));
-  throw Error(body.error||body.title||('Server HTTP '+response.status));
+  const error=Error(body.error||body.title||
+    (transientStatus(response.status)?'Servizio temporaneamente non disponibile':'Server HTTP '+response.status));
+  error.status=response.status;
+  const seconds=parseInt(response.headers.get('Retry-After')||'',10);
+  if(Number.isFinite(seconds)&&seconds>0&&seconds<=120)error.retryAfter=seconds*1000;
+  throw error;
  }
  return response;
 }
@@ -108,25 +145,49 @@ function chromeSupported(){return typeof window.PasswordCredential==='function' 
 function browserStore(){
  if(!chromeSupported()||!authKey)return;
  try{
-  const c=new window.PasswordCredential({id:credentialId,password:authKey,name:'Gestione contatti'});
-  navigator.credentials.store(c).then(()=>authFeedback('Accesso riuscito. Chrome ha gestito la richiesta di salvataggio.')).catch(()=>{});
+  const c=new window.PasswordCredential({id:credentialId,password:authKey,name:credentialId});
+  navigator.credentials.store(c)
+   .then(()=>authFeedback('Accesso riuscito. Chrome ha gestito la memorizzazione della password.'))
+   .catch(()=>{});
  }catch(_error){authFeedback('Password valida. Gestore password di Chrome non disponibile.');}
 }
+async function verifyWithFreeWake(){
+ // Retry solo su validazione GET: mai ripetere automaticamente le scritture POST.
+ const fallback=[0,6000,10000,15000,20000,25000,30000];
+ for(let i=0;i<fallback.length;i++){
+  if(i)await pause(fallback[i]);
+  try{return await apiCall('/api/auth/check');}
+  catch(error){
+   if(error.status===401)throw error;
+   if(!transientStatus(error.status) && !(error instanceof TypeError))throw error;
+   if(i===fallback.length-1)throw Error(
+    'Verifica non disponibile: il servizio Free non risponde oppure il controllo centralizzato è limitato. Riprova senza cambiare password.');
+   authFeedback('Servizio di prova in risveglio o temporaneamente limitato (HTTP '+
+    (error.status||'rete')+'). Nuovo tentativo '+(i+2)+'/'+fallback.length+
+    ' senza reinserire la password…');
+  }
+ }
+}
 async function login(candidate){
- if(!candidate||candidate.length>1024){authFeedback('Inserisci una chiave valida.',true);return;}
+ if(!candidate||candidate.length>1024){authFeedback('Inserisci una password valida.',true);return;}
  const connect=document.getElementById('commesse-connect');
- connect.disabled=true;authFeedback('Verifica della chiave tramite Contatti in corso…');
+ connect.disabled=true;
+ authFeedback('Connessione FastPharma in corso…');
  authKey=candidate;
  try{
-  await apiCall('/api/auth/check');
+  // Il nome di registrazione Chrome proviene da ADMINKEYNAME, non dal modulo.
+  await loadAdminConfig();
+  await verifyWithFreeWake();
   document.getElementById('commesse-auth').hidden=true;
   document.getElementById('commesse-app').hidden=false;
   document.getElementById('commesse-store').hidden=!chromeSupported();
   show(pages[location.hash.slice(1)]?location.hash.slice(1):'commesse');
   authFeedback('Archivio TEST collegato.');
   if(chromeSupported())browserStore();
- }catch(e){authKey='';authFeedback(e.message||'Connessione non disponibile',true);}
- finally{connect.disabled=false;}
+ }catch(e){
+  authKey='';
+  authFeedback(e.message||'Connessione temporaneamente non disponibile',true);
+ }finally{connect.disabled=false;}
 }
 document.getElementById('commesse-login').addEventListener('submit',e=>{
  e.preventDefault();void login(document.getElementById('commesse-password').value.trim());
@@ -135,14 +196,17 @@ document.getElementById('commesse-chrome').addEventListener('click',async()=>{
  if(typeof navigator.credentials?.get!=='function'){
   authFeedback('Il browser non supporta questa funzione; inserisci la password.',true);return;
  }
- authFeedback('Ricerca nel Gestore password del browser…');
+ await loadAdminConfig();
+ authFeedback('Ricerca della password nel Gestore password di Chrome…');
  try{
   const saved=await navigator.credentials.get({password:true,mediation:'required'});
-  if(saved?.type==='password' && saved.id===credentialId && saved.password){
+  // Compatibilità una tantum con i vecchi nomi, mentre allineiamo le altre app.
+  const accepted=[credentialId,'Gestione contatti','FastPharma-TEST'];
+  if(saved?.type==='password' && accepted.includes(saved.id) && saved.password){
    document.getElementById('commesse-password').value=saved.password;
-   authFeedback('Chiave recuperata: premi Verifica e apri.');
-  }else authFeedback('Chiave non trovata; puoi inserirla manualmente.',true);
- }catch(_error){authFeedback('Gestore password non disponibile; inserisci la chiave.',true);}
+   authFeedback('Password recuperata. Premi «Verifica e apri»; dopo l’accesso verrà registrato il nome FastPharma aggiornato.');
+  }else authFeedback('Password non trovata; puoi inserirla manualmente.',true);
+ }catch(_error){authFeedback('Gestore password non disponibile; inserisci la password.',true);}
 });
 document.getElementById('commesse-store').addEventListener('click',browserStore);
 document.getElementById('commesse-logout').addEventListener('click',()=>{
@@ -151,8 +215,10 @@ document.getElementById('commesse-logout').addEventListener('click',()=>{
  document.getElementById('page').replaceChildren();
  document.getElementById('commesse-app').hidden=true;
  document.getElementById('commesse-auth').hidden=false;
- authFeedback('Accesso terminato: inserisci la chiave per aprire il gestionale.');
+ authFeedback('Accesso terminato: inserisci la password per aprire il gestionale.');
 });
+// Il risveglio Free inizia all'apertura della pagina; senza mostrare il gestionale.
+void loadAdminConfig();
 
 const euro=n=>Number(n||0).toLocaleString('it-IT',{style:'currency',currency:'EUR'});
 
