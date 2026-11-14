@@ -490,8 +490,31 @@
   if(!r.ok)throw new Error("Archivio non disponibile (HTTP "+r.status+").");
   return await r.json();
  }
- const chromeCredentialId="Gestione contatti";
- const previousChromeCredentialId="FastPharma-TEST";
+ // Nome centralizzato in ADMINKEYNAME, letto soltanto come metadato non segreto.
+ let chromeCredentialId="FastPharma";
+ const previousChromeCredentialIds=["Gestione contatti","FastPharma-TEST"];
+ let chromeNameLookup=null;
+ async function loadAdminCredentialName(){
+  if(desktop || !base)return;
+  if(chromeNameLookup)return chromeNameLookup;
+  chromeNameLookup=(async()=>{
+   try{
+    const response=await fetch(base+"/api/meta",{
+     cache:"no-store",signal:AbortSignal.timeout(10000)
+    });
+    if(!response.ok)return;
+    const info=await response.json();
+    const candidate=info?.adminKeyName;
+    if(typeof candidate==="string" && candidate.trim() &&
+       candidate.length<=120 && !/[\x00-\x1f\x7f]/.test(candidate))
+     { chromeCredentialId=candidate.trim();
+       const loginName=$("#loginUsername");
+       if(loginName)loginName.value=chromeCredentialId;
+     }
+   }catch(_error){/* Render Free non pronto: fallback non segreto FastPharma */}
+  })();
+  return chromeNameLookup;
+ }
  let chromeStorePending=false;
  // Chrome gestisce la credenziale nel proprio Password Manager. Mai in localStorage,
  // sessionStorage, cookie o PostgreSQL; la chiave resta solo nella sessione RAM del CRM.
@@ -512,8 +535,9 @@
   try{
    // Chromium non sempre riconosce come login un form AJAX senza navigazione.
    // L'API dedicata richiede direttamente al browser di gestire questa credenziale.
+   await loadAdminCredentialName();
    const credential=new window.PasswordCredential({
-    id:chromeCredentialId,password:key,name:"Gestione contatti"
+    id:chromeCredentialId,password:key,name:chromeCredentialId
    });
    await navigator.credentials.store(credential);
    $("#chromePasswordStatus").textContent=
@@ -532,7 +556,7 @@
    const stored=await navigator.credentials.get({password:true,mediation:"required"});
    // Su GitHub Pages altre applicazioni possono condividere l'origin:
    // accettare esclusivamente il profilo esatto di FastPharma.
-   if(stored?.type==="password" && (stored.id===chromeCredentialId || stored.id===previousChromeCredentialId) && typeof stored.password==="string"){
+   if(stored?.type==="password" && ([chromeCredentialId,...previousChromeCredentialIds].includes(stored.id)) && typeof stored.password==="string"){
     $("#demoKey").value=stored.password;
     loginStatus("Chiave recuperata dal browser. Premi «Verifica e apri».");
    }else{
@@ -946,6 +970,7 @@
  });
  render();
  showChromePasswordUi();
+ if(!desktop)void loadAdminCredentialName();
  window.__FASTPHARMA_CRM_READY__=true;
  if(desktop){
   $("#loginForm").hidden=true;showNotice("Collegamento al database Windows in corso…");
