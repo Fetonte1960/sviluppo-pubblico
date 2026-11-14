@@ -98,12 +98,15 @@ function transientStatus(code){return [429,502,503,504].includes(code);}
 async function loadAdminConfig(){
  if(adminConfigPromise)return adminConfigPromise;
  adminConfigPromise=(async()=>{
-  // Il primo caricamento di /api/meta risveglia Commesse senza inviare password.
-  const delays=[0,6000,10000,15000,22000,28000];
+  // Un solo servizio da risvegliare: GET /api/meta non richiede password.
+  // Il browser non deve restare più di ~30s in attesa cieca.
+  const delays=[0,3500];
   for(let attempt=0;attempt<delays.length;attempt++){
    if(delays[attempt])await pause(delays[attempt]);
    try{
-    const resp=await fetch(testApi+'/api/meta',{cache:'no-store'});
+    const resp=await fetch(testApi+'/api/meta',{
+     cache:'no-store',signal:AbortSignal.timeout(12000)
+    });
     if(resp.ok){
      const info=await resp.json();
      if(typeof info.adminKeyName==='string' && info.adminKeyName.trim().length>0 &&
@@ -111,13 +114,17 @@ async function loadAdminConfig(){
       credentialId=info.adminKeyName.trim();
       document.getElementById('commesse-user').value=credentialId;
      }
-     return {available:true,fromGroup:info.adminKeyNameConfigured===true,sharedKeyConfigured:info.sharedKeyConfigured===true};
+     return {
+      available:true,
+      fromGroup:info.adminKeyNameConfigured===true,
+      sharedKeyConfigured:info.sharedKeyConfigured===true
+     };
     }
     if(!transientStatus(resp.status))break;
-   }catch(_error){/* servizio Free non pronto o rete temporaneamente assente */}
+   }catch(_error){/* Render Free in avvio, connessione interrotta o timeout */}
   }
-  return {available:false,fromGroup:false};
- })();
+  return {available:false,fromGroup:false,sharedKeyConfigured:false};
+ })().finally(()=>{adminConfigPromise=null;});
  return adminConfigPromise;
 }
 async function apiCall(path,options={}){
@@ -134,6 +141,7 @@ async function apiCall(path,options={}){
   const error=Error(body.error||body.title||
     (transientStatus(response.status)?'Servizio temporaneamente non disponibile':'Server HTTP '+response.status));
   error.status=response.status;
+  error.code=body.code||'';
   const seconds=parseInt(response.headers.get('Retry-After')||'',10);
   if(Number.isFinite(seconds)&&seconds>0&&seconds<=120)error.retryAfter=seconds*1000;
   throw error;
@@ -152,31 +160,32 @@ function browserStore(){
  }catch(_error){authFeedback('Password valida. Gestore password di Chrome non disponibile.');}
 }
 async function verifyWithFreeWake(){
- // Retry solo su validazione GET: mai ripetere automaticamente le scritture POST.
- const fallback=[0,6000,10000,15000,20000,25000,30000];
- for(let i=0;i<fallback.length;i++){
-  if(i)await pause(fallback[i]);
-  try{return await apiCall('/api/auth/check');}
-  catch(error){
-   if(error.status===401)throw error;
-   if(!transientStatus(error.status) && !(error instanceof TypeError))throw error;
-   if(i===fallback.length-1)throw Error(
-    'Verifica non disponibile: il servizio Free non risponde oppure il controllo centralizzato è limitato. Riprova senza cambiare password.');
-   authFeedback('Servizio di prova in risveglio o temporaneamente limitato (HTTP '+
-    (error.status||'rete')+'). Nuovo tentativo '+(i+2)+'/'+fallback.length+
-    ' senza reinserire la password…');
-  }
+ // Il processo Render Free è già stato controllato da GET /api/meta.
+ // Una verifica diretta non deve chiamare altri servizi né richiedere 7 tentativi.
+ try{return await apiCall('/api/auth/check');}
+ catch(error){
+  if(error.status===401||error.code==='FASTPHARMA_ADMIN_KEY_NOT_CONFIGURED')throw error;
+  if(!transientStatus(error.status) && !(error instanceof TypeError))throw error;
+  authFeedback('Servizio momentaneamente non disponibile. Eseguo un ultimo controllo…');
+  await pause(4000);
+  return apiCall('/api/auth/check');
  }
 }
 async function login(candidate){
- if(!candidate||candidate.length>1024){authFeedback('Inserisci una password valida.',true);return;}
+ if(!candidate||candidate.length>1024){
+  authFeedback('Inserisci una password valida.',true);return;
+ }
  const connect=document.getElementById('commesse-connect');
  connect.disabled=true;
- authFeedback('Connessione FastPharma in corso…');
- authKey=candidate;
+ authFeedback('Controllo configurazione del servizio FastPharma…');
  try{
-  // Il nome di registrazione Chrome proviene da ADMINKEYNAME, non dal modulo.
-  await loadAdminConfig();
+  const configuration=await loadAdminConfig();
+  if(!configuration.available)
+   throw Error('Server Render di prova non ancora disponibile. Verifica la connessione o riprova premendo «Verifica e apri». La password non è stata giudicata errata.');
+  if(!configuration.sharedKeyConfigured)
+   throw Error('Il server è attivo, ma la chiave amministrativa condivisa non è configurata per Gestione Commesse. Verificare il gruppo Render FastPharma. Ripetere l’accesso dopo la configurazione.');
+  authKey=candidate;
+  authFeedback('Verifica della password amministrativa FastPharma…');
   await verifyWithFreeWake();
   document.getElementById('commesse-auth').hidden=true;
   document.getElementById('commesse-app').hidden=false;
