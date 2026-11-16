@@ -1,7 +1,7 @@
 "use strict";
 // Demo only. GitHub Pages hosts this static frontend; the authorized API URL is configured explicitly.
 // No Neon credentials, company identity tokens or internal secrets in the frontend.
-const APP_VERSION="1.7.0";
+const APP_VERSION="1.7.1";
 const $ = id => document.getElementById(id);
 const escapeHtml = s => String(s ?? "").replace(/[&<>"']/g, c =>
   ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -609,6 +609,20 @@ function openBimCad(id){
   if(!row)throw Error("Progetto non associato al preventivo aperto");
   if(row.kind!=="BIM-CAD-Architettonico")
     throw Error("Non è ancora disponibile un editor per il tipo "+row.kind);
+  // One bound editor per Preventivi window: another project must not leave an
+  // orphaned editor whose Save cannot receive a confirmation.
+  if(bimCadWindow&&!bimCadWindow.closed){
+    if(bimCadOpen?.id===id&&bimCadOpen.quoteId===quote.id&&
+       bimCadOpen.companyId===companyId){
+      bimCadWindow.focus();
+      bimCadFeedback("Il progetto è già aperto. Usa la finestra BIM-CAD esistente.");
+      return;
+    }
+    if(!confirm("È già aperto un altro progetto BIM-CAD. Chiuderlo e passare a questo? Salva prima le modifiche."))return;
+    bimCadWindow.close();
+    bimCadWindow=null;
+    bimCadOpen=null;
+  }
   // Parameters identify the context only, never grant database write rights.
   const nonce=crypto.randomUUID().replace(/-/g,"");
   const uri=BIM_CAD_EDITOR_URL+"?bimCad=preventivi&bimCadProjectId="+
