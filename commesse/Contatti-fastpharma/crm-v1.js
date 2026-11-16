@@ -11,21 +11,78 @@
  // Selezione di Organizzazioni per Gestione Commesse, solo dopo login CRM.
  const pickerParams=new URLSearchParams(location.search);
  const pickerNonce=pickerParams.get("nonce")||"";
- const pickerEnabled=pickerParams.get("picker")==="commesse" &&
-  /^[a-f0-9]{32}$/.test(pickerNonce) &&
-  /^https:\/\/fetonte1960\.github\.io\/sviluppo-pubblico\/commesse\/Fastpharma-Commesse\//.test(document.referrer) &&
-  Boolean(window.opener);
+ const pickerKind=pickerParams.get("picker")||"";
+ const preventiviTrust=pickerKind==="preventivi" &&
+  /^https:\/\/fetonte1960\.github\.io\/sviluppo-pubblico\/commesse\/Preventivi\//.test(document.referrer);
+ const pickerEnabled=/^[a-f0-9]{32}$/.test(pickerNonce) && Boolean(window.opener) &&
+  ((pickerKind==="commesse" &&
+    /^https:\/\/fetonte1960\.github\.io\/sviluppo-pubblico\/commesse\/Fastpharma-Commesse\//.test(document.referrer))||preventiviTrust);
+ const preventiviPicker=pickerEnabled&&pickerKind==="preventivi";
+ let selectedForPreventivi=null;
+ const recordedNotes=new Set();
+ function sendOrganizationsToPreventivi(){
+  if(!preventiviPicker||!authenticated||window.opener?.closed)return;
+  window.opener.postMessage({type:"fastpharma-preventivi.organizations",
+   nonce:pickerNonce,organizations:data.organizations.slice(0,500)
+    .map(o=>({id:String(o.id),name:String(o.name||"")}))},location.origin);
+ }
  function returnOrganizationToCommesse(id){
-  if(!pickerEnabled || !authenticated || !window.opener || window.opener.closed)return;
+  if(!pickerEnabled||!authenticated||!window.opener||window.opener.closed)return;
   const org=getRecord("organizations",id);
-  if(!org?.id || !org?.name)return;
-  window.opener.postMessage({
-   type:"fastpharma-commesse.organization-selected",nonce:pickerNonce,
-   id:String(org.id),name:String(org.name)
-  },location.origin);
+  if(!org?.id||!org?.name)return;
+  if(preventiviPicker){
+   selectedForPreventivi=String(org.id);
+   const fields={id:String(org.id),name:String(org.name),
+    address:String(org.address||""),city:String(org.city||""),
+    province:String(org.province||""),postalCode:String(org.postal_code||""),
+    vatNumber:String(org.vat_number||""),phone:String(org.phone||""),
+    email:String(org.email||"")};
+   window.opener.postMessage({type:"fastpharma-preventivi.organization-selected",
+     nonce:pickerNonce,organization:fields},location.origin);
+   showNotice("Organizzazione inviata a Preventivi. Torna al preventivo e lascia aperta questa finestra per la nota.");
+   window.opener.focus();
+   return;
+  }
+  window.opener.postMessage({type:"fastpharma-commesse.organization-selected",
+   nonce:pickerNonce,id:String(org.id),name:String(org.name)},location.origin);
   showNotice("Organizzazione selezionata e comunicata a Gestione Commesse.");
   window.close();
  }
+ // Preventivi can request a CRM organization or log the new quote via this authenticated popup.
+ window.addEventListener("message",async event=>{
+  if(!preventiviPicker||!authenticated||event.origin!==location.origin||
+     event.source!==window.opener)return;
+  const m=event.data;
+  if(!m||typeof m!=="object"||m.nonce!==pickerNonce)return;
+  if(m.type==="fastpharma-preventivi.select-organization"){
+   if(typeof m.id==="string"&&/^[0-9a-f-]{36}$/i.test(m.id))
+     returnOrganizationToCommesse(m.id);
+   return;
+  }
+  if(m.type!=="fastpharma-preventivi.note-request")return;
+  const orgId=String(m.organizationId||""),qid=String(m.quoteId||"");
+  const ref=String(m.reference||"").trim().slice(0,80);
+  const subject=String(m.subject||"").trim().slice(0,200);
+  const respond=(ok,error="")=>window.opener&&!window.opener.closed&&
+    window.opener.postMessage({type:"fastpharma-preventivi.note-result",
+      nonce:pickerNonce,quoteId:qid,ok,error},location.origin);
+  if(!/^[0-9a-f-]{36}$/i.test(qid)||orgId!==selectedForPreventivi||
+     !getRecord("organizations",orgId)||!ref||!subject){
+   respond(false,"Organizzazione o preventivo non valido");return;
+  }
+  if(recordedNotes.has(qid)){respond(true);return;}
+  try{
+   const res=await fetch(base+"/api/v1/activities",{
+    method:"POST",headers:{"X-Demo-Key":key,"Content-Type":"application/json"},
+    body:JSON.stringify({subject:"Iniziato un nuovo preventivo",
+      type:"Altro",status:"Completata",organization_id:orgId,
+      notes:"Categoria: da completare. Preventivo "+ref+" ("+qid+"). Oggetto: "+subject}),
+    signal:AbortSignal.timeout(20000)});
+   if(!res.ok)throw Error("HTTP "+res.status);
+   recordedNotes.add(qid);respond(true);
+   showNotice("Attività «Iniziato un nuovo preventivo» registrata su Contatti.");
+  }catch(e){respond(false,"La nota non è stata registrata: "+(e.message||"errore"));}
+ });
  const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
  const fmt=v=>{if(!v)return "";let d=new Date(v);return Number.isFinite(d.getTime())?d.toLocaleString("it-IT",{dateStyle:"short",timeStyle:"short"}):String(v)};
  const models={
@@ -312,8 +369,8 @@
    commercialTitle(module)+selectedOrganization().name:m.title+" · List View";
   $("#recordCount").textContent=filtered.length+" record · "+(authenticated?"Archivio collegato":"Accesso richiesto");
   const canPick=pickerEnabled && authenticated && module==="organizations";
-  $("#recordsHead").innerHTML="<tr>"+m.cols.map(([field,label])=>`<th><button type="button" data-sort="${field}">${esc(label)} ${sortBy===field?(desc?"↓":"↑"):""}</button></th>`).join("")+(canPick?"<th>Gestione Commesse</th>":"")+"</tr>";
-  $("#recordsBody").innerHTML=filtered.length?filtered.map(r=>`<tr tabindex="0" data-id="${esc(r.id)}">`+m.cols.map(([field],i)=>`<td class="${i===0?"primary-cell":""}">${esc(display(field,r)||"—")}</td>`).join("")+(canPick?`<td><button class="primary" type="button" data-pick-org="${esc(r.id)}">Usa in Commesse</button></td>`:"")+"</tr>").join(""):`<tr><td colspan="${m.cols.length+(canPick?1:0)}" class="empty-row">Nessun record trovato.</td></tr>`;
+  $("#recordsHead").innerHTML="<tr>"+m.cols.map(([field,label])=>`<th><button type="button" data-sort="${field}">${esc(label)} ${sortBy===field?(desc?"↓":"↑"):""}</button></th>`).join("")+(canPick?"<th>"+(preventiviPicker?"Preventivi":"Gestione Commesse")+"</th>":"")+"</tr>";
+  $("#recordsBody").innerHTML=filtered.length?filtered.map(r=>`<tr tabindex="0" data-id="${esc(r.id)}">`+m.cols.map(([field],i)=>`<td class="${i===0?"primary-cell":""}">${esc(display(field,r)||"—")}</td>`).join("")+(canPick?`<td><button class="primary" type="button" data-pick-org="${esc(r.id)}">${preventiviPicker?"Usa in Preventivi":"Usa in Commesse"}</button></td>`:"")+"</tr>").join(""):`<tr><td colspan="${m.cols.length+(canPick?1:0)}" class="empty-row">Nessun record trovato.</td></tr>`;
  }
  function openRecord(id){
   if(!authenticated||!getRecord(module,id))return;
@@ -583,7 +640,10 @@
    shareArchiveSession();
    if(pickerEnabled){module="organizations";screen="list";activeId=null;sortBy="";desc=false;}
    render();
-   if(pickerEnabled)showNotice("Seleziona «Usa in Commesse» accanto alla farmacia desiderata.");
+   if(pickerEnabled)showNotice(preventiviPicker?
+    "Seleziona «Usa in Preventivi» oppure crea una nuova Organizzazione. Lascia aperta la finestra per registrare la nota.":
+    "Seleziona «Usa in Commesse» accanto alla farmacia desiderata.");
+   sendOrganizationsToPreventivi();
    showChromePasswordUi();
    // Tentativo esplicito dopo il login riuscito; senza bloccare l'apertura del CRM.
    // L'utente può anche riprovare con il pulsante visibile dopo l'accesso.
@@ -622,6 +682,7 @@
    if(!res.ok){const problem=await res.json().catch(()=>({}));throw new Error(problem.error||"Salvataggio non riuscito (HTTP "+res.status+")")}
    const result=await res.json();
    data[target]=await get("/api/v1/"+target);
+   if(target==="organizations")sendOrganizationsToPreventivi();
    $("#recordDialog").close();
    const originalContext=formContext;
    formContext=null;
