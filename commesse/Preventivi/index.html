@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="it">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Preventivi V1.6.0 — Demo sintetica</title><link rel="stylesheet" href="styles.css"></head>
+<title>Preventivi V1.7.0 — Demo sintetica</title><link rel="stylesheet" href="styles.css"></head>
 <body>
 <header class="compact-header">
-  <strong class="brand-version">Preventivi — <span id="appVersion">V1.6.0</span> <small>TEST</small></strong>
+  <strong class="brand-version">Preventivi — <span id="appVersion">V1.7.0</span> <small>TEST</small></strong>
   <span id="currentQuoteHeader">Preventivo in elaborazione: nessuno</span>
   <span class="header-actions">
     <button type="button" id="infoButton" class="button-secondary">Informazioni</button>
@@ -13,7 +13,7 @@
 </header>
 <dialog id="infoDialog" class="app-dialog info-dialog">
  <div class="dialog-title"><h2>Preventivi — informazioni</h2><button type="button" id="closeInfo" class="button-secondary">Chiudi</button></div>
- <p><b>Versione: <span id="infoVersion">V1.6.0</span></b></p>
+ <p><b>Versione: <span id="infoVersion">V1.7.0</span></b></p>
  <p class="hint">Frontend GitHub Pages, backend .NET su Render Free. DEMO sintetica: quote in memoria non persistenti su Neon.</p>
  <p id="status" aria-live="polite">Connessione non inizializzata</p>
  <details class="connection-settings"><summary>Connessione demo (avanzate)</summary>
@@ -34,8 +34,9 @@
   <nav class="step-tabs" role="tablist" aria-label="Fasi di compilazione preventivo">
     <button id="tabIssuer" class="step-tab active" type="button" role="tab" aria-selected="true" aria-controls="issuerPanel">1 · Generale</button>
     <button id="tabChapters" class="step-tab" type="button" role="tab" aria-selected="false" aria-controls="chapterPanel">2 · Capitoli</button>
-    <button id="tabQuote" class="step-tab" type="button" role="tab" aria-selected="false" aria-controls="quotePanel">3 · Corpo preventivo</button>
-    <button id="tabPrices" class="step-tab" type="button" role="tab" aria-selected="false" aria-controls="pricesPanel">4 · Prezziario</button>
+    <button id="tabBimCad" class="step-tab" type="button" role="tab" aria-selected="false" aria-controls="bimCadPanel">3 · BIM-CAD</button>
+    <button id="tabQuote" class="step-tab" type="button" role="tab" aria-selected="false" aria-controls="quotePanel">4 · Corpo preventivo</button>
+    <button id="tabPrices" class="step-tab" type="button" role="tab" aria-selected="false" aria-controls="pricesPanel">5 · Prezziario</button>
   </nav>
   <section id="issuerPanel" class="step-panel" role="tabpanel" aria-labelledby="tabIssuer">
     <h2 class="screen-heading">Generale — nuovo preventivo</h2>
@@ -245,7 +246,38 @@
         </div>
       </article>
     </div>
-    <div class="next-step"><button id="goBody" type="button">Vai a 3 · Corpo preventivo</button></div>
+    <div class="next-step"><button id="goBody" type="button">Vai a 3 · BIM-CAD</button></div>
+  </section>
+  <section id="bimCadPanel" class="step-panel" role="tabpanel" aria-labelledby="tabBimCad" hidden>
+    <div class="bimcad-screen">
+      <div class="bimcad-header">
+        <div>
+          <h2>3. BIM-CAD — progetti del preventivo</h2>
+          <p class="hint" id="bimCadQuoteLabel">Apri un preventivo dalla scheda Generale per gestirne i progetti.</p>
+        </div>
+        <button id="bimCadRefresh" type="button" class="button-secondary">Aggiorna elenco</button>
+      </div>
+      <form id="bimCadCreateForm" class="bimcad-create">
+        <label>Nome nuovo progetto
+          <input id="bimCadNewName" maxlength="120" required placeholder="Es. Farmacia — piano terra">
+        </label>
+        <label>Tipologia BIM-CAD
+          <select id="bimCadNewKind"><option value="BIM-CAD-Architettonico">BIM-CAD-Architettonico</option></select>
+        </label>
+        <button id="bimCadNew" type="submit">+ Nuovo progetto</button>
+      </form>
+      <p class="hint">Ogni progetto è associato esclusivamente al preventivo aperto. Il salvataggio del disegno viene indirizzato a questo progetto, con controllo di revisione.</p>
+      <div class="bimcad-table-wrap">
+        <table class="bimcad-table">
+          <thead><tr>
+            <th>Progetto</th><th>Tipologia</th><th>Revisione</th><th>Ultimo salvataggio</th><th>Operazioni</th>
+          </tr></thead>
+          <tbody id="bimCadGrid"><tr><td colspan="5">Nessun progetto caricato</td></tr></tbody>
+        </table>
+      </div>
+      <p id="bimCadFeedback" class="hint" aria-live="polite">I progetti dimostrativi sono temporanei finché Preventivi non sarà collegato al proprio archivio PostgreSQL.</p>
+    <div class="next-step"><button type="button" id="bimCadNext">Vai a 4 · Corpo preventivo</button></div>
+    </div>
   </section>
   <section id="quotePanel" class="step-panel" role="tabpanel" aria-labelledby="tabQuote" hidden>
     <div class="body-workspace">
@@ -353,18 +385,18 @@
     </div>
     <div id="bodyLegacyHidden" hidden aria-hidden="true">
       <span id="chosenIssuer"></span>
-      <button id="backIssuer" type="button">Torna a Capitoli</button>
+      <button id="backIssuer" type="button">Torna a BIM-CAD</button>
     </div>
   </section>
   <section id="pricesPanel" class="step-panel" role="tabpanel" aria-labelledby="tabPrices" hidden>
     <div class="prices-workspace">
       <div class="prices-title">
-        <h2>4. Prezziario</h2>
+        <h2>5. Prezziario</h2>
         <p class="hint">Prezzi di vendita dell'emittente selezionato. Nessun costo interno o ricarico viene mostrato al browser.</p>
       </div>
       <div id="priceList" class="prices-grid"></div>
     </div>
   </section>
 </main>
-<script src="app.js?v=1.6.0"></script>
+<script src="app.js?v=1.7.0"></script>
 </body></html>

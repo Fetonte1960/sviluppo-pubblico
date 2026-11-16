@@ -1,7 +1,7 @@
 "use strict";
 // Demo only. GitHub Pages hosts this static frontend; the authorized API URL is configured explicitly.
 // No Neon credentials, company identity tokens or internal secrets in the frontend.
-const APP_VERSION="1.6.0";
+const APP_VERSION="1.7.0";
 const $ = id => document.getElementById(id);
 const escapeHtml = s => String(s ?? "").replace(/[&<>"']/g, c =>
   ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -49,6 +49,9 @@ let pendingCrmImport = null, crmCandidates = [];
 let dossierProject = "farmacia-demo", lastImageUrl = null;
 let toolMode="line",selectedLineId=null,lineEditBaseline="",lastChapterFilter="all";
 let pendingChapterFocus=null;
+let bimCadProjects=[],bimCadTypes=[],bimCadWindow=null,bimCadOpen=null;
+const BIM_CAD_EDITOR_URL="https://www.termodel.it/termodel-ui-demo/index.html";
+const BIM_CAD_EDITOR_ORIGIN=new URL(BIM_CAD_EDITOR_URL).origin;
 const fmt = n => n == null ? "DA DEFINIRE" : Number(n).toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
 const value = n => n == null ? "" : n;
 const number = s => s === "" || s == null ? null : Number(s);
@@ -402,6 +405,8 @@ async function chooseIssuer(next){
     $("company").value=companyId;return;
   }
   const changed=next!==companyId;
+  if(bimCadWindow&&!bimCadWindow.closed)bimCadWindow.close();
+  bimCadWindow=null;bimCadOpen=null;
   companyId=next;quote=null;
   selectedCrmOrganization=null;
   templateId="";chapterTemplates=[];
@@ -532,6 +537,130 @@ async function addTemplateToQuote(id){
   }
 }
 
+
+function bimCadQuoteContext(){
+  if(!quote)throw Error("Apri prima un preventivo da Generale");
+  return {companyId,quoteId:quote.id};
+}
+function bimCadFeedback(text,isError=false){
+  $("bimCadFeedback").textContent=text;
+  $("bimCadFeedback").style.color=isError?"#aa3030":"#236858";
+}
+async function refreshBimCad(){
+  if(!quote){
+    bimCadProjects=[];
+    $("bimCadQuoteLabel").textContent="Apri prima un preventivo da Generale.";
+    $("bimCadGrid").innerHTML='<tr><td colspan="5">Nessun preventivo aperto</td></tr>';
+    return;
+  }
+  const query="?companyId="+encodeURIComponent(companyId)+
+    "&quoteId="+encodeURIComponent(quote.id);
+  const [list,types]=await Promise.all([
+    request("/api/bim-cad/projects"+query),
+    request("/api/bim-cad/types"+query)
+  ]);
+  bimCadProjects=list;bimCadTypes=types;
+  $("bimCadQuoteLabel").textContent=quote.reference+" · "+quote.draft.subject+
+    " · riferimento: "+quote.id;
+  const select=$("bimCadNewKind");
+  select.innerHTML=types.filter(t=>t.enabled).map(t=>
+    '<option value="'+escapeHtml(t.id)+'">'+escapeHtml(t.label)+'</option>').join("");
+  $("bimCadNew").disabled=!types.some(t=>t.enabled);
+  $("bimCadGrid").innerHTML=list.map(project=>
+    '<tr data-bimcad-id="'+escapeHtml(project.id)+'">'+
+    '<td><strong>'+escapeHtml(project.name)+'</strong></td>'+
+    '<td>'+escapeHtml(project.kind)+'</td>'+
+    '<td>R'+project.revision+(project.revision===0?' · mai salvato':'')+'</td>'+
+    '<td>'+escapeHtml(project.revision?
+      new Date(project.updatedAt).toLocaleString("it-IT"):"—")+'</td>'+
+    '<td><button type="button" data-bimcad-open="'+escapeHtml(project.id)+
+    '">Apri</button> <button type="button" class="button-danger" '+
+    'data-bimcad-delete="'+escapeHtml(project.id)+'">Elimina</button></td></tr>'
+  ).join("")||'<tr><td colspan="5">Nessun progetto associato. Creane uno dalla riga superiore.</td></tr>';
+}
+async function createBimCad(){
+  const ids=bimCadQuoteContext();
+  const name=$("bimCadNewName").value.trim();
+  const kind=$("bimCadNewKind").value;
+  if(!name)throw Error("Inserisci un nome per il nuovo progetto");
+  const project=await request("/api/bim-cad/projects",json("POST",{...ids,name,kind}));
+  $("bimCadNewName").value="";
+  await refreshBimCad();
+  bimCadFeedback("Progetto «"+project.name+"» creato. Premi Apri per iniziare il disegno.");
+}
+async function deleteBimCad(id){
+  const row=bimCadProjects.find(p=>p.id===id);
+  if(!row)throw Error("Progetto non appartenente al preventivo aperto");
+  if(!confirm("Eliminare il progetto «"+row.name+"» da questo preventivo? "+
+    "L'eliminazione è logica; le eventuali revisioni esistenti non saranno modificate."))return;
+  const ids=bimCadQuoteContext();
+  await request("/api/bim-cad/projects/"+encodeURIComponent(id)+"?"+
+    "companyId="+encodeURIComponent(ids.companyId)+
+    "&quoteId="+encodeURIComponent(ids.quoteId),{method:"DELETE"});
+  if(bimCadOpen?.id===id){
+    if(bimCadWindow&&!bimCadWindow.closed)bimCadWindow.close();
+    bimCadWindow=null;bimCadOpen=null;
+  }
+  await refreshBimCad();
+  bimCadFeedback("Progetto BIM-CAD eliminato dall'elenco.");
+}
+function openBimCad(id){
+  const row=bimCadProjects.find(p=>p.id===id);
+  if(!row)throw Error("Progetto non associato al preventivo aperto");
+  if(row.kind!=="BIM-CAD-Architettonico")
+    throw Error("Non è ancora disponibile un editor per il tipo "+row.kind);
+  // Parameters identify the context only, never grant database write rights.
+  const nonce=crypto.randomUUID().replace(/-/g,"");
+  const uri=BIM_CAD_EDITOR_URL+"?bimCad=preventivi&bimCadProjectId="+
+    encodeURIComponent(row.id)+"&bimCadQuoteId="+encodeURIComponent(quote.id)+
+    "&bimCadNonce="+nonce;
+  const popup=window.open(uri,"preventivi-bimcad-"+row.id,
+    "width=1450,height=900,resizable=yes,scrollbars=yes");
+  if(!popup)throw Error("Consenti l'apertura delle finestre popup per BIM-CAD");
+  bimCadWindow=popup;
+  bimCadOpen={id:row.id,quoteId:quote.id,companyId,nonce};
+  bimCadFeedback("BIM-CAD-Architettonico aperto. Il comando Salva dell'editor invierà il progetto alla bozza "+quote.reference+".");
+}
+async function onBimCadMessage(event){
+  const link=bimCadOpen;
+  if(!link||!bimCadWindow||event.source!==bimCadWindow||
+      event.origin!==BIM_CAD_EDITOR_ORIGIN)return;
+  const message=event.data;
+  if(!message||message.namespace!=="preventivi-bimcad-v1"||
+     message.nonce!==link.nonce||message.projectId!==link.id||
+     message.quoteId!==link.quoteId)return;
+  if(!quote||quote.id!==link.quoteId||companyId!==link.companyId)return;
+  const respond=(payload)=>bimCadWindow&&!bimCadWindow.closed&&
+    bimCadWindow.postMessage({namespace:"preventivi-bimcad-v1",
+      nonce:link.nonce,projectId:link.id,quoteId:link.quoteId,...payload},
+      BIM_CAD_EDITOR_ORIGIN);
+  const requestPath="/api/bim-cad/projects/"+encodeURIComponent(link.id);
+  try{
+    if(message.type==="ready"){
+      const project=await request(requestPath+"?companyId="+link.companyId+
+        "&quoteId="+link.quoteId);
+      respond({type:"load",revision:project.revision,projectText:project.projectText||""});
+    }else if(message.type==="save"){
+      if(typeof message.projectText!=="string"||
+         !Number.isInteger(message.expectedRevision)){
+        respond({type:"save-result",ok:false,error:"Contenuto non valido"});return;
+      }
+      const result=await request(requestPath+"/content",json("PUT",{
+        companyId:link.companyId,quoteId:link.quoteId,
+        expectedRevision:message.expectedRevision,projectText:message.projectText
+      }));
+      respond({type:"save-result",ok:true,revision:result.revision});
+      await refreshBimCad();
+      bimCadFeedback("Disegno BIM-CAD salvato in "+quote.reference+" · revisione R"+result.revision);
+    }
+  }catch(e){
+    respond({type:message.type==="ready"?"load-error":"save-result",
+      ok:false,error:e.message});
+    bimCadFeedback("Salvataggio BIM-CAD non riuscito: "+e.message,true);
+  }
+}
+window.addEventListener("message",event=>{void onBimCadMessage(event)});
+
 function showStep(which){
   if(which!=="general"){
     if(creatingIssuer){
@@ -555,19 +684,21 @@ function showStep(which){
     return false;
   }
   const general=which==="general",chapters=which==="chapters",
-    body=which==="quote",prices=which==="prices";
+    body=which==="quote",prices=which==="prices",bim=which==="bimCad";
   $("issuerPanel").hidden=!general;
   $("chapterPanel").hidden=!chapters;
+  $("bimCadPanel").hidden=!bim;
   $("quotePanel").hidden=!body;
   $("pricesPanel").hidden=!prices;
   for(const [id,selected] of [["tabIssuer",general],
-                              ["tabChapters",chapters],["tabQuote",body],
+                              ["tabChapters",chapters],["tabBimCad",bim],["tabQuote",body],
                               ["tabPrices",prices]]){
     $(id).classList.toggle("active",selected);
     $(id).setAttribute("aria-selected",String(selected));
   }
   displayIssuer();
   if(chapters)renderQuoteChapterSummary();
+  if(bim)guard(refreshBimCad);
   return true;
 }
 
@@ -839,6 +970,10 @@ async function openQuote(id){
   const previousId=quote?.id;
   quote=await request("/api/quotes/"+id+"?companyId="+companyId);
   if(previousId!==id){
+    if(bimCadOpen&&bimCadOpen.quoteId!==id){
+      if(bimCadWindow&&!bimCadWindow.closed)bimCadWindow.close();
+      bimCadWindow=null;bimCadOpen=null;
+    }
     selectedLineId=null;
     if(toolMode==="editLine")toolMode="line";
     $("chapterFilter").value="all";
@@ -1002,12 +1137,22 @@ $("templateStatus").onclick=()=>guard(toggleTemplateStatus);
 $("templateShowInactive").onchange=renderTemplateList;
 $("tabIssuer").onclick=()=>showStep("general");
 $("tabChapters").onclick=()=>showStep("chapters");
+$("tabBimCad").onclick=()=>showStep("bimCad");
+$("bimCadNext").onclick=()=>showStep("quote");
 $("tabQuote").onclick=()=>showStep("quote");
 $("tabPrices").onclick=()=>showStep("prices");
 $("goQuote").onclick=()=>showStep("chapters");
-$("goBody").onclick=()=>showStep("quote");
+$("goBody").onclick=()=>showStep("bimCad");
 $("backGeneralFromChapters").onclick=()=>showStep("general");
-$("backIssuer").onclick=()=>showStep("chapters");
+$("backIssuer").onclick=()=>showStep("bimCad");
+$("bimCadRefresh").onclick=()=>guard(refreshBimCad);
+$("bimCadCreateForm").onsubmit=e=>{e.preventDefault();guard(createBimCad)};
+$("bimCadGrid").onclick=e=>{
+ const open=e.target.closest("[data-bimcad-open]");
+ if(open){guard(()=>openBimCad(open.dataset.bimcadOpen));return;}
+ const remove=e.target.closest("[data-bimcad-delete]");
+ if(remove)guard(()=>deleteBimCad(remove.dataset.bimcadDelete));
+};
 $("reload").onclick=()=>guard(refresh);
 $("newQuote").onclick=()=>guard(async()=>{
   if(creatingIssuer||issuerIsDirty())

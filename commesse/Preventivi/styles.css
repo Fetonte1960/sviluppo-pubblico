@@ -227,3 +227,21 @@
  .body-grid-header{display:block}
  .body-grid-header .hint{text-align:left}
 }
+
+/* V1.7 — BIM-CAD project registry, expandable for future specialized editors. */
+.bimcad-screen{background:#fff;border:1px solid #d8e3ed;border-radius:9px;padding:16px}
+.bimcad-header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:10px}
+.bimcad-header h2{font-size:1.08rem;margin:0 0 5px}
+.bimcad-create{display:flex;align-items:end;gap:12px;margin:16px 0;background:#f3f7fb;
+  padding:13px;border:1px solid #dce6ef;border-radius:7px}
+.bimcad-create label{flex:1 1 260px;min-width:180px;margin:0}
+.bimcad-create button{flex:0 0 auto;white-space:nowrap}
+.bimcad-table-wrap{overflow:auto;width:100%;margin:14px 0}
+.bimcad-table{border-collapse:collapse;width:100%;min-width:800px}
+.bimcad-table th{background:#eaf1f8;color:#1e4663;text-align:left}
+.bimcad-table th,.bimcad-table td{padding:11px 12px;border-bottom:1px solid #e0e9f2}
+.bimcad-table tbody tr:hover{background:#f4f9fd}
+.bimcad-table td:last-child{white-space:nowrap}
+.bimcad-table td button{width:auto;margin-right:6px}
+@media(max-width:790px){.bimcad-create{flex-wrap:wrap}.bimcad-create label{flex-basis:100%}
+.bimcad-header{align-items:start;flex-wrap:wrap}}
