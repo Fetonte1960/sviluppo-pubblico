@@ -51,23 +51,15 @@ input[name="farmacia_id"][readonly]{background:#edf3f4;color:#395466}
 <div id="commesse-auth">
   <section class="auth-box" aria-label="Accesso a Gestione Commesse">
     <h1>FastPharma · Gestione Commesse</h1>
-    <p>Accesso amministrativo FastPharma richiesto prima di visualizzare il gestionale. I dati saranno salvati nell'archivio Neon TEST.</p>
-    <form id="commesse-login" autocomplete="on">
-      <label for="commesse-user">Profilo</label>
-      <input id="commesse-user" name="username" autocomplete="username" value="FastPharma" readonly>
-      <label for="commesse-password">Password</label>
-      <input id="commesse-password" name="password" type="password" required autocomplete="current-password" placeholder="Password amministrativa FastPharma">
-      <button id="commesse-connect" type="submit">Verifica e apri</button>
-      <button id="commesse-chrome" type="button">Usa password salvata in Chrome</button>
-      <button id="commesse-store" type="button" hidden>Salva la password in Chrome</button>
-      <p id="commesse-auth-status" role="status" aria-live="polite" class="auth-state">In attesa della verifica della chiave.</p>
-    </form>
+    <p>Accedi con FastPharma Access. La password si inserisce soltanto nel servizio centrale; Commesse non la riceve né la conserva.</p>
+    <button id="commesse-oidc-login" type="button">Accedi con FastPharma Access</button>
+    <p id="commesse-auth-status" role="status" aria-live="polite" class="auth-state">Verifica autenticazione centralizzata…</p>
   </section>
 </div>
 <div id="commesse-app" hidden>
 <div class="demo-ribbon">GESTIONE COMMESSE V4 · TEST protetto · salvataggi persistenti su Neon · non inserire dati di produzione</div>
 <header><b>FastPharma — Gestione Commesse</b> <button id="commesse-logout" type="button" style="float:right;background:#f0f6f8;color:#13394d">Esci</button> <span class="test">AMBIENTE DI PROVA</span><p><a href="/" data-page="commesse">Commesse</a><a href="/fornitori" data-page="fornitori">Fornitori</a></p></header>
-<div class="demo-meta">Frontend V4 TEST · salvataggi e allegati su PostgreSQL Neon. La chiave di accesso non viene salvata dal programma. <button id="help">Informazioni</button></div>
+<div class="demo-meta">Frontend V4 TEST · salvataggi e allegati su PostgreSQL Neon. La password è gestita da FastPharma Access, senza passaggio al gestionale. <button id="help">Informazioni</button></div>
 <nav id="demo-navigation" class="demo-navigation" aria-label="Torna alla schermata precedente" hidden><button id="demo-back" type="button">← Indietro</button><span id="demo-current"></span></nav>
 <div id="page"></div><div id="toast" class="demo-toast" role="status"></div></div>
 <script type="application/json" id="screens">{"commesse": "\u003cmain\u003e\u003ch1\u003eCommesse\u003c/h1\u003e\u003csection\u003e\u003ch2\u003eNuova commessa\u003c/h2\u003e\u003cform action=\"/nuova\" method=\"post\"\u003e\u003clabel\u003eCodice commessa\u003cinput name=\"codice\" required=\"\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003clabel\u003eFarmacia / cliente\u003cinput name=\"cliente\" required=\"\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003clabel\u003eID farmacia CRM (facoltativo)\u003cinput name=\"farmacia_id\" type=\"number\" value=\"\"/\u003e\u003c/label\u003e\u003clabel\u003eTitolo progetto\u003cinput name=\"titolo\" required=\"\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003clabel\u003eRicavi contrattuali previsti (€)\u003cinput name=\"ricavi\" required=\"\" type=\"text\" value=\"0\"/\u003e\u003c/label\u003e\u003cbutton\u003eCrea commessa\u003c/button\u003e\u003c/form\u003e\u003c/section\u003e\u003csection\u003e\u003ch2\u003eElenco commesse\u003c/h2\u003e\u003ctable\u003e\u003ctr\u003e\u003cth\u003eCodice\u003c/th\u003e\u003cth\u003eFarmacia\u003c/th\u003e\u003cth\u003eProgetto\u003c/th\u003e\u003cth\u003eStato\u003c/th\u003e\u003cth\u003eMargine stimato\u003c/th\u003e\u003c/tr\u003e\u003ctr\u003e\u003ctd\u003e\u003ca href=\"/commessa?id=1\"\u003eDEMO-001\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eFARMACIA DIMOSTRATIVA\u003c/td\u003e\u003ctd\u003eRINNOVAMENTO LOCALI FARMACIA\u003c/td\u003e\u003ctd\u003eProposta\u003c/td\u003e\u003ctd\u003e176.500,00 €\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003c/section\u003e\u003c/main\u003e", "fornitori": "\u003cmain\u003e\u003ch1\u003eFornitori, imprese e artigiani\u003c/h1\u003e\u003csection\u003e\u003ctable\u003e\u003ctr\u003e\u003cth\u003eRagione sociale\u003c/th\u003e\u003cth\u003eCategoria\u003c/th\u003e\u003cth\u003eEmail\u003c/th\u003e\u003c/tr\u003e\u003ctr\u003e\u003ctd\u003eEDILIZIA ESEMPIO SRL\u003c/td\u003e\u003ctd\u003eImpresa\u003c/td\u003e\u003ctd\u003einfo@esempio.invalid\u003c/td\u003e\u003c/tr\u003e\u003ctr\u003e\u003ctd\u003eIMPIANTI DIMOSTRATIVI\u003c/td\u003e\u003ctd\u003eArtigiano\u003c/td\u003e\u003ctd\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003c/section\u003e\u003csection\u003e\u003ch2\u003eAggiungi fornitore\u003c/h2\u003e\u003cform action=\"/fornitore\" method=\"post\"\u003e\u003clabel\u003eRagione sociale\u003cinput name=\"nome\" required=\"\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003clabel\u003eCategoria\u003cselect name=\"categoria\"\u003e\u003coption value=\"Impresa\"\u003eImpresa\u003c/option\u003e\u003coption value=\"Artigiano\"\u003eArtigiano\u003c/option\u003e\u003coption value=\"Materiali\"\u003eMateriali\u003c/option\u003e\u003coption value=\"Arredi\"\u003eArredi\u003c/option\u003e\u003coption value=\"Attrezzature\"\u003eAttrezzature\u003c/option\u003e\u003coption value=\"Professionista\"\u003eProfessionista\u003c/option\u003e\u003c/select\u003e\u003c/label\u003e\u003clabel\u003eEmail\u003cinput name=\"email\" type=\"email\" value=\"\"/\u003e\u003c/label\u003e\u003clabel\u003eTelefono\u003cinput name=\"telefono\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003cbutton\u003eSalva\u003c/button\u003e\u003c/form\u003e\u003c/section\u003e\u003c/main\u003e", "commessa": "\u003cmain\u003e\u003ch1\u003eDEMO-001 — RINNOVAMENTO LOCALI FARMACIA\u003c/h1\u003e\n\u003cp class=\"muted\"\u003eCliente: FARMACIA DIMOSTRATIVA | Farmacia ID:  | Stato: Proposta\u003c/p\u003e\n\u003csection\u003e\u003ch2\u003eQuadro economico\u003c/h2\u003e\u003cdiv class=\"grid\"\u003e\n\u003cdiv class=\"metric\"\u003eRicavi previsti\u003cb\u003e200.000,00 €\u003c/b\u003e\u003c/div\u003e\u003cdiv class=\"metric\"\u003eBudget costi\u003cb\u003e25.000,00 €\u003c/b\u003e\u003c/div\u003e\n\u003cdiv class=\"metric\"\u003eCosti affidati\u003cb\u003e23.500,00 €\u003c/b\u003e\u003c/div\u003e\u003cdiv class=\"metric\"\u003eCosti registrati\u003cb\u003e10.000,00 €\u003c/b\u003e\u003c/div\u003e\n\u003cdiv class=\"metric\"\u003ePagamenti registrati\u003cb\u003e4.000,00 €\u003c/b\u003e\u003c/div\u003e\u003cdiv class=\"metric\"\u003eCosto finale stimato\u003cb\u003e23.500,00 €\u003c/b\u003e\u003c/div\u003e\u003cdiv class=\"metric\"\u003eMargine stimato\u003cb class=\"good\"\u003e176.500,00 €\u003c/b\u003e\u003c/div\u003e\u003c/div\u003e\n\u003cp class=\"muted\"\u003eATTENZIONE: indicatore sperimentale, non contabilità ufficiale; SAL non sommati alle fatture. Per ogni voce usa il maggiore tra importo affidato e costo registrato; le voci non avviate mantengono il budget iniziale. Non è contabilità ufficiale.\u003c/p\u003e\u003c/section\u003e\n\u003csection\u003e\u003ch2\u003eVoci budget interno\u003c/h2\u003e\u003ctable\u003e\u003ctr\u003e\u003cth\u003eCodice\u003c/th\u003e\u003cth\u003eLavorazione\u003c/th\u003e\u003cth\u003eCategoria\u003c/th\u003e\u003cth\u003eCosto previsto\u003c/th\u003e\u003c/tr\u003e\u003ctr\u003e\u003ctd\u003eED-001\u003c/td\u003e\u003ctd\u003eOPERE EDILI E IMPIANTI\u003c/td\u003e\u003ctd\u003eLavori\u003c/td\u003e\u003ctd\u003e25.000,00 €\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003ch3\u003eAggiungi voce\u003c/h3\u003e\u003cform action=\"/voce\" method=\"post\"\u003e\u003clabel\u003e\u003cinput name=\"commessa_id\" required=\"\" type=\"hidden\" value=\"1\"/\u003e\u003c/label\u003e\u003clabel\u003eCodice voce\u003cinput name=\"codice\" required=\"\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003clabel\u003eDescrizione\u003cinput name=\"descrizione\" required=\"\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003clabel\u003eCategoria\u003cselect name=\"categoria\"\u003e\u003coption value=\"Lavori\"\u003eLavori\u003c/option\u003e\u003coption value=\"Materiali\"\u003eMateriali\u003c/option\u003e\u003coption value=\"Arredi\"\u003eArredi\u003c/option\u003e\u003coption value=\"Attrezzature\"\u003eAttrezzature\u003c/option\u003e\u003coption value=\"Servizi\"\u003eServizi\u003c/option\u003e\u003c/select\u003e\u003c/label\u003e\u003clabel\u003eCosto preventivato (€)\u003cinput name=\"budget\" required=\"\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003cbutton\u003eSalva\u003c/button\u003e\u003c/form\u003e\u003c/section\u003e\n\u003ch2\u003eConfronto preventivi fornitori e affidamenti\u003c/h2\u003e\u003csection\u003e\u003ch3\u003eED-001 — OPERE EDILI E IMPIANTI\u003c/h3\u003e\u003cp\u003eStima FastPharma: \u003cb\u003e25.000,00 €\u003c/b\u003e\u003c/p\u003e\n\u003ctable\u003e\u003ctr\u003e\u003cth\u003eFornitore\u003c/th\u003e\u003cth\u003eOfferta\u003c/th\u003e\u003cth\u003eScostamento\u003c/th\u003e\u003cth\u003eStato\u003c/th\u003e\u003cth\u003eEsclusioni\u003c/th\u003e\u003cth\u003eDecisione\u003c/th\u003e\u003c/tr\u003e\u003ctr\u003e\u003ctd\u003eEDILIZIA ESEMPIO SRL\u003c/td\u003e\u003ctd\u003e23.500,00 €\u003c/td\u003e\u003ctd class=\"good\"\u003e-1.500,00 €\u003c/td\u003e\u003ctd\u003eApprovata (affidata)\u003c/td\u003e\u003ctd\u003eOfferta dimostrativa completa\u003c/td\u003e\u003ctd\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\n\u003cform action=\"/offerta\" method=\"post\"\u003e\u003clabel\u003e\u003cinput name=\"voce_id\" required=\"\" type=\"hidden\" value=\"1\"/\u003e\u003c/label\u003e\u003clabel\u003eFornitore\u003cselect name=\"fornitore_id\"\u003e\u003coption value=\"1\"\u003eEDILIZIA ESEMPIO SRL\u003c/option\u003e\u003coption value=\"2\"\u003eIMPIANTI DIMOSTRATIVI\u003c/option\u003e\u003c/select\u003e\u003c/label\u003e\u003clabel\u003eImporto offerto (€)\u003cinput name=\"prezzo\" required=\"\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003clabel\u003eEsclusioni\u003cinput name=\"esclusioni\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003clabel\u003eTempi (giorni)\u003cinput name=\"tempi\" type=\"number\" value=\"\"/\u003e\u003c/label\u003e\u003cbutton\u003eRegistra offerta\u003c/button\u003e\u003c/form\u003e\u003c/section\u003e\n\u003csection\u003e\u003ch2\u003eVarianti\u003c/h2\u003e\u003ctable\u003e\u003ctr\u003e\u003cth\u003eDescrizione\u003c/th\u003e\u003cth\u003eExtra costo\u003c/th\u003e\u003cth\u003eExtra ricavo\u003c/th\u003e\u003cth\u003eStato\u003c/th\u003e\u003cth\u003eApprovazione\u003c/th\u003e\u003c/tr\u003e\u003c/table\u003e\u003cform action=\"/variante\" method=\"post\"\u003e\u003clabel\u003e\u003cinput name=\"commessa_id\" required=\"\" type=\"hidden\" value=\"1\"/\u003e\u003c/label\u003e\u003clabel\u003eDescrizione\u003cinput name=\"descrizione\" required=\"\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003clabel\u003eCosto variante (€)\u003cinput name=\"costo\" required=\"\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003clabel\u003eRicavo variante (€)\u003cinput name=\"ricavo\" required=\"\" type=\"text\" value=\"0\"/\u003e\u003c/label\u003e\u003cbutton\u003eRegistra proposta\u003c/button\u003e\u003c/form\u003e\u003c/section\u003e\n\u003csection\u003e\u003ch2\u003eRiconciliazione affidamenti, fatture, SAL e pagamenti\u003c/h2\u003e\n\u003cp class=\"warn\"\u003ePROTOTIPO V4 (sezione affidamenti): SAL è avanzamento, NON è un nuovo costo. Le fatture registrano il costo; i pagamenti registrano solo il flusso finanziario. L'approvazione NON equivale a firma.\u003c/p\u003e\n\u003ctable\u003e\u003ctr\u003e\u003cth\u003eFornitore\u003c/th\u003e\u003cth\u003eLavorazione\u003c/th\u003e\u003cth\u003eAffidato\u003c/th\u003e\u003cth\u003eFatture\u003c/th\u003e\u003cth\u003eDa fatturare\u003c/th\u003e\u003cth\u003eSAL\u003c/th\u003e\u003c/tr\u003e\u003ctr\u003e\u003ctd\u003eEDILIZIA ESEMPIO SRL\u003c/td\u003e\u003ctd\u003eOPERE EDILI E IMPIANTI\u003c/td\u003e\u003ctd\u003e23.500,00 €\u003c/td\u003e\u003ctd\u003e10.000,00 €\u003c/td\u003e\u003ctd\u003e13.500,00 €\u003c/td\u003e\u003ctd\u003e0,00 €\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\n\u003ch3\u003eRegistra SAL\u003c/h3\u003e\u003cform action=\"/sal\" method=\"post\"\u003e\u003clabel\u003e\u003cinput name=\"commessa_id\" required=\"\" type=\"hidden\" value=\"1\"/\u003e\u003c/label\u003e\u003clabel\u003eAffidamento\u003cselect name=\"affidamento_id\"\u003e\u003coption value=\"1\"\u003eEDILIZIA ESEMPIO SRL — OPERE EDILI E IMPIANTI (23.500,00 €)\u003c/option\u003e\u003c/select\u003e\u003c/label\u003e\u003clabel\u003eRiferimento SAL\u003cinput name=\"riferimento\" required=\"\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003clabel\u003eImporto progressivo del SAL (€)\u003cinput name=\"importo\" required=\"\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003cbutton\u003eRegistra SAL\u003c/button\u003e\u003c/form\u003e\n\u003ctable\u003e\u003ctr\u003e\u003cth\u003eFornitore\u003c/th\u003e\u003cth\u003eSAL\u003c/th\u003e\u003cth\u003eAvanzamento\u003c/th\u003e\u003c/tr\u003e\u003c/table\u003e\n\u003ch3\u003eRegistra fattura collegata ad affidamento\u003c/h3\u003e\u003cform action=\"/fattura\" method=\"post\"\u003e\u003clabel\u003e\u003cinput name=\"commessa_id\" required=\"\" type=\"hidden\" value=\"1\"/\u003e\u003c/label\u003e\u003clabel\u003eAffidamento\u003cselect name=\"affidamento_id\"\u003e\u003coption value=\"1\"\u003eEDILIZIA ESEMPIO SRL — OPERE EDILI E IMPIANTI (23.500,00 €)\u003c/option\u003e\u003c/select\u003e\u003c/label\u003e\u003clabel\u003eNumero fattura\u003cinput name=\"riferimento\" required=\"\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003clabel\u003eDescrizione\u003cinput name=\"descrizione\" required=\"\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003clabel\u003eImponibile fattura (€)\u003cinput name=\"importo\" required=\"\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003cbutton\u003eRegistra fattura\u003c/button\u003e\u003c/form\u003e\n\u003ctable\u003e\u003ctr\u003e\u003cth\u003eFornitore\u003c/th\u003e\u003cth\u003eDocumento\u003c/th\u003e\u003cth\u003eImponibile\u003c/th\u003e\u003cth\u003ePagato\u003c/th\u003e\u003c/tr\u003e\u003ctr\u003e\u003ctd\u003eEDILIZIA ESEMPIO SRL\u003c/td\u003e\u003ctd\u003eFATT-DEMO-001\u003c/td\u003e\u003ctd\u003e10.000,00 €\u003c/td\u003e\u003ctd\u003e4.000,00 €\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\n\u003ch3\u003eRiconcilia fattura storica già registrata\u003c/h3\u003e\u003cp class=\"warn\"\u003eCollega il documento esistente a un affidamento senza generare una seconda fattura. Verificare che fornitore, importo, periodo e lavorazione corrispondano; l'operazione viene tracciata. Non è una verifica fiscale automatica.\u003c/p\u003e\n\u003ctable\u003e\u003ctr\u003e\u003cth\u003eRiferimento\u003c/th\u003e\u003cth\u003eDescrizione\u003c/th\u003e\u003cth\u003eImporto\u003c/th\u003e\u003cth\u003eStato\u003c/th\u003e\u003c/tr\u003e\u003c/table\u003e\u003cp\u003eNessuna fattura storica da collegare oppure nessun affidamento disponibile.\u003c/p\u003e\n\u003ch4\u003eStorico riconciliazioni\u003c/h4\u003e\u003ctable\u003e\u003ctr\u003e\u003cth\u003eFattura\u003c/th\u003e\u003cth\u003eImpresa\u003c/th\u003e\u003cth\u003eVerificato da\u003c/th\u003e\u003cth\u003eQuando\u003c/th\u003e\u003cth\u003eMotivazione\u003c/th\u003e\u003c/tr\u003e\u003c/table\u003e\n\u003ch3\u003eRegistra pagamento di una fattura\u003c/h3\u003e\u003cform action=\"/pagamento\" method=\"post\"\u003e\u003clabel\u003e\u003cinput name=\"commessa_id\" required=\"\" type=\"hidden\" value=\"1\"/\u003e\u003c/label\u003e\u003clabel\u003eFattura\u003cselect name=\"costo_id\"\u003e\u003coption value=\"1\"\u003eEDILIZIA ESEMPIO SRL FATT-DEMO-001 — 6.000,00 € da pagare\u003c/option\u003e\u003c/select\u003e\u003c/label\u003e\u003clabel\u003eImporto pagato (€)\u003cinput name=\"importo\" required=\"\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003clabel\u003eRiferimento pagamento\u003cinput name=\"riferimento\" required=\"\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003cbutton\u003eRegistra pagamento\u003c/button\u003e\u003c/form\u003e\n\u003cp class=\"muted\"\u003ePagamenti registrati: 4.000,00 €. Il residuo indicato è rispetto agli affidamenti di prova; la fatturazione completa e i costi extra richiedono verifica amministrativa.\u003c/p\u003e\n\u003c/section\u003e\n\u003csection\u003e\u003ch2\u003eAltri costi / documenti storici\u003c/h2\u003e\u003cp class=\"warn\"\u003ePer fatture di imprese affidatarie utilizzare la sezione Riconciliazione sopra. Qui solo spese esterne ad affidamenti o documenti precedenti: richiedono verifica manuale.\u003c/p\u003e\u003ctable\u003e\u003ctr\u003e\u003cth\u003eDescrizione\u003c/th\u003e\u003cth\u003eCosto\u003c/th\u003e\u003cth\u003eOrigine\u003c/th\u003e\u003c/tr\u003e\u003ctr\u003e\u003ctd\u003eFattura dimostrativa\u003c/td\u003e\u003ctd\u003e10.000,00 €\u003c/td\u003e\u003ctd\u003eFattura\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003cform action=\"/costo\" method=\"post\"\u003e\u003clabel\u003e\u003cinput name=\"commessa_id\" required=\"\" type=\"hidden\" value=\"1\"/\u003e\u003c/label\u003e\u003clabel\u003eVoce budget (se pertinente)\u003cselect name=\"voce_id\"\u003e\u003coption value=\"\"\u003eNon attribuita\u003c/option\u003e\u003coption value=\"1\"\u003eOPERE EDILI E IMPIANTI\u003c/option\u003e\u003c/select\u003e\u003c/label\u003e\u003clabel\u003eDescrizione\u003cinput name=\"descrizione\" required=\"\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003clabel\u003eCosto (€)\u003cinput name=\"importo\" required=\"\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003clabel\u003eOrigine\u003cselect name=\"origine\"\u003e\u003coption value=\"Fattura\"\u003eFattura\u003c/option\u003e\u003coption value=\"SAL\"\u003eSAL\u003c/option\u003e\u003coption value=\"Altro\"\u003eAltro\u003c/option\u003e\u003c/select\u003e\u003c/label\u003e\u003clabel\u003eRiferimento documento\u003cinput name=\"riferimento\" required=\"\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003cbutton\u003eRegistra costo\u003c/button\u003e\u003c/form\u003e\u003cp class=\"muted\"\u003eNon registrare la stessa spesa come SAL e fattura senza riconciliazione: il sistema impedisce solo i duplicati identici.\u003c/p\u003e\u003c/section\u003e\n\u003csection\u003e\u003ch2\u003eV4 — Fatturazione attiva e passiva (TEST)\u003c/h2\u003e\u003cp class=\"warn\"\u003eBozze e simulazioni: nessun XML fiscale, numerazione SdI o trasmissione. IVA e regimi da verificare col commercialista. Il ricavo contrattuale NON aumenta quando emetti una fattura.\u003c/p\u003e\n\u003cdiv class=\"grid\"\u003e\u003cdiv class=\"metric\"\u003eFatture attive confermate imponibile\u003cb\u003e0,00 €\u003c/b\u003e\u003c/div\u003e\u003cdiv class=\"metric\"\u003eIVA attiva esposta\u003cb\u003e0,00 €\u003c/b\u003e\u003c/div\u003e\u003cdiv class=\"metric\"\u003eIncassato lordo\u003cb\u003e0,00 €\u003c/b\u003e\u003c/div\u003e\u003cdiv class=\"metric\"\u003eDa incassare su fatture confermate\u003cb\u003e0,00 €\u003c/b\u003e\u003c/div\u003e\u003cdiv class=\"metric\"\u003eFatture passive imponibile\u003cb\u003e10.000,00 €\u003c/b\u003e\u003c/div\u003e\u003cdiv class=\"metric\"\u003eIVA passiva registrata\u003cb\u003e0,00 €\u003c/b\u003e\u003c/div\u003e\u003cdiv class=\"metric\"\u003ePagato registrato\u003cb\u003e4.000,00 €\u003c/b\u003e\u003c/div\u003e\u003cdiv class=\"metric\"\u003eDa pagare su fatture note (parziale se IVA mancante)\u003cb\u003e6.000,00 €\u003c/b\u003e\u003c/div\u003e\u003c/div\u003e\n\u003cp class=\"warn\"\u003eATTENZIONE: 1 fattura/e passive senza trattamento IVA verificato. I totali lordi passivi sono incompleti.\u003c/p\u003e\u003cp class=\"muted\"\u003eIVA a credito/debito NON calcolata fiscalmente: detraibilità e reverse charge richiedono verifica. Pagamenti storici eventualmente già registrati su imponibile necessitano verifica documentale.\u003c/p\u003e\n\u003ch3\u003eNuova bozza fattura attiva\u003c/h3\u003e\u003cform action=\"/fattura-attiva-nuova\" method=\"post\"\u003e\u003clabel\u003e\u003cinput name=\"commessa_id\" required=\"\" type=\"hidden\" value=\"1\"/\u003e\u003c/label\u003e\u003clabel\u003eNumero interno di prova\u003cinput name=\"numero\" required=\"\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003clabel\u003eData\u003cinput name=\"data_fattura\" required=\"\" type=\"date\" value=\"2026-11-14\"/\u003e\u003c/label\u003e\u003clabel\u003eDescrizione prima riga\u003cinput name=\"descrizione\" required=\"\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003clabel\u003eImponibile prima riga (€)\u003cinput name=\"imponibile\" required=\"\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003clabel\u003eAliquota IVA (%)\u003cinput name=\"aliquota\" required=\"\" type=\"text\" value=\"22\"/\u003e\u003c/label\u003e\u003clabel\u003eTrattamento\u003cselect name=\"trattamento\"\u003e\u003coption\u003eOrdinaria\u003c/option\u003e\u003coption\u003eReverse charge\u003c/option\u003e\u003coption\u003eAltra natura\u003c/option\u003e\u003c/select\u003e\u003c/label\u003e\u003clabel\u003eNatura IVA / riferimento normativo\u003cinput name=\"natura\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003clabel\u003eScadenza\u003cinput name=\"scadenza\" type=\"date\" value=\"\"/\u003e\u003c/label\u003e\u003cbutton\u003eCrea bozza\u003c/button\u003e\u003c/form\u003e\n\u003ch3\u003eFatture attive\u003c/h3\u003e\u003ctable\u003e\u003ctr\u003e\u003cth\u003eNumero\u003c/th\u003e\u003cth\u003eStato\u003c/th\u003e\u003cth\u003eImponibile\u003c/th\u003e\u003cth\u003eIVA\u003c/th\u003e\u003cth\u003eTotale\u003c/th\u003e\u003cth\u003eIncassato\u003c/th\u003e\u003cth\u003eAzioni\u003c/th\u003e\u003c/tr\u003e\u003ctr\u003e\u003ctd\u003eBOZZA-DEMO-001\u003c/td\u003e\u003ctd\u003eBozza\u003c/td\u003e\u003ctd\u003e10.000,00 €\u003c/td\u003e\u003ctd\u003e2.200,00 €\u003c/td\u003e\u003ctd\u003e12.200,00 €\u003c/td\u003e\u003ctd\u003e0,00 €\u003c/td\u003e\u003ctd\u003e\u003ca href=\"/fattura-attiva?id=1\"\u003eDettagli / righe\u003c/a\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\n\u003ch3\u003eRegistra incasso\u003c/h3\u003e\u003cform action=\"/incasso-attivo\" method=\"post\"\u003e\u003clabel\u003e\u003cinput name=\"commessa_id\" required=\"\" type=\"hidden\" value=\"1\"/\u003e\u003c/label\u003e\u003clabel\u003eFattura\u003cselect name=\"fattura_id\"\u003e\u003c/select\u003e\u003c/label\u003e\u003clabel\u003eImporto incassato lordo (€)\u003cinput name=\"importo\" required=\"\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003clabel\u003eData incasso\u003cinput name=\"data_incasso\" required=\"\" type=\"date\" value=\"2026-11-14\"/\u003e\u003c/label\u003e\u003clabel\u003eRiferimento bancario\u003cinput name=\"riferimento\" required=\"\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003cbutton\u003eRegistra incasso\u003c/button\u003e\u003c/form\u003e\n\u003ch3\u003eFatture passive collegate agli affidamenti V3\u003c/h3\u003e\u003ctable\u003e\u003ctr\u003e\u003cth\u003eDocumento\u003c/th\u003e\u003cth\u003eImponibile\u003c/th\u003e\u003cth\u003eIVA\u003c/th\u003e\u003cth\u003eTotale lordo\u003c/th\u003e\u003cth\u003ePagato\u003c/th\u003e\u003cth\u003eIVA\u003c/th\u003e\u003c/tr\u003e\u003ctr\u003e\u003ctd\u003eFATT-DEMO-001\u003c/td\u003e\u003ctd\u003e10.000,00 €\u003c/td\u003e\u003ctd\u003eDA VERIFICARE\u003c/td\u003e\u003ctd\u003eDA VERIFICARE\u003c/td\u003e\u003ctd\u003e4.000,00 €\u003c/td\u003e\u003ctd\u003ePagamenti preesistenti: verifica manuale\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003c/section\u003e\n\u003csection\u003e\u003ch2\u003eAttività e assistenza\u003c/h2\u003e\u003ctable\u003e\u003ctr\u003e\u003cth\u003eTipo\u003c/th\u003e\u003cth\u003eDescrizione\u003c/th\u003e\u003cth\u003eScadenza\u003c/th\u003e\u003cth\u003eStato\u003c/th\u003e\u003c/tr\u003e\u003ctr\u003e\u003ctd\u003eSopralluogo\u003c/td\u003e\u003ctd\u003eVerifica locali dimostrativa\u003c/td\u003e\u003ctd\u003e2026-12-01\u003c/td\u003e\u003ctd\u003eDa fare\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003cform action=\"/attivita\" method=\"post\"\u003e\u003clabel\u003e\u003cinput name=\"commessa_id\" required=\"\" type=\"hidden\" value=\"1\"/\u003e\u003c/label\u003e\u003clabel\u003eTipo\u003cselect name=\"tipo\"\u003e\u003coption value=\"Sopralluogo\"\u003eSopralluogo\u003c/option\u003e\u003coption value=\"Cantiere\"\u003eCantiere\u003c/option\u003e\u003coption value=\"Assistenza\"\u003eAssistenza\u003c/option\u003e\u003coption value=\"Scadenza\"\u003eScadenza\u003c/option\u003e\u003c/select\u003e\u003c/label\u003e\u003clabel\u003eDescrizione\u003cinput name=\"descrizione\" required=\"\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003clabel\u003eScadenza\u003cinput name=\"scadenza\" type=\"date\" value=\"\"/\u003e\u003c/label\u003e\u003cbutton\u003eAggiungi attività\u003c/button\u003e\u003c/form\u003e\u003c/section\u003e\n\u003csection id=\"documenti\"\u003e\u003ch2\u003eDocumenti, elaborati, contratti e fotografie\u003c/h2\u003e\u003ctable\u003e\u003ctr\u003e\u003cth\u003eCategoria\u003c/th\u003e\u003cth\u003eTitolo\u003c/th\u003e\u003cth\u003eFile\u003c/th\u003e\u003cth\u003eApri\u003c/th\u003e\u003c/tr\u003e\u003ctr\u003e\u003ctd\u003eFotografia lavori\u003c/td\u003e\u003ctd\u003eFOTO DIMOSTRATIVA\u003c/td\u003e\u003ctd\u003efoto-demo.png\u003c/td\u003e\u003ctd\u003e\u003ca href=\"/file?id=2\" rel=\"noopener noreferrer\" target=\"_blank\"\u003eApri file\u003c/a\u003e   \u003ca href=\"/file?id=2\u0026amp;download=1\"\u003eScarica file\u003c/a\u003e\u003c/td\u003e\u003c/tr\u003e\u003ctr\u003e\u003ctd\u003eDocumento\u003c/td\u003e\u003ctd\u003ePLANIMETRIA DI ESEMPIO\u003c/td\u003e\u003ctd\u003eplanimetria-demo.pdf\u003c/td\u003e\u003ctd\u003e\u003ca href=\"/file?id=1\" rel=\"noopener noreferrer\" target=\"_blank\"\u003eApri file\u003c/a\u003e   \u003ca href=\"/file?id=1\u0026amp;download=1\"\u003eScarica file\u003c/a\u003e\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003cform action=\"/allega\" enctype=\"multipart/form-data\" method=\"post\"\u003e\u003clabel\u003e\u003cinput name=\"commessa_id\" required=\"\" type=\"hidden\" value=\"1\"/\u003e\u003c/label\u003e\u003clabel\u003eCategoria\u003cselect name=\"categoria\"\u003e\u003coption value=\"Documento\"\u003eDocumento\u003c/option\u003e\u003coption value=\"Elaborato\"\u003eElaborato\u003c/option\u003e\u003coption value=\"Preventivo cliente\"\u003ePreventivo cliente\u003c/option\u003e\u003coption value=\"Contratto cliente\"\u003eContratto cliente\u003c/option\u003e\u003coption value=\"Preventivo fornitore\"\u003ePreventivo fornitore\u003c/option\u003e\u003coption value=\"Contratto fornitore\"\u003eContratto fornitore\u003c/option\u003e\u003coption value=\"Fotografia iniziale\"\u003eFotografia iniziale\u003c/option\u003e\u003coption value=\"Fotografia lavori\"\u003eFotografia lavori\u003c/option\u003e\u003coption value=\"Fotografia finale\"\u003eFotografia finale\u003c/option\u003e\u003c/select\u003e\u003c/label\u003e\u003clabel\u003eTitolo\u003cinput name=\"titolo\" required=\"\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003clabel\u003eFile\u003cinput name=\"allegato\" required=\"\" type=\"file\"/\u003e\u003c/label\u003e\u003cbutton\u003eCarica file\u003c/button\u003e\u003c/form\u003e\u003cp class=\"muted\"\u003eMassimo 15 MB per file. Archivio locale di prova: non inserire documenti riservati.\u003c/p\u003e\u003c/section\u003e\n\u003c/main\u003e", "fattura": "\u003cmain\u003e\u003ch1\u003eFattura attiva di prova BOZZA-DEMO-001\u003c/h1\u003e\u003csection\u003e\u003cp\u003e\u003ca href=\"/commessa?id=1\"\u003eTorna alla commessa\u003c/a\u003e\u003c/p\u003e\u003ch2\u003eBOZZA-DEMO-001 — Bozza\u003c/h2\u003e\u003ctable\u003e\u003ctr\u003e\u003cth\u003eDescrizione\u003c/th\u003e\u003cth\u003eImponibile\u003c/th\u003e\u003cth\u003eAliquota / Natura\u003c/th\u003e\u003cth\u003eIVA\u003c/th\u003e\u003c/tr\u003e\u003ctr\u003e\u003ctd\u003eAcconto lavori - esempio\u003c/td\u003e\u003ctd\u003e10.000,00 €\u003c/td\u003e\u003ctd\u003e22% / Ordinaria \u003c/td\u003e\u003ctd\u003e2.200,00 €\u003c/td\u003e\u003c/tr\u003e\u003c/table\u003e\u003cp\u003e\u003cb\u003eImponibile: 10.000,00 € — IVA: 2.200,00 € — Totale: 12.200,00 €\u003c/b\u003e\u003c/p\u003e\u003ch3\u003eAggiungi riga con IVA indipendente\u003c/h3\u003e\u003cform action=\"/fattura-attiva-riga\" method=\"post\"\u003e\u003clabel\u003e\u003cinput name=\"fattura_id\" required=\"\" type=\"hidden\" value=\"1\"/\u003e\u003c/label\u003e\u003clabel\u003eDescrizione\u003cinput name=\"descrizione\" required=\"\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003clabel\u003eImponibile (€)\u003cinput name=\"imponibile\" required=\"\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003clabel\u003eAliquota IVA (%)\u003cinput name=\"aliquota\" required=\"\" type=\"text\" value=\"22\"/\u003e\u003c/label\u003e\u003clabel\u003eTrattamento\u003cselect name=\"trattamento\"\u003e\u003coption\u003eOrdinaria\u003c/option\u003e\u003coption\u003eReverse charge\u003c/option\u003e\u003coption\u003eAltra natura\u003c/option\u003e\u003c/select\u003e\u003c/label\u003e\u003clabel\u003eNatura IVA / riferimento\u003cinput name=\"natura\" type=\"text\" value=\"\"/\u003e\u003c/label\u003e\u003cbutton\u003eAggiungi riga\u003c/button\u003e\u003c/form\u003e\u003cform action=\"/fattura-attiva-conferma\" method=\"post\"\u003e\u003clabel\u003e\u003cinput name=\"fattura_id\" required=\"\" type=\"hidden\" value=\"1\"/\u003e\u003c/label\u003e\u003cbutton\u003eConferma simulazione\u003c/button\u003e\u003c/form\u003e\u003c/section\u003e\u003c/main\u003e"}</script>
@@ -90,151 +82,156 @@ const testApi=location.hostname==='fetonte1960.github.io'
  ? 'https://fastpharma-commesse-api.onrender.com'
  : '';
 
-/* Gestione Commesse usa la password amministrativa unica FastPharma.
-   Password esclusivamente in RAM; memorizzazione facoltativa nel browser Chrome. */
-
-let authKey='';
-let credentialId='FastPharma'; // fallback di presentazione; ADMINKEYNAME arriva dall'API.
-let adminConfigPromise=null;
+/* FastPharma Commesse e' client OAuth 2.0/OpenID Connect.
+   Authorization Code + PKCE S256, token JWT solo nella RAM di questa pagina;
+   non riceve ADMINKEY ne' legge cookie appartenenti a Contatti/Access. */
+let authToken='';
 const authState=document.getElementById('commesse-auth-status');
 const authFeedback=(message,error=false)=>{
  authState.textContent=message;authState.classList.toggle('auth-error',error);
 };
+const loginButton=document.getElementById('commesse-oidc-login');
+const pkceStorageKey='fastpharma.commesse.pkce.v1';
+const oidcRedirectUri=location.origin+location.pathname;
+let oidcMeta=null;
 const pause=(ms)=>new Promise(resolve=>setTimeout(resolve,ms));
 function transientStatus(code){return [429,502,503,504].includes(code);}
-async function loadAdminConfig(){
- if(adminConfigPromise)return adminConfigPromise;
- adminConfigPromise=(async()=>{
-  // Un solo servizio da risvegliare: GET /api/meta non richiede password.
-  // Il browser non deve restare più di ~30s in attesa cieca.
-  const delays=[0,3500];
-  for(let attempt=0;attempt<delays.length;attempt++){
-   if(delays[attempt])await pause(delays[attempt]);
-   try{
-    const resp=await fetch(testApi+'/api/meta',{
-     cache:'no-store',signal:AbortSignal.timeout(12000)
-    });
-    if(resp.ok){
-     const info=await resp.json();
-     if(typeof info.adminKeyName==='string' && info.adminKeyName.trim().length>0 &&
-        info.adminKeyName.length<=120 && !/[\x00-\x1f\x7f]/.test(info.adminKeyName)){
-      credentialId=info.adminKeyName.trim();
-      document.getElementById('commesse-user').value=credentialId;
-     }
-     return {
-      available:true,
-      fromGroup:info.adminKeyNameConfigured===true,
-      sharedKeyConfigured:info.sharedKeyConfigured===true
-     };
-    }
-    if(!transientStatus(resp.status))break;
-   }catch(_error){/* Render Free in avvio, connessione interrotta o timeout */}
+async function loadOidcMeta(){
+ if(oidcMeta)return oidcMeta;
+ for(let attempt=0;attempt<2;attempt++){
+  if(attempt)await pause(3000);
+  try{
+   const resp=await fetch(testApi+'/api/meta',{cache:'no-store',signal:AbortSignal.timeout(20000)});
+   if(!resp.ok){if(transientStatus(resp.status))continue;throw Error('HTTP '+resp.status);}
+   const info=await resp.json();
+   if(info.authentication!=='openid-connect'||
+      typeof info.oidcAuthorization!=='string'||
+      typeof info.oidcToken!=='string'||
+      info.oidcClientId!=='fastpharma-commesse')
+     throw Error('Il server Commesse non è ancora configurato come client FastPharma Access.');
+   if(!info.oidcAuthorization.startsWith('https://') ||
+      !info.oidcToken.startsWith('https://'))
+     throw Error('Endpoint FastPharma Access non HTTPS.');
+   oidcMeta=info;return info;
+  }catch(error){
+   if(attempt===1)throw error;
   }
-  return {available:false,fromGroup:false,sharedKeyConfigured:false};
- })().finally(()=>{adminConfigPromise=null;});
- return adminConfigPromise;
+ }
+ throw Error('Server Commesse temporaneamente non disponibile.');
+}
+function base64url(bytes){
+ const input=Array.from(bytes,x=>String.fromCharCode(x)).join('');
+ return btoa(input).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+async function beginOidcLogin(){
+ loginButton.disabled=true;
+ authFeedback('Apertura autenticazione centralizzata FastPharma…');
+ try{
+  const cfg=await loadOidcMeta();
+  const verifier=base64url(crypto.getRandomValues(new Uint8Array(32)));
+  const state=base64url(crypto.getRandomValues(new Uint8Array(32)));
+  const nonce=base64url(crypto.getRandomValues(new Uint8Array(32)));
+  const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(verifier));
+  const challenge=base64url(new Uint8Array(digest));
+  const transaction={verifier,state,nonce,redirect:oidcRedirectUri,at:Date.now()};
+  sessionStorage.setItem(pkceStorageKey,JSON.stringify(transaction));
+  const uri=new URL(cfg.oidcAuthorization);
+  uri.searchParams.set('client_id',cfg.oidcClientId);
+  uri.searchParams.set('redirect_uri',oidcRedirectUri);
+  uri.searchParams.set('response_type','code');
+  uri.searchParams.set('response_mode','query');
+  uri.searchParams.set('scope','openid profile commesse');
+  uri.searchParams.set('state',state);
+  uri.searchParams.set('nonce',nonce);
+  uri.searchParams.set('code_challenge',challenge);
+  uri.searchParams.set('code_challenge_method','S256');
+  window.location.assign(uri.toString());
+ }catch(error){
+  authFeedback('Autenticazione non avviata: '+(error.message||'errore di rete'),true);
+  loginButton.disabled=false;
+ }
 }
 async function apiCall(path,options={}){
- if(!authKey)throw Error('Accesso richiesto');
+ if(!authToken)throw Error('Accesso richiesto: usa FastPharma Access');
  const headers=new Headers(options.headers||{});
- headers.set('X-Demo-Key',authKey);
+ headers.set('Authorization','Bearer '+authToken);
  const response=await fetch(testApi+path,{...options,headers,cache:'no-store'});
  if(response.status===401){
-  const error=Error('Password non valida. Verifica la password amministrativa FastPharma.');
+  authToken='';
+  document.getElementById('commesse-app').hidden=true;
+  document.getElementById('commesse-auth').hidden=false;
+  const error=Error('La sessione Commesse è scaduta. Accedi di nuovo con FastPharma Access.');
   error.status=401;throw error;
  }
  if(!response.ok){
   const body=await response.json().catch(()=>({}));
   const error=Error(body.error||body.title||
     (transientStatus(response.status)?'Servizio temporaneamente non disponibile':'Server HTTP '+response.status));
-  error.status=response.status;
-  error.code=body.code||'';
-  const seconds=parseInt(response.headers.get('Retry-After')||'',10);
-  if(Number.isFinite(seconds)&&seconds>0&&seconds<=120)error.retryAfter=seconds*1000;
+  error.status=response.status;error.code=body.code||'';
   throw error;
  }
  return response;
 }
-function chromeSupported(){return typeof window.PasswordCredential==='function' &&
- typeof navigator.credentials?.store==='function';}
-function browserStore(){
- if(!chromeSupported()||!authKey)return;
- try{
-  const c=new window.PasswordCredential({id:credentialId,password:authKey,name:credentialId});
-  navigator.credentials.store(c)
-   .then(()=>authFeedback('Accesso riuscito. Chrome ha gestito la memorizzazione della password.'))
-   .catch(()=>{});
- }catch(_error){authFeedback('Password valida. Gestore password di Chrome non disponibile.');}
+async function completeOidcCallback(){
+ const parameters=new URLSearchParams(location.search);
+ const code=parameters.get('code'),receivedState=parameters.get('state');
+ const remoteError=parameters.get('error');
+ if(!code && !remoteError)return false;
+ // Il codice è eliminato subito dall'URL, anche se il token exchange fallisce.
+ history.replaceState(null,'',location.pathname+location.hash);
+ if(remoteError)throw Error('FastPharma Access: '+remoteError);
+ const saved=sessionStorage.getItem(pkceStorageKey);
+ sessionStorage.removeItem(pkceStorageKey);
+ let entry;
+ try{entry=JSON.parse(saved||'null');}catch(_){entry=null;}
+ if(!entry||typeof entry.state!=='string'||entry.state!==receivedState||
+    !entry.verifier || entry.redirect!==oidcRedirectUri||
+    !Number.isFinite(entry.at)||Date.now()-entry.at>10*60*1000)
+   throw Error('Risposta di autorizzazione scaduta o non corrispondente alla richiesta.');
+ const cfg=await loadOidcMeta();
+ const form=new URLSearchParams({
+  grant_type:'authorization_code',client_id:cfg.oidcClientId,
+  code,redirect_uri:oidcRedirectUri,code_verifier:entry.verifier
+ });
+ const res=await fetch(cfg.oidcToken,{
+  method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
+  cache:'no-store',credentials:'omit',body:form
+ });
+ const result=await res.json().catch(()=>({}));
+ if(!res.ok||typeof result.access_token!=='string')
+  throw Error('Token FastPharma Access non ricevuto ('+(result.error||'HTTP '+res.status)+').');
+ authToken=result.access_token;
+ // Il backend Commesse valida firma, issuer, audience, scadenza e scope;
+ // nessun dato operativo viene mostrato prima di questo controllo.
+ await apiCall('/api/auth/check');
+ document.getElementById('commesse-auth').hidden=true;
+ document.getElementById('commesse-app').hidden=false;
+ show(pages[location.hash.slice(1)]?location.hash.slice(1):'commesse');
+ authFeedback('Sessione FastPharma Access valida. Commesse collegato.');
+ return true;
 }
-async function verifyWithFreeWake(){
- // Il processo Render Free è già stato controllato da GET /api/meta.
- // Una verifica diretta non deve chiamare altri servizi né richiedere 7 tentativi.
- try{return await apiCall('/api/auth/check');}
- catch(error){
-  if(error.status===401||error.code==='FASTPHARMA_ADMIN_KEY_NOT_CONFIGURED')throw error;
-  if(!transientStatus(error.status) && !(error instanceof TypeError))throw error;
-  authFeedback('Servizio momentaneamente non disponibile. Eseguo un ultimo controllo…');
-  await pause(4000);
-  return apiCall('/api/auth/check');
- }
-}
-async function login(candidate){
- if(!candidate||candidate.length>1024){
-  authFeedback('Inserisci una password valida.',true);return;
- }
- const connect=document.getElementById('commesse-connect');
- connect.disabled=true;
- authFeedback('Controllo configurazione del servizio FastPharma…');
- try{
-  const configuration=await loadAdminConfig();
-  if(!configuration.available)
-   throw Error('Server Render di prova non ancora disponibile. Verifica la connessione o riprova premendo «Verifica e apri». La password non è stata giudicata errata.');
-  if(!configuration.sharedKeyConfigured)
-   throw Error('Il server è attivo, ma la chiave amministrativa condivisa non è configurata per Gestione Commesse. Verificare il gruppo Render FastPharma. Ripetere l’accesso dopo la configurazione.');
-  authKey=candidate;
-  authFeedback('Verifica della password amministrativa FastPharma…');
-  await verifyWithFreeWake();
-  document.getElementById('commesse-auth').hidden=true;
-  document.getElementById('commesse-app').hidden=false;
-  document.getElementById('commesse-store').hidden=!chromeSupported();
-  show(pages[location.hash.slice(1)]?location.hash.slice(1):'commesse');
-  authFeedback('Archivio TEST collegato.');
-  if(chromeSupported())browserStore();
- }catch(e){
-  authKey='';
-  authFeedback(e.message||'Connessione temporaneamente non disponibile',true);
- }finally{connect.disabled=false;}
-}
-document.getElementById('commesse-login').addEventListener('submit',e=>{
- e.preventDefault();void login(document.getElementById('commesse-password').value.trim());
-});
-document.getElementById('commesse-chrome').addEventListener('click',async()=>{
- if(typeof navigator.credentials?.get!=='function'){
-  authFeedback('Il browser non supporta questa funzione; inserisci la password.',true);return;
- }
- await loadAdminConfig();
- authFeedback('Ricerca della password nel Gestore password di Chrome…');
- try{
-  const saved=await navigator.credentials.get({password:true,mediation:'required'});
-  // Compatibilità una tantum con i vecchi nomi, mentre allineiamo le altre app.
-  const accepted=[credentialId,'Gestione contatti','FastPharma-TEST'];
-  if(saved?.type==='password' && accepted.includes(saved.id) && saved.password){
-   document.getElementById('commesse-password').value=saved.password;
-   authFeedback('Password recuperata. Premi «Verifica e apri»; dopo l’accesso verrà registrato il nome FastPharma aggiornato.');
-  }else authFeedback('Password non trovata; puoi inserirla manualmente.',true);
- }catch(_error){authFeedback('Gestore password non disponibile; inserisci la password.',true);}
-});
-document.getElementById('commesse-store').addEventListener('click',browserStore);
+loginButton.addEventListener('click',()=>{void beginOidcLogin();});
 document.getElementById('commesse-logout').addEventListener('click',()=>{
- authKey='';
- document.getElementById('commesse-password').value='';
+ authToken='';
+ sessionStorage.removeItem(pkceStorageKey);
  document.getElementById('page').replaceChildren();
  document.getElementById('commesse-app').hidden=true;
  document.getElementById('commesse-auth').hidden=false;
- authFeedback('Accesso terminato: inserisci la password per aprire il gestionale.');
+ authFeedback('Sessione Commesse terminata. FastPharma Access rimane autenticato.');
+ loginButton.disabled=false;
 });
-// Il risveglio Free inizia all'apertura della pagina; senza mostrare il gestionale.
-void loadAdminConfig();
+(async()=>{
+ try{
+  if(await completeOidcCallback())return;
+  if(new URLSearchParams(location.search).has('error'))return;
+  // Apre il login centrale; una sessione Access già valida evita la password.
+  await beginOidcLogin();
+ }catch(error){
+  authToken='';
+  authFeedback('Autenticazione non riuscita: '+(error.message||'errore sconosciuto'),true);
+  loginButton.disabled=false;
+ }
+})();
 
 const euro=n=>Number(n||0).toLocaleString('it-IT',{style:'currency',currency:'EUR'});
 
@@ -338,7 +335,7 @@ function addMovementTable(kind,records,headers,cells,afterForm){
 }
 
 async function loadTestData(page){
- if(!authKey)return;
+ if(!authToken)return;
  const requestSerial=++renderSerial;
  const main=view.querySelector('main');if(!main)return;
  const note=document.createElement('p');note.className='demo-cloud-status';
@@ -628,7 +625,7 @@ document.addEventListener('click',e=>{
 });
 document.getElementById('page').addEventListener('click',async e=>{
  const button=e.target.closest('button[data-action]');
- if(!button||!authKey)return;
+ if(!button||!authToken)return;
  const action=button.dataset.action;
  button.disabled=true;
  try{
@@ -672,7 +669,7 @@ document.addEventListener('submit',async e=>{
  const form=e.target.closest('form');
  if(!form||!form.closest('#page'))return;
  e.preventDefault();
- if(!authKey){alertDemo('Accedi prima di salvare');return;}
+ if(!authToken){alertDemo('Accedi prima di salvare');return;}
  const kind=(form.getAttribute('action')||'').replace(/^\//,'');
  const submit=form.querySelector('[type="submit"],button:not([type])');
  if(submit)submit.disabled=true;
@@ -702,9 +699,9 @@ document.addEventListener('submit',async e=>{
   alertDemo('Salvataggio NON riuscito: '+(err.message||'errore')); 
  }finally{if(submit)submit.disabled=false;}
 });
-document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse TEST: password amministrativa FastPharma condivisa, salvataggi persistenti su Neon. Dati di prova sotto la responsabilità dell’operatore.');
+document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse TEST: accesso centralizzato tramite FastPharma Access, salvataggi persistenti su Neon. Dati di prova sotto la responsabilità dell’operatore.');
 backButton.addEventListener('click',()=>goTo(parentPage[location.hash.slice(1)]||'commesse'));
-window.addEventListener('hashchange',()=>{if(authKey)show(location.hash.slice(1));});
+window.addEventListener('hashchange',()=>{if(authToken)show(location.hash.slice(1));});
 // Avvio chiuso: nessuna vista gestionale prima di login().
 })();
 </script></body></html>
