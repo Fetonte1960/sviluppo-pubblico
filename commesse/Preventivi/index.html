@@ -1,67 +1,82 @@
 <!doctype html>
 <html lang="it">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Preventivi V1.4 — Demo sintetica</title><link rel="stylesheet" href="styles.css"></head>
+<title>Preventivi V1.5.0 — Demo sintetica</title><link rel="stylesheet" href="styles.css"></head>
 <body>
-<header><h1>Preventivi <small>V1.4 · DEMO SINTETICA</small></h1><p>Frontend GitHub Pages, calcoli e preparazione preventivi nel servizio Render. Solo dati sintetici; modifiche temporanee per sessione, Neon non collegato.</p></header>
+<header class="compact-header">
+  <strong class="brand-version">Preventivi — <span id="appVersion">V1.5.0</span> <small>TEST</small></strong>
+  <span id="currentQuoteHeader">Preventivo in elaborazione: nessuno</span>
+  <span class="header-actions">
+    <button type="button" id="infoButton" class="button-secondary">Informazioni</button>
+    <button type="button" id="exitButton" class="button-secondary">Esci</button>
+  </span>
+</header>
+<dialog id="infoDialog" class="app-dialog info-dialog">
+ <div class="dialog-title"><h2>Preventivi — informazioni</h2><button type="button" id="closeInfo" class="button-secondary">Chiudi</button></div>
+ <p><b>Versione: <span id="infoVersion">V1.5.0</span></b></p>
+ <p class="hint">Frontend GitHub Pages, backend .NET su Render Free. DEMO sintetica: quote in memoria non persistenti su Neon.</p>
+ <p id="status" aria-live="polite">Connessione non inizializzata</p>
+ <details class="connection-settings"><summary>Connessione demo (avanzate)</summary>
+  <div class="connection-row">
+   <label>Servizio API Render<input id="apiBase" placeholder="https://preventivi-demo-api.onrender.com"></label>
+   <button id="connect" type="button">Connetti</button>
+   <button id="resetDemo" type="button" title="Solo localhost autorizzato">Ripristina esempi</button>
+  </div>
+ </details>
+ <p class="hint">Per le Organizzazioni è necessario l'accesso autorizzato a Contatti FastPharma; la chiave non viene trasmessa a Preventivi.</p>
+</dialog>
+<section id="exitOverlay" class="exit-overlay" hidden>
+ <h2>Sessione dimostrativa terminata</h2>
+ <p>La sessione locale di Preventivi è stata chiusa.</p>
+ <button type="button" id="reenter">Rientra in Preventivi</button>
+</section>
 <main>
-  <section class="toolbar">
-    <span id="status" aria-live="polite">Connessione non inizializzata</span>
-    <details class="connection-settings">
-      <summary>Connessione demo (avanzate)</summary>
-      <div class="connection-row">
-        <label>Servizio API Render<input id="apiBase" placeholder="https://preventivi-demo-api.onrender.com"></label>
-        <button id="connect" type="button">Connetti</button>
-        <button id="resetDemo" type="button" title="Disponibile solo da localhost con autorizzazione esplicita">Ripristina esempi</button>
-      </div>
-    </details>
-  </section>
   <nav class="step-tabs" role="tablist" aria-label="Fasi di compilazione preventivo">
     <button id="tabIssuer" class="step-tab active" type="button" role="tab" aria-selected="true" aria-controls="issuerPanel">1 · Generale</button>
     <button id="tabChapters" class="step-tab" type="button" role="tab" aria-selected="false" aria-controls="chapterPanel">2 · Capitoli</button>
     <button id="tabQuote" class="step-tab" type="button" role="tab" aria-selected="false" aria-controls="quotePanel">3 · Corpo preventivo</button>
   </nav>
   <section id="issuerPanel" class="step-panel" role="tabpanel" aria-labelledby="tabIssuer">
-    <div class="section-title">
-      <div><h2>1. Generale</h2>
-      <p class="hint">Imposta emittente e destinatario, crea un preventivo o riaprine uno esistente.</p></div>
+    <h2 class="screen-heading">Generale — nuovo preventivo</h2>
+    <div class="general-create-row">
+      <button type="button" id="manageIssuer" class="button-secondary issuer-open" title="Apri la gestione emittenti">Gestione emittente <strong id="selectedIssuerName">—</strong></button>
+      <label class="inline-field recipient-choice">Destinatario (Organizzazione Contatti)
+        <select id="crmOrganization"><option value="">— Apri Contatti per scegliere —</option></select>
+      </label>
+      <button type="button" id="openContacts" class="button-secondary">Apri Contatti</button>
+      <label class="inline-field subject-choice">Oggetto del nuovo preventivo
+        <input id="newSubject" maxlength="240" placeholder="Oggetto del lavoro">
+      </label>
+      <button type="button" id="newQuote">+ Nuovo preventivo</button>
     </div>
-    <h3 class="general-subheading">Anagrafica emittente</h3>
-    <div class="issuer-layout">
-      <aside class="issuer-directory">
-        <h3>Emittenti disponibili</h3>
-        <label for="company">Seleziona emittente</label>
-        <select id="company" aria-label="Elenco aziende emittenti"></select>
-        <div id="issuerCards" class="issuer-cards"></div>
-        <button id="issuerNew" type="button">+ Nuovo emittente</button>
-      </aside>
-      <article class="issuer-editor">
-        <h3 id="issuerMode">Anagrafica emittente</h3>
-        <p class="hint">I dati vengono riportati nell'intestazione dei nuovi preventivi. Usa solo informazioni inventate per questa demo.</p>
-        <form id="issuerForm">
-          <div class="grid2">
-            <label>Ragione sociale / nome emittente *
-              <input id="issuerName" maxlength="160" autocomplete="off" required placeholder="Es. Impresa Gamma — DEMO">
-            </label>
-            <label>Partita IVA / codice fiscale
-              <input id="issuerTaxId" maxlength="40" autocomplete="off" placeholder="Solo dato sintetico">
-            </label>
-            <label>Indirizzo e sede *
-              <input id="issuerAddress" maxlength="300" autocomplete="off" required placeholder="Via, numero, città — DEMO">
-            </label>
-            <label>Recapiti (telefono, email, PEC)
-              <input id="issuerContact" maxlength="180" autocomplete="off" placeholder="Recapiti dimostrativi">
-            </label>
-          </div>
-          <div class="actionbar">
-            <button id="issuerSave" type="submit">Salva emittente</button>
-            <button id="issuerCancel" type="button" class="button-secondary">Annulla modifiche</button>
-          </div>
-        </form>
-        <p id="issuerNotice" class="hint">Se modifichi un'emittente, i preventivi già creati conserveranno i dati precedenti.</p>
-      </article>
-    </div>
-    <section class="general-section">
+    <p id="crmLinkStatus" class="hint crm-status">Il destinatario è un riferimento all'Organizzazione del CRM. Per selezionarlo apri Contatti FastPharma e accedi.</p>
+    <section class="quote-archive">
+      <div class="archive-heading">
+        <h3>Archivio preventivi</h3>
+        <span class="hint" id="demoInfo">Caricamento archivio…</span>
+        <button id="reload" type="button" class="button-secondary">Aggiorna</button>
+      </div>
+      <div class="quote-grid-wrap">
+        <table class="quote-grid"><thead><tr>
+          <th>Numero</th><th>Emittente</th><th>Destinatario (Organizzazione)</th>
+          <th>Oggetto</th><th>Stato</th><th>Revisioni</th><th>Azioni</th>
+        </tr></thead><tbody id="quoteList"><tr><td colspan="7">Caricamento…</td></tr></tbody></table>
+      </div>
+    </section>
+    <details class="current-quote-settings">
+      <summary>Modifica dati generali del preventivo aperto</summary>
+      <p id="openedQuote" class="registry-note">Nessun preventivo selezionato.</p>
+      <p id="openedRecipient" class="hint"></p>
+      <label>Oggetto del preventivo aperto
+        <input id="generalSubject" maxlength="240" disabled>
+      </label>
+      <input id="applyRecipient" type="checkbox" disabled hidden aria-label="Opzione destinatario precedente disabilitata">
+      <button id="generalSave" type="button" disabled>Salva oggetto del preventivo</button>
+      <p class="hint">Il destinatario collegato non viene cambiato qui: per un altro destinatario crea un nuovo preventivo. Le revisioni esistenti rimangono storiche.</p>
+    </details>
+    <div class="next-step"><button id="goQuote" type="button">Vai a 2 · Capitoli</button></div>
+    <div id="legacyRecipientControls" hidden aria-hidden="true">
+          <section class="general-section">
       <h3 class="general-subheading">Anagrafica destinatario</h3>
       <div class="issuer-layout">
         <aside class="issuer-directory">
@@ -119,42 +134,50 @@
         </article>
       </div>
     </section>
-    <section class="general-section">
-      <h3 class="general-subheading">Gestione generale dei preventivi</h3>
-      <div class="general-quote-layout">
-        <article>
-          <h3>Nuovo preventivo</h3>
-          <p class="hint">Utilizza l'emittente e il destinatario selezionati sopra.</p>
-          <p id="newRecipientSummary" class="registry-note">Seleziona o crea prima un destinatario.</p>
-          <label for="newSubject">Oggetto del nuovo preventivo *</label>
-          <input id="newSubject" maxlength="240" placeholder="Es. Ristrutturazione farmacia DEMO">
-          <button id="newQuote" type="button">Crea nuovo preventivo</button>
-        </article>
-        <article>
-          <h3>Archivio preventivi</h3>
-          <p class="hint" id="demoInfo">Caricamento archivio…</p>
-          <div id="quoteList"></div>
-          <button id="reload" type="button" class="button-secondary">Ricarica archivio</button>
-        </article>
-      </div>
-      <article class="general-current">
-        <h3>Preventivo aperto</h3>
-        <p id="openedQuote" class="registry-note">Nessun preventivo selezionato.</p>
-        <p id="openedRecipient" class="hint"></p>
-        <div class="grid2">
-          <label>Oggetto del preventivo aperto
-            <input id="generalSubject" maxlength="240" disabled>
-          </label>
-          <label class="general-check"><input id="applyRecipient" type="checkbox" disabled>
-            Sostituisci il destinatario del preventivo aperto con quello selezionato nell'anagrafica
-          </label>
-        </div>
-        <button id="generalSave" type="button" disabled>Salva dati generali della bozza</button>
-        <p class="hint">Le modifiche agiscono solo sulla bozza corrente: le revisioni già archiviate non cambiano.</p>
-      </article>
-    </section>
-    <div class="next-step"><button id="goQuote" type="button">Vai a 2 · Capitoli</button></div>
+
+      <span id="newRecipientSummary"></span>
+    </div>
   </section>
+  <dialog id="issuerDialog" class="app-dialog">
+    <div class="dialog-title"><h2>Gestione emittenti</h2><button type="button" id="closeIssuer" class="button-secondary">Chiudi</button></div>
+    <p class="hint">Archivio dimostrativo degli emittenti. Seleziona, modifica o crea un emittente.</p>
+        <h3 class="general-subheading">Anagrafica emittente</h3>
+    <div class="issuer-layout">
+      <aside class="issuer-directory">
+        <h3>Emittenti disponibili</h3>
+        <label for="company">Seleziona emittente</label>
+        <select id="company" aria-label="Elenco aziende emittenti"></select>
+        <div id="issuerCards" class="issuer-cards"></div>
+        <button id="issuerNew" type="button">+ Nuovo emittente</button>
+      </aside>
+      <article class="issuer-editor">
+        <h3 id="issuerMode">Anagrafica emittente</h3>
+        <p class="hint">I dati vengono riportati nell'intestazione dei nuovi preventivi. Usa solo informazioni inventate per questa demo.</p>
+        <form id="issuerForm">
+          <div class="grid2">
+            <label>Ragione sociale / nome emittente *
+              <input id="issuerName" maxlength="160" autocomplete="off" required placeholder="Es. Impresa Gamma — DEMO">
+            </label>
+            <label>Partita IVA / codice fiscale
+              <input id="issuerTaxId" maxlength="40" autocomplete="off" placeholder="Solo dato sintetico">
+            </label>
+            <label>Indirizzo e sede *
+              <input id="issuerAddress" maxlength="300" autocomplete="off" required placeholder="Via, numero, città — DEMO">
+            </label>
+            <label>Recapiti (telefono, email, PEC)
+              <input id="issuerContact" maxlength="180" autocomplete="off" placeholder="Recapiti dimostrativi">
+            </label>
+          </div>
+          <div class="actionbar">
+            <button id="issuerSave" type="submit">Salva emittente</button>
+            <button id="issuerCancel" type="button" class="button-secondary">Annulla modifiche</button>
+          </div>
+        </form>
+        <p id="issuerNotice" class="hint">Se modifichi un'emittente, i preventivi già creati conserveranno i dati precedenti.</p>
+      </article>
+    </div>
+
+  </dialog>
   <section id="chapterPanel" class="step-panel" role="tabpanel" aria-labelledby="tabChapters" hidden>
     <div class="section-title">
       <h2>2. Capitoli</h2>
@@ -262,5 +285,5 @@
   </div>
   </section>
 </main>
-<script src="app.js?v=20261114-commesse-picker"></script>
+<script src="app.js?v=1.5.0"></script>
 </body></html>

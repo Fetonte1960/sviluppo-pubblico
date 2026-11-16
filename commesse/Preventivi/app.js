@@ -1,6 +1,7 @@
 "use strict";
 // Demo only. GitHub Pages hosts this static frontend; the authorized API URL is configured explicitly.
 // No Neon credentials, company identity tokens or internal secrets in the frontend.
+const APP_VERSION="1.5.0";
 const $ = id => document.getElementById(id);
 const escapeHtml = s => String(s ?? "").replace(/[&<>"']/g, c =>
   ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -76,6 +77,93 @@ async function connect(){
   showStep("general");
 }
 
+// Secure browser bridge: the CRM popup owns its credential; Preventivi never reads it.
+const CRM_PAGE="https://fetonte1960.github.io/sviluppo-pubblico/commesse/Contatti-fastpharma/";
+let crmPopup=null,crmNonce="",crmOrganizations=new Map();
+let selectedCrmOrganization=null,pendingCrmNote=null;
+const crmUuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function renderCrmOrganizations(){
+  const select=$("crmOrganization");
+  const entries=[...crmOrganizations.values()].sort((a,b)=>a.name.localeCompare(b.name,"it"));
+  select.innerHTML='<option value="">— Seleziona Organizzazione —</option>'+
+    entries.map(o=>'<option value="'+escapeHtml(o.id)+'">'+escapeHtml(o.name)+'</option>').join("");
+  select.value=selectedCrmOrganization?.id||"";
+  $("crmLinkStatus").textContent=entries.length
+    ? "Organizzazioni del CRM lette con accesso autorizzato. Seleziona un destinatario; la finestra Contatti serve anche per annotare la nuova bozza."
+    : "Apri Contatti FastPharma, accedi e seleziona un'Organizzazione. Nessuna credenziale viene trasferita.";
+}
+function openContactsPicker(){
+  if(crmPopup&&!crmPopup.closed){crmPopup.focus();return;}
+  crmNonce=crypto.randomUUID().replace(/-/g,"");
+  crmOrganizations=new Map();
+  selectedCrmOrganization=null;
+  renderCrmOrganizations();
+  crmPopup=window.open(CRM_PAGE+"?picker=preventivi&nonce="+crmNonce,
+    "fastpharma-contatti-preventivi","width=1180,height=760,scrollbars=yes,resizable=yes");
+  if(!crmPopup){
+    status("Il browser ha bloccato Contatti. Consenti i popup di GitHub Pages.",true);
+    return;
+  }
+  $("crmLinkStatus").textContent="Accedi a Contatti nella finestra aperta. Se un'Organizzazione non esiste, creala lì.";
+}
+function onCrmMessage(event){
+  if(event.origin!==location.origin||event.source!==crmPopup)return;
+  const data=event.data;
+  if(!data||typeof data!=="object"||data.nonce!==crmNonce)return;
+  if(data.type==="fastpharma-preventivi.organizations"){
+    if(!Array.isArray(data.organizations)||data.organizations.length>500)return;
+    crmOrganizations=new Map(data.organizations.filter(o=>crmUuid.test(o.id)&&
+      typeof o.name==="string"&&o.name.length>0&&o.name.length<=300)
+      .map(o=>[o.id,{id:o.id,name:o.name}]));
+    renderCrmOrganizations();
+  }
+  if(data.type==="fastpharma-preventivi.organization-selected"){
+    const org=data.organization;
+    if(!org||!crmUuid.test(org.id)||typeof org.name!=="string"||
+       !org.name.trim()||org.name.length>300)return;
+    selectedCrmOrganization=org;
+    crmOrganizations.set(org.id,{id:org.id,name:org.name});
+    renderCrmOrganizations();
+    $("crmLinkStatus").textContent="Destinatario collegato: "+org.name+
+      " (Organizzazione Contatti). La finestra CRM resta aperta per registrare la nota quando crei il preventivo.";
+  }
+  if(data.type==="fastpharma-preventivi.note-result"&&pendingCrmNote&&
+     data.quoteId===pendingCrmNote.id){
+    const task=pendingCrmNote;pendingCrmNote=null;
+    if(data.ok){task.resolve(true);$("crmLinkStatus").textContent=
+      "Nota «Iniziato un nuovo preventivo» registrata in Contatti. Categoria da completare.";}
+    else {task.reject(Error(data.error||"Nota non registrata da Contatti"));}
+  }
+}
+window.addEventListener("message",onCrmMessage);
+function requestCrmSelection(id){
+  selectedCrmOrganization=null;
+  if(!crmPopup||crmPopup.closed){status("Riapri Contatti per scegliere l'Organizzazione.",true);return;}
+  crmPopup.postMessage({type:"fastpharma-preventivi.select-organization",
+    nonce:crmNonce,id},location.origin);
+  $("crmLinkStatus").textContent="Verifica del destinatario nel CRM in corso…";
+}
+async function recordCrmNote(created){
+  if(!crmPopup||crmPopup.closed)throw Error(
+    "Contatti è stato chiuso: la nota non è stata registrata. Il preventivo è stato creato.");
+  if(pendingCrmNote)throw Error("Registrazione nota già in corso");
+  const note=new Promise((resolve,reject)=>{pendingCrmNote={id:created.id,resolve,reject};});
+  crmPopup.postMessage({type:"fastpharma-preventivi.note-request",nonce:crmNonce,
+    organizationId:selectedCrmOrganization.id,quoteId:created.id,
+    reference:created.reference,subject:created.draft.subject},location.origin);
+  const timeout=new Promise((_,reject)=>setTimeout(()=>reject(Error(
+    "Contatti non ha confermato la nota. Non ripetere automaticamente la creazione del preventivo.")),50000));
+  try {await Promise.race([note,timeout]);}
+  finally {pendingCrmNote=null;}
+}
+function updateHeaderQuote(){
+  $("appVersion").textContent="V"+APP_VERSION;
+  $("infoVersion").textContent="V"+APP_VERSION;
+  $("currentQuoteHeader").textContent=quote
+    ? "Preventivo in elaborazione: "+quote.reference+" — "+quote.draft.subject
+    : "Preventivo in elaborazione: nessuno";
+}
+
 const issuerFields = ["issuerName","issuerAddress","issuerTaxId","issuerContact"];
 function readIssuer(){
   return {name:$("issuerName").value.trim(),address:$("issuerAddress").value.trim(),
@@ -89,6 +177,7 @@ function displayIssuer(){
   const current=issuerSelected();
   $("chosenIssuer").textContent=current?.details.name||"Nessun emittente";
   $("company").value=companyId;
+  $("selectedIssuerName").textContent=current?.details.name||"Seleziona";
   $("issuerCards").innerHTML=companies.map(c=>
     '<button type="button" class="issuer-card '+(c.id===companyId?'active':'')+
     '" data-issuer="'+escapeHtml(c.id)+'"><b>'+escapeHtml(c.details.name)+'</b>'+
@@ -277,6 +366,7 @@ function renderGeneralQuote(){
   $("generalSubject").value=exists?quote.draft.subject:"";
   $("applyRecipient").disabled=!exists||!recipientId;
   $("applyRecipient").checked=false;
+  updateHeaderQuote();
   document.querySelectorAll("#quoteList [data-open]").forEach(button=>{
     button.setAttribute("aria-current",String(exists&&button.dataset.open===quote.id));
   });
@@ -311,6 +401,7 @@ async function chooseIssuer(next){
   }
   const changed=next!==companyId;
   companyId=next;quote=null;
+  selectedCrmOrganization=null;
   templateId="";chapterTemplates=[];
   recipientId="";recipients=[];
   clearCrmPending();
@@ -482,7 +573,7 @@ async function refresh(){
     request("/api/catalog?companyId="+companyId),
     request("/api/prices/"+companyId),
     request("/api/batches?companyId="+companyId),
-    request("/api/quotes?companyId="+companyId),
+    request("/api/quotes/overview"),
     request("/api/recipients?companyId="+companyId),
     request("/api/chapter-templates?companyId="+companyId+"&includeInactive=true")
   ]);
@@ -492,11 +583,20 @@ async function refresh(){
   if(!recipients.some(r=>r.id===recipientId))recipientId=recipients[0]?.id||"";
   renderRecipientForm();
   $("quoteList").innerHTML=allQuotes.map(q=>
-    '<button data-open="'+q.id+'">'+escapeHtml(q.reference+" — "+q.subject)+" (r"+q.revisions+")</button>" +
-    (selectForCommesse?' <button type="button" data-pick-commesse="'+escapeHtml(q.id)+'">Usa in Commesse</button>':'')).join("");
+    '<tr data-quote-row="'+escapeHtml(q.id)+'" aria-selected="'+(quote?.id===q.id)+'">'+
+    '<td><b>'+escapeHtml(q.reference)+'</b></td>'+
+    '<td>'+escapeHtml(q.issuerName||companies.find(c=>c.id===companyId)?.details.name||"—")+'</td>'+
+    '<td>'+escapeHtml(q.recipientName||"—")+
+    (q.recipientOrganizationId?' <span class="muted">CRM</span>':' <span class="muted">DEMO</span>')+'</td>'+
+    '<td>'+escapeHtml(q.subject)+'</td><td>'+escapeHtml(q.status)+'</td>'+
+    '<td>'+escapeHtml(q.revisions)+'</td>'+
+    '<td><button type="button" data-open="'+escapeHtml(q.id)+'">Apri</button>'+
+    (selectForCommesse?'<button type="button" data-pick-commesse="'+escapeHtml(q.id)+'">Usa in Commesse</button>':'')+
+    '</td></tr>').join("")||
+    '<tr><td colspan="7" class="empty">Nessun preventivo disponibile per questo emittente.</td></tr>';
   $("batch").innerHTML=batches.map(b=>'<option value="'+escapeHtml(b.batchId)+'">'+escapeHtml(b.sourceProjectId+" / "+b.sourceRevision)+"</option>").join("");
-  $("demoInfo").textContent=allQuotes.length+" preventivi di esempio · "+catalog.length+
-    " voci consultabili · "+batches.length+" lotti disponibili.";
+  $("demoInfo").textContent=allQuotes.length+" preventivi complessivi · "+
+    "Emittente attivo: "+(companies.find(c=>c.id===companyId)?.details.name||"—");
   dossierProject = batches[0]?.sourceProjectId || "farmacia-demo";
   await loadDossier();
   renderCatalog();renderPrices();renderQuote();renderGeneralQuote();
@@ -695,6 +795,27 @@ $("externalList").onclick=e=>guard(async()=>{
   await openQuote(quote.id);
 });
 
+$("appVersion").textContent="V"+APP_VERSION;
+$("infoVersion").textContent="V"+APP_VERSION;
+$("infoButton").onclick=()=>$("infoDialog").showModal();
+$("closeInfo").onclick=()=>$("infoDialog").close();
+$("manageIssuer").onclick=()=>$("issuerDialog").showModal();
+$("closeIssuer").onclick=()=>$("issuerDialog").close();
+$("openContacts").onclick=openContactsPicker;
+$("crmOrganization").onchange=()=>{
+ const id=$("crmOrganization").value;
+ if(id)requestCrmSelection(id);else selectedCrmOrganization=null;
+};
+$("exitButton").onclick=()=>{
+ if(!confirm("Terminare la sessione dimostrativa Preventivi?"))return;
+ localStorage.removeItem("preventivi-demo-session");
+ demoSession=crypto.randomUUID(); // Old in-memory session is abandoned, never deleted in CRM.
+ quote=null;updateHeaderQuote();
+ if(crmPopup&&!crmPopup.closed)crmPopup.close();
+ $("exitOverlay").hidden=false;
+ document.querySelector("main").hidden=true;
+};
+$("reenter").onclick=()=>location.reload();
 $("apiBase").value=apiBase;
 $("connect").onclick=()=>guard(connect);
 $("resetDemo").onclick=()=>guard(async()=>{
@@ -745,20 +866,32 @@ $("backGeneralFromChapters").onclick=()=>showStep("general");
 $("backIssuer").onclick=()=>showStep("chapters");
 $("reload").onclick=()=>guard(refresh);
 $("newQuote").onclick=()=>guard(async()=>{
-  if(creatingIssuer||issuerIsDirty()||recipientIsDirty())
-    throw Error("Salva le anagrafiche prima di creare il preventivo.");
-  if(!companyId||!recipientId)
-    throw Error("Seleziona o crea emittente e destinatario nella scheda Generale.");
+  if(creatingIssuer||issuerIsDirty())
+    throw Error("Salva o annulla le modifiche dell'emittente.");
+  if(!companyId)throw Error("Seleziona un emittente in Gestione emittenti.");
+  if(!selectedCrmOrganization||$("crmOrganization").value!==selectedCrmOrganization.id)
+    throw Error("Seleziona un'Organizzazione autenticata tramite Apri Contatti.");
+  if(!crmPopup||crmPopup.closed)
+    throw Error("La finestra Contatti deve restare aperta per registrare la nota.");
   const subject=$("newSubject").value.trim();
   if(!subject)throw Error("Inserire l'oggetto del nuovo preventivo.");
-  const created=await request("/api/quotes/from-recipient",json("POST",{
-    companyId,recipientId,subject
-  }));
-  quote=created;
-  await refresh();
-  await openQuote(created.id);
-  $("newSubject").value="";
-  showStep("chapters");
+  $("newQuote").disabled=true;
+  try{
+    const created=await request("/api/quotes/from-organization",json("POST",{
+      companyId,organization:selectedCrmOrganization,subject
+    }));
+    quote=created;await refresh();await openQuote(created.id);
+    $("newSubject").value="";
+    showStep("chapters");
+    try {
+      await recordCrmNote(created);
+      status("Preventivo "+created.reference+" creato; nota registrata in Contatti.");
+    } catch(noteError){
+      status("Preventivo creato, ma "+noteError.message,true);
+      $("crmLinkStatus").textContent="ATTENZIONE: preventivo "+created.reference+
+        " creato, nota CRM non confermata. Verificare lo storico Attività in Contatti.";
+    }
+  }finally{$("newQuote").disabled=false;}
 });
 $("quoteList").onclick=e=>{
  const selected=e.target.closest("[data-pick-commesse]");
@@ -766,6 +899,12 @@ $("quoteList").onclick=e=>{
  const b=e.target.closest("[data-open]");if(b)guard(async()=>{
   if(issuerIsDirty()||recipientIsDirty())
     throw Error("Salva le anagrafiche prima di aprire un preventivo");
+  const choice=allQuotes.find(x=>x.id===b.dataset.open);
+  if(!choice)throw Error("Preventivo non trovato");
+  if(choice.companyId!==companyId){
+    await chooseIssuer(choice.companyId);
+    if(companyId!==choice.companyId)return; // issuer switch cancelled
+  }
   await openQuote(b.dataset.open);
   showStep("quote");
 })};
