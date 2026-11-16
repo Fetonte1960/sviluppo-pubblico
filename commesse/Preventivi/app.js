@@ -1,7 +1,7 @@
 "use strict";
 // Demo only. GitHub Pages hosts this static frontend; the authorized API URL is configured explicitly.
 // No Neon credentials, company identity tokens or internal secrets in the frontend.
-const APP_VERSION="1.5.0";
+const APP_VERSION="1.6.0";
 const $ = id => document.getElementById(id);
 const escapeHtml = s => String(s ?? "").replace(/[&<>"']/g, c =>
   ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -47,6 +47,8 @@ let chapterTemplates = [], templateId = "", creatingTemplate = false, templateBa
 let chapterAttachBusy = false;
 let pendingCrmImport = null, crmCandidates = [];
 let dossierProject = "farmacia-demo", lastImageUrl = null;
+let toolMode="line",selectedLineId=null,lineEditBaseline="",lastChapterFilter="all";
+let pendingChapterFocus=null;
 const fmt = n => n == null ? "DA DEFINIRE" : Number(n).toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
 const value = n => n == null ? "" : n;
 const number = s => s === "" || s == null ? null : Number(s);
@@ -520,9 +522,8 @@ async function addTemplateToQuote(id){
     const idQuote=quote.id;
     const result=await request("/api/quotes/"+idQuote+"/chapters/from-catalog",
       json("POST",{companyId,templateId:id}));
+    pendingChapterFocus=result.chapter.id;
     await openQuote(idQuote);
-    const select=$("activeChapter");
-    if(select)select.value=result.chapter.id;
     renderQuoteChapterSummary();
     status(result.added?"Capitolo «"+item.title+"» aggiunto al preventivo.":
       "Capitolo «"+item.title+"» già presente: nessun duplicato.");
@@ -553,12 +554,15 @@ function showStep(which){
     status("Salva o annulla le modifiche al capitolo prima di cambiare scheda.",true);
     return false;
   }
-  const general=which==="general",chapters=which==="chapters",body=which==="quote";
+  const general=which==="general",chapters=which==="chapters",
+    body=which==="quote",prices=which==="prices";
   $("issuerPanel").hidden=!general;
   $("chapterPanel").hidden=!chapters;
   $("quotePanel").hidden=!body;
+  $("pricesPanel").hidden=!prices;
   for(const [id,selected] of [["tabIssuer",general],
-                              ["tabChapters",chapters],["tabQuote",body]]){
+                              ["tabChapters",chapters],["tabQuote",body],
+                              ["tabPrices",prices]]){
     $(id).classList.toggle("active",selected);
     $(id).setAttribute("aria-selected",String(selected));
   }
@@ -599,8 +603,8 @@ async function refresh(){
     "Emittente attivo: "+(companies.find(c=>c.id===companyId)?.details.name||"—");
   dossierProject = batches[0]?.sourceProjectId || "farmacia-demo";
   await loadDossier();
-  renderCatalog();renderPrices();renderQuote();renderGeneralQuote();
-  renderQuoteChapterSummary();
+  renderCatalog();renderPrices();renderFinancialSettings();
+  renderQuote();renderGeneralQuote();renderQuoteChapterSummary();
 }
 function renderCatalog(){
   const s=$("searchCatalog").value.toLowerCase();
@@ -617,53 +621,178 @@ function renderPrices(){
       '<button data-saveprice="'+w.id+'">Aggiorna prezziario</button></div>';
   }).join("");
 }
-function showSelectedChapter(){return $("activeChapter")?.value||quote?.draft.chapters[0]?.id}
-function renderQuote(){
-  if(!quote){$("editor").innerHTML='<div class="empty">Seleziona o crea un preventivo.</div>';$("revisions").innerHTML="";renderExternalBlocks();return}
-  const d=quote.draft;
-  let html='<p><b>'+escapeHtml(quote.reference)+'</b> · '+escapeHtml(quote.status)+' · <span class="badge">DEMO</span></p>'+
-    '<div class="issuer-in-document"><b>Emittente del documento:</b> '+escapeHtml(d.issuer.name)+
-    ' · '+escapeHtml(d.issuer.address)+(d.issuer.taxId?' · '+escapeHtml(d.issuer.taxId):'')+
-    (d.issuer.contact?' · '+escapeHtml(d.issuer.contact):'')+'</div>'+
-    '<div class="issuer-in-document"><b>Destinatario:</b> '+escapeHtml(d.recipient.name)+
-    ' · '+escapeHtml(d.recipient.address)+(d.recipient.taxId?' · '+escapeHtml(d.recipient.taxId):'')+
-    ' | <b>Oggetto:</b> '+escapeHtml(d.subject)+'</div>'+
-    '<button type="button" data-go-general class="button-secondary">Modifica emittente, destinatario e dati generali</button>'+
-    '<label>Condizioni commerciali<textarea id="conditions">'+escapeHtml(d.conditions)+'</textarea></label>'+
-    '<label>Capitolo attivo per importazione/aggiunta<select id="activeChapter">'+d.chapters.map(c=>
-      '<option value="'+c.id+'">'+escapeHtml(c.title)+'</option>').join("")+'</select></label>'+
-    '<button type="button" data-go-chapters class="button-secondary">Apri archivio Capitoli</button>'+
-    (d.chapters.length?'':'<p class="chapter-preview-empty">Il preventivo non contiene ancora capitoli. Vai nella scheda Capitoli e usa il doppio clic per inserirli.</p>');
-  for(const c of [...d.chapters].sort((a,b)=>a.order-b.order)){
-    html+='<section class="chapter"><div class="chapter-top"><h3>'+escapeHtml(c.title)+'</h3>'+
-      (c.lines.length===0?'<button type="button" class="button-secondary" data-remove-chapter="'+
-      escapeHtml(c.id)+'">Rimuovi capitolo vuoto</button>':'')+'</div><table><thead><tr>'+
-      '<th>Codice / descrizione</th><th>Quantità</th><th>UM</th><th>Prezzo vendita</th><th>Blocco</th><th></th></tr></thead><tbody>';
-    for(const l of c.lines) html+='<tr data-line="'+l.id+'"><td>'+escapeHtml(l.code)+
-      '<div>'+escapeHtml(l.description)+'</div>'+(l.verify?'<span class="badge">DA VERIFICARE</span>':'')+'</td>'+
-      '<td><input data-field="quantity" type="number" step=".0001" min="0" value="'+value(l.quantity)+'"></td>'+
-      '<td>'+escapeHtml(l.unit)+'</td>'+
-      '<td><input data-field="saleUnitPrice" type="number" step=".0001" min="0" value="'+value(l.saleUnitPrice)+'"></td>'+
-      '<td><input data-field="lockedPrice" type="checkbox" '+(l.lockedPrice?'checked':'')+'></td>'+
-      '<td><button data-remove="'+l.id+'">×</button></td></tr>';
-    html+='</tbody></table></section>';
-  }
-  html+='<h3>Parametri facoltativi (nessuna percentuale preimpostata)</h3><div class="grid4">';
-  for(const [key,label] of [["general","Spese generali"],["contingency","Imprevisti"],["discount","Sconto"]]){
-    const setting=d.options[key];
-    html+='<div><label>'+label+'<select data-adjust="'+key+'"><option value="">NON APPLICATO</option>'+
-      '<option value="Amount" '+(setting?.kind===0?'selected':'')+'>Importo €</option>'+
-      '<option value="Percentage" '+(setting?.kind===1?'selected':'')+'>Percentuale %</option></select>'+
-      '<input data-adjustvalue="'+key+'" type="number" step=".01" min="0" placeholder="Valore" value="'+value(setting?.value)+'"></label></div>';
-  }
-  html+='<label>IVA (vuota = non configurata)<input id="vat" type="number" step=".01" min="0" value="'+value(d.options.vatRate)+'"></label></div>'+
-    '<div id="totals">Calcolo in aggiornamento…</div>';
-  $("editor").innerHTML=html;
-  renderExternalBlocks();
-  $("revisions").innerHTML=quote.revisions.map(r=>
+
+function showSelectedChapter(){
+  const id=$("chapterFilter").value;
+  return quote?.draft.chapters.some(c=>c.id===id)?id:null;
+}
+function lineById(id){
+  if(!quote)return null;
+  for(const c of quote.draft.chapters)
+    for(const l of c.lines)if(l.id===id)return l;
+  return null;
+}
+function lineEditValues(){
+  return {
+    quantity:$("editLineQuantity").value,price:$("editLinePrice").value,
+    locked:$("editLineLocked").checked
+  };
+}
+function lineEditDirty(){
+  return toolMode==="editLine" && selectedLineId &&
+    JSON.stringify(lineEditValues())!==lineEditBaseline;
+}
+function showTool(mode){
+  const mapping={chapter:"toolChapter",materials:"toolMaterials",section:"toolSection",
+    line:"toolLine",image:"toolImage",editLine:"toolEditLine"};
+  if(!mapping[mode])return false;
+  if(mode!==toolMode&&lineEditDirty()&&!confirm(
+     "La voce contiene modifiche non salvate. Scartarle?"))return false;
+  toolMode=mode;
+  for(const [key,id] of Object.entries(mapping))$(id).hidden=key!==mode;
+  document.querySelectorAll("[data-tool]").forEach(button=>
+    button.setAttribute("aria-pressed",String(button.dataset.tool===mode)));
+  $("toolStatus").textContent=mode==="editLine"?
+    "Modifica la voce selezionata e premi Salva voce.":
+    "Operazione: "+({chapter:"Capitolo",materials:"Distinta materiali",
+     section:"Sezione esterna",line:"Voce",image:"Immagine"})[mode]+
+    ". Prima scegli il capitolo nel filtro quando necessario.";
+  if(mode==="section")renderSectionList();
+  if(mode==="image")renderExternalBlocks();
+  return true;
+}
+function renderChapterFilter(){
+  const previous=$("chapterFilter").value||"all";
+  const chapters=quote?.draft.chapters||[];
+  $("chapterFilter").innerHTML='<option value="all">Tutti</option>'+
+    chapters.map(c=>'<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.title)+'</option>').join("");
+  $("chapterFilter").value=chapters.some(c=>c.id===previous)?previous:"all";
+  if(pendingChapterFocus&&chapters.some(c=>c.id===pendingChapterFocus))
+    $("chapterFilter").value=pendingChapterFocus;
+  pendingChapterFocus=null;
+  lastChapterFilter=$("chapterFilter").value;
+  $("chapterToInsert").innerHTML=chapterTemplates.filter(x=>x.active).map(c=>
+    '<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.title)+'</option>').join("");
+  const current=$("chapterFilter").value;
+  $("sectionChapter").innerHTML='<option value="">Sezione generale</option>'+
+    chapters.map(c=>'<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.title)+'</option>').join("");
+  if(current!=="all")$("sectionChapter").value=current;
+}
+function renderFinancialSettings(){
+  const d=quote?.draft;
+  $("conditions").value=d?.conditions||"";
+  $("vat").value=value(d?.options?.vatRate);
+  $("financialFields").innerHTML=[["general","Spese generali"],
+    ["contingency","Imprevisti"],["discount","Sconto"]].map(([key,label])=>{
+    const adjustment=d?.options?.[key];
+    return '<label>'+label+'<select data-adjust="'+key+'">'+
+      '<option value="">Non applicato</option>'+
+      '<option value="Amount" '+(adjustment?.kind===0?'selected':'')+'>Importo €</option>'+
+      '<option value="Percentage" '+(adjustment?.kind===1?'selected':'')+'>Percentuale %</option>'+
+      '</select><input data-adjustvalue="'+key+'" type="number" step=".01" min="0" '+
+      'placeholder="Valore" value="'+value(adjustment?.value)+'"></label>';
+  }).join("");
+  $("revisions").innerHTML=(quote?.revisions||[]).map(r=>
     '<div class="rev">Revisione '+r.number+' — '+escapeHtml(r.reason)+
-    ' <button data-historic="'+r.number+'">PDF storico</button></div>').join("");
+    ' <button type="button" data-historic="'+r.number+'">PDF storico</button></div>').join("")||
+    '<p class="hint">Nessuna revisione archiviata.</p>';
+  for(const id of ["save","revision","previewPrices","pdf"]){
+    $(id).disabled=!quote;
+  }
+}
+function renderSectionList(){
+  const host=$("sectionList");
+  if(!quote){host.innerHTML='<p class="hint">Apri prima una bozza.</p>';return}
+  host.innerHTML='<h4>Sezioni esterne inserite</h4>'+
+    [...(quote.draft.sections||[])].sort((a,b)=>a.order-b.order).map(section=>
+    '<div class="cardline"><b>'+escapeHtml(section.title)+'</b>'+
+    '<div class="hint">'+escapeHtml(section.text.slice(0,90))+'</div>'+
+    '<button type="button" data-delete-section="'+escapeHtml(section.id)+'">Rimuovi sezione</button></div>').join("") ;
+}
+function renderBodyGrid(){
+  const host=$("editor");
+  if(!quote){
+    host.innerHTML='<p class="empty">Apri o crea un preventivo dalla scheda Generale.</p>';
+    $("bodyDocumentLabel").textContent="Nessun preventivo aperto";
+    $("totals").textContent="";
+    return;
+  }
+  const d=quote.draft,filter=$("chapterFilter").value||"all";
+  $("bodyDocumentLabel").textContent=quote.reference+" · "+d.recipient.name;
+  const sections=d.sections||[],blocks=d.blocks||[];
+  const rows=[];
+  function addDocumentRows(chapterId){
+    for(const section of sections.filter(s=>(s.chapterId||null)===(chapterId||null))
+               .sort((a,b)=>a.order-b.order)){
+      rows.push('<tr class="document-row"><td colspan="5"><b>Sezione esterna: '+
+        escapeHtml(section.title)+'</b><div class="hint">'+
+        escapeHtml(section.text.slice(0,220))+'</div></td>'+
+        '<td><button type="button" data-show-section>Sezioni</button></td></tr>');
+    }
+    for(const block of blocks.filter(b=>chapterId?b.chapterId===chapterId:
+        !b.chapterId)){
+      rows.push('<tr class="document-row"><td colspan="5"><b>Immagine: '+
+        escapeHtml(block.title||"Allegato")+'</b><div class="hint">'+
+        escapeHtml(block.caption||"")+'</div></td>'+
+        '<td><button type="button" data-show-image>Immagini</button></td></tr>');
+    }
+  }
+  if(filter==="all")addDocumentRows(null);
+  for(const chapter of [...d.chapters].sort((a,b)=>a.order-b.order)){
+    if(filter!=="all"&&filter!==chapter.id)continue;
+    const valued=chapter.lines.filter(l=>l.quantity!=null&&l.saleUnitPrice!=null)
+      .reduce((sum,l)=>sum+Number(l.quantity)*Number(l.saleUnitPrice),0);
+    const partial=chapter.lines.some(l=>l.quantity==null||l.saleUnitPrice==null);
+    rows.push('<tr class="body-chapter-row"><td colspan="4"><b>'+
+      escapeHtml(chapter.title)+'</b> <span class="muted">('+
+      chapter.lines.length+' voci)</span></td>'+
+      '<td class="align-right">'+(partial?'Parziale · ':'')+fmt(valued)+'</td>'+
+      '<td>'+(chapter.lines.length===0?'<button type="button" data-remove-chapter="'+
+        escapeHtml(chapter.id)+'" title="Rimuovi solo se vuoto">Rimuovi</button>':'')+'</td></tr>');
+    addDocumentRows(chapter.id);
+    for(const line of chapter.lines){
+      const amount=line.quantity!=null&&line.saleUnitPrice!=null
+        ?fmt(Number(line.quantity)*Number(line.saleUnitPrice)):"Da definire";
+      rows.push('<tr class="body-line-row '+(selectedLineId===line.id?'selected':'')+
+        '" data-select-line="'+escapeHtml(line.id)+'" tabindex="0" role="button" '+
+        'aria-label="Modifica voce '+escapeHtml(line.code)+'"><td><b>'+
+        escapeHtml(line.code)+'</b> — '+escapeHtml(line.description)+
+        (line.verify?' <span class="badge">DA VERIFICARE</span>':'')+'</td>'+
+        '<td class="align-right">'+escapeHtml(line.quantity??"—")+'</td>'+
+        '<td>'+escapeHtml(line.unit)+'</td>'+
+        '<td class="align-right">'+(line.saleUnitPrice==null?"—":fmt(line.saleUnitPrice))+'</td>'+
+        '<td class="align-right"><b>'+amount+'</b></td>'+
+        '<td><button type="button" data-edit-line="'+escapeHtml(line.id)+'">Modifica</button></td></tr>');
+    }
+  }
+  host.innerHTML='<div class="body-grid-scroll"><table class="body-quote-table">'+
+    '<thead><tr><th>Codice / Descrizione</th><th>Quantità</th>'+
+    '<th>U.M.</th><th>Prezzo unitario</th><th>Importo</th><th>Azioni</th></tr></thead>'+
+    '<tbody>'+(rows.join("")||'<tr><td colspan="6" class="empty">'+
+     'Nessuna voce. Aggiungi un capitolo o una voce dalla toolbar.</td></tr>')+
+    '</tbody></table></div>';
   refreshTotals();
+}
+function renderQuote(){
+  renderChapterFilter();
+  renderBodyGrid();
+  renderSectionList();
+  renderExternalBlocks();
+}
+function selectLine(id){
+  const line=lineById(id);
+  if(!line)return;
+  if(lineEditDirty()&&!confirm("Scartare le modifiche alla voce selezionata?"))return;
+  selectedLineId=id;
+  if(!showTool("editLine"))return;
+  $("editingLineTitle").textContent=line.code+" — "+line.description+" ("+line.unit+")";
+  $("editLineQuantity").value=value(line.quantity);
+  $("editLinePrice").value=value(line.saleUnitPrice);
+  $("editLineLocked").checked=!!line.lockedPrice;
+  lineEditBaseline=JSON.stringify(lineEditValues());
+  // Reflect selection without losing the contents of the editor.
+  document.querySelectorAll("[data-select-line]").forEach(row=>
+    row.classList.toggle("selected",row.dataset.selectLine===id));
 }
 async function refreshTotals(){
   if(!quote)return;
@@ -678,29 +807,43 @@ async function refreshTotals(){
 function collect(){
   if(!quote)throw Error("Nessuna bozza aperta");
   const d=quote.draft;
-  // Recipient and subject are managed only from the General tab.
   d.conditions=$("conditions").value;
   d.options.vatRate=number($("vat").value);
+  if(d.options.vatRate!=null && (d.options.vatRate<0||d.options.vatRate>100))
+    throw Error("L'IVA deve essere compresa tra 0 e 100");
   for(const key of ["general","contingency","discount"]){
     const kind=document.querySelector('[data-adjust="'+key+'"]').value;
     const val=document.querySelector('[data-adjustvalue="'+key+'"]').value;
     d.options[key]=kind===""?null:{kind:kind==="Amount"?0:1,value:number(val)};
-    if(kind!==""&&val==="")throw Error("Manca valore per "+key);
+    if(kind!==""&&(val===""||Number(val)<0))throw Error("Valore non valido per "+key);
   }
-  document.querySelectorAll("[data-line]").forEach(row=>{
-    const line=d.chapters.flatMap(c=>c.lines).find(l=>l.id===row.dataset.line);
-    line.quantity=number(row.querySelector('[data-field="quantity"]').value);
-    const price=number(row.querySelector('[data-field="saleUnitPrice"]').value);
-    const changed=price!==line.saleUnitPrice;
-    line.saleUnitPrice=price;
-    line.lockedPrice=row.querySelector('[data-field="lockedPrice"]').checked || changed;
-  });
+  if(toolMode==="editLine"&&selectedLineId){
+    const l=lineById(selectedLineId);
+    if(l){
+      const quantity=number($("editLineQuantity").value);
+      const salePrice=number($("editLinePrice").value);
+      if((quantity!=null&&(!Number.isFinite(quantity)||quantity<0))||
+        (salePrice!=null&&(!Number.isFinite(salePrice)||salePrice<0)))
+          throw Error("Quantità e prezzo devono essere numeri non negativi");
+      const changed=salePrice!==l.saleUnitPrice;
+      l.quantity=quantity;
+      l.saleUnitPrice=salePrice;
+      l.lockedPrice=$("editLineLocked").checked||changed;
+      lineEditBaseline=JSON.stringify(lineEditValues());
+    }
+  }
   return d;
 }
 async function save(){await request("/api/quotes/"+quote.id+"/draft?companyId="+companyId,json("PUT",collect())); await openQuote(quote.id)}
 async function openQuote(id){
+  const previousId=quote?.id;
   quote=await request("/api/quotes/"+id+"?companyId="+companyId);
-  renderQuote();renderGeneralQuote();renderQuoteChapterSummary();
+  if(previousId!==id){
+    selectedLineId=null;
+    if(toolMode==="editLine")toolMode="line";
+    $("chapterFilter").value="all";
+  }
+  renderFinancialSettings();renderQuote();renderGeneralQuote();renderQuoteChapterSummary();
 }
 async function downloadPdf(revision){
   if(!quote)return;
@@ -732,7 +875,7 @@ async function loadDossier(){
 function externalOptions(){
   if(!quote)return;
   const chapters=quote.draft.chapters;
-  const previous=$("externalChapter").value || $("activeChapter")?.value;
+  const previous=$("externalChapter").value || showSelectedChapter();
   $("externalChapter").innerHTML=chapters.map(c=>
     '<option value="'+c.id+'">'+escapeHtml(c.title)+'</option>').join("");
   if(chapters.some(c=>c.id===previous))$("externalChapter").value=previous;
@@ -860,6 +1003,7 @@ $("templateShowInactive").onchange=renderTemplateList;
 $("tabIssuer").onclick=()=>showStep("general");
 $("tabChapters").onclick=()=>showStep("chapters");
 $("tabQuote").onclick=()=>showStep("quote");
+$("tabPrices").onclick=()=>showStep("prices");
 $("goQuote").onclick=()=>showStep("chapters");
 $("goBody").onclick=()=>showStep("quote");
 $("backGeneralFromChapters").onclick=()=>showStep("general");
@@ -912,7 +1056,7 @@ $("searchCatalog").oninput=renderCatalog;
 $("catalog").onclick=e=>guard(async()=>{
   const btn=e.target.closest("[data-add]");if(!btn||!quote)return;
   const chapterId=showSelectedChapter();
-  if(!chapterId)throw Error("Aggiungi prima un capitolo dalla scheda Capitoli (doppio clic)");
+  if(!chapterId)throw Error("Seleziona un capitolo nel filtro a sinistra (non «Tutti»).");
   await save();
   await request("/api/quotes/"+quote.id+"/lines",json("POST",{
     companyId,chapterId,workId:btn.dataset.add,quantity:1}));
@@ -931,8 +1075,10 @@ $("priceList").onclick=e=>guard(async()=>{
     manualSalePrice:field("manualSalePrice")}));await refresh();
 });
 $("editor").onclick=e=>guard(async()=>{
-  if(e.target.closest("[data-go-general]")){showStep("general");return}
-  if(e.target.closest("[data-go-chapters]")){showStep("chapters");return}
+  const row=e.target.closest("[data-select-line]");
+  if(row){selectLine(row.dataset.selectLine);return;}
+  if(e.target.closest("[data-show-section]")){showTool("section");return}
+  if(e.target.closest("[data-show-image]")){showTool("image");return}
   const chapterButton=e.target.closest("[data-remove-chapter]");
   if(chapterButton){
     const chapter=quote.draft.chapters.find(c=>c.id===chapterButton.dataset.removeChapter);
@@ -944,8 +1090,71 @@ $("editor").onclick=e=>guard(async()=>{
     renderQuoteChapterSummary();
     return;
   }
-  const rm=e.target.closest("[data-remove]");
-  if(rm){collect();for(const c of quote.draft.chapters)c.lines=c.lines.filter(l=>l.id!==rm.dataset.remove);await save()}
+});
+$("editor").onkeydown=e=>{
+  if((e.key==="Enter"||e.key===" ")&&e.target.matches("[data-select-line]")){
+    e.preventDefault();selectLine(e.target.dataset.selectLine);
+  }
+};
+$("chapterFilter").onchange=()=>{
+  if(lineEditDirty()&&!confirm("Scartare le modifiche non salvate alla voce?")){
+    $("chapterFilter").value=lastChapterFilter;return;
+  }
+  lastChapterFilter=$("chapterFilter").value;
+  selectedLineId=null;
+  if(toolMode==="editLine")showTool("line");
+  renderBodyGrid();externalOptions();
+};
+$("insertChosenChapter").onclick=()=>guard(async()=>{
+  if(!quote)throw Error("Crea o apri un preventivo prima di inserire capitoli");
+  const id=$("chapterToInsert").value;
+  if(!id)throw Error("Non ci sono capitoli attivi nell'archivio");
+  await addTemplateToQuote(id);
+});
+document.querySelectorAll("[data-tool]").forEach(button=>
+  button.onclick=()=>showTool(button.dataset.tool));
+$("editLineSave").onclick=()=>guard(async()=>{
+  if(!quote||!selectedLineId)throw Error("Seleziona una voce del preventivo");
+  await save();
+  if(selectedLineId)selectLine(selectedLineId);
+  status("Modifiche della voce salvate nella bozza.");
+});
+$("editLineDelete").onclick=()=>guard(async()=>{
+  const id=selectedLineId;
+  if(!quote||!id)throw Error("Seleziona una voce");
+  const line=lineById(id);
+  if(!confirm("Rimuovere la voce «"+line.code+"» dal preventivo?"))return;
+  selectedLineId=null;toolMode="line";
+  for(const chapter of quote.draft.chapters)
+    chapter.lines=chapter.lines.filter(l=>l.id!==id);
+  await save();
+  showTool("line");
+  status("Voce rimossa dalla bozza. Le revisioni archiviate restano invariate.");
+});
+$("sectionAdd").onclick=()=>guard(async()=>{
+  if(!quote)throw Error("Apri prima un preventivo");
+  const title=$("sectionTitle").value.trim(),text=$("sectionText").value.trim();
+  if(!title||!text)throw Error("Compila titolo e testo della sezione esterna");
+  const chapterId=$("sectionChapter").value||null;
+  const order=Number($("sectionOrder").value);
+  if(!Number.isInteger(order)||order<0||order>10000)
+    throw Error("Ordine della sezione non valido");
+  await save();
+  await request("/api/quotes/"+quote.id+"/sections",json("POST",{
+    companyId,title,text,chapterId,order}));
+  $("sectionTitle").value="";$("sectionText").value="";
+  await openQuote(quote.id);
+  showTool("section");
+  status("Sezione esterna aggiunta al documento e al PDF.");
+});
+$("sectionList").onclick=e=>guard(async()=>{
+  const button=e.target.closest("[data-delete-section]");
+  if(!button||!quote)return;
+  if(!confirm("Rimuovere la sezione esterna dalla bozza? Le revisioni storiche restano invariate."))return;
+  await request("/api/quotes/"+quote.id+"/sections/"+button.dataset.deleteSection+
+    "?companyId="+companyId,{method:"DELETE"});
+  await openQuote(quote.id);
+  showTool("section");
 });
 $("save").onclick=()=>guard(save);
 $("revision").onclick=()=>guard(async()=>{await save();await request("/api/quotes/"+quote.id+
@@ -953,10 +1162,11 @@ $("revision").onclick=()=>guard(async()=>{await save();await request("/api/quote
 $("previewPrices").onclick=()=>guard(pricePreview);
 $("pdf").onclick=()=>guard(async()=>{await save();await downloadPdf()});
 $("revisions").onclick=e=>{const b=e.target.closest("[data-historic]");if(b)guard(()=>downloadPdf(Number(b.dataset.historic)))};
+showTool("line");
 $("import").onclick=()=>guard(async()=>{
   if(!quote)throw Error("Apri una bozza");
   const chapterId=showSelectedChapter();
-  if(!chapterId)throw Error("Aggiungi prima un capitolo dalla scheda Capitoli");
+  if(!chapterId)throw Error("Seleziona un capitolo nel filtro a sinistra (non «Tutti»).");
   await save();
   const result=await request("/api/quotes/"+quote.id+"/imports/"+encodeURIComponent($("batch").value),
     json("POST",{companyId,chapterId}));await openQuote(quote.id);

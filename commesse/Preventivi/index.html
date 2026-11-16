@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="it">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Preventivi V1.5.0 — Demo sintetica</title><link rel="stylesheet" href="styles.css"></head>
+<title>Preventivi V1.6.0 — Demo sintetica</title><link rel="stylesheet" href="styles.css"></head>
 <body>
 <header class="compact-header">
-  <strong class="brand-version">Preventivi — <span id="appVersion">V1.5.0</span> <small>TEST</small></strong>
+  <strong class="brand-version">Preventivi — <span id="appVersion">V1.6.0</span> <small>TEST</small></strong>
   <span id="currentQuoteHeader">Preventivo in elaborazione: nessuno</span>
   <span class="header-actions">
     <button type="button" id="infoButton" class="button-secondary">Informazioni</button>
@@ -13,7 +13,7 @@
 </header>
 <dialog id="infoDialog" class="app-dialog info-dialog">
  <div class="dialog-title"><h2>Preventivi — informazioni</h2><button type="button" id="closeInfo" class="button-secondary">Chiudi</button></div>
- <p><b>Versione: <span id="infoVersion">V1.5.0</span></b></p>
+ <p><b>Versione: <span id="infoVersion">V1.6.0</span></b></p>
  <p class="hint">Frontend GitHub Pages, backend .NET su Render Free. DEMO sintetica: quote in memoria non persistenti su Neon.</p>
  <p id="status" aria-live="polite">Connessione non inizializzata</p>
  <details class="connection-settings"><summary>Connessione demo (avanzate)</summary>
@@ -35,6 +35,7 @@
     <button id="tabIssuer" class="step-tab active" type="button" role="tab" aria-selected="true" aria-controls="issuerPanel">1 · Generale</button>
     <button id="tabChapters" class="step-tab" type="button" role="tab" aria-selected="false" aria-controls="chapterPanel">2 · Capitoli</button>
     <button id="tabQuote" class="step-tab" type="button" role="tab" aria-selected="false" aria-controls="quotePanel">3 · Corpo preventivo</button>
+    <button id="tabPrices" class="step-tab" type="button" role="tab" aria-selected="false" aria-controls="pricesPanel">4 · Prezziario</button>
   </nav>
   <section id="issuerPanel" class="step-panel" role="tabpanel" aria-labelledby="tabIssuer">
     <h2 class="screen-heading">Generale — nuovo preventivo</h2>
@@ -74,6 +75,27 @@
       <button id="generalSave" type="button" disabled>Salva oggetto del preventivo</button>
       <p class="hint">Il destinatario collegato non viene cambiato qui: per un altro destinatario crea un nuovo preventivo. Le revisioni esistenti rimangono storiche.</p>
     </details>
+    <section class="general-document-actions">
+      <h3>Gestione del preventivo in elaborazione</h3>
+      <div class="actionbar document-buttons">
+        <button type="button" id="save">Salva bozza</button>
+        <button type="button" id="revision">Archivia revisione</button>
+        <button type="button" id="previewPrices">Aggiorna prezzi della bozza…</button>
+        <button type="button" id="pdf">PDF cliente</button>
+      </div>
+      <div class="general-doc-config">
+        <details id="commercialDetails">
+          <summary>Condizioni commerciali, IVA e parametri</summary>
+          <label>Condizioni commerciali<textarea id="conditions" placeholder="Condizioni concordate"></textarea></label>
+          <div id="financialFields" class="grid4"></div>
+          <label>IVA % (vuota = non configurata)<input id="vat" type="number" step=".01" min="0" max="100"></label>
+        </details>
+        <details>
+          <summary>Revisioni e PDF storici</summary>
+          <div id="revisions"></div>
+        </details>
+      </div>
+    </section>
     <div class="next-step"><button id="goQuote" type="button">Vai a 2 · Capitoli</button></div>
     <div id="legacyRecipientControls" hidden aria-hidden="true">
           <section class="general-section">
@@ -226,33 +248,74 @@
     <div class="next-step"><button id="goBody" type="button">Vai a 3 · Corpo preventivo</button></div>
   </section>
   <section id="quotePanel" class="step-panel" role="tabpanel" aria-labelledby="tabQuote" hidden>
-    <div class="quote-context">
-      <div><small>Emittente selezionato</small><strong id="chosenIssuer">—</strong>
-        <span class="hint">I documenti esistenti mantengono l'intestazione salvata alla creazione.</span></div>
-      <button id="backIssuer" type="button" class="button-secondary">Torna a Capitoli</button>
-    </div>
-    <div class="layout">
-    <aside>
-      <h2>Strumenti per il corpo preventivo</h2>
-      <p class="hint">Anagrafiche e gestione delle bozze sono in Generale; archivio e inserimento capitoli nella scheda Capitoli.</p>
-      <h2>Import computi</h2>
-      <select id="batch"></select><button id="import">Importa lotto nel capitolo</button>
-      <p class="hint">Stesse righe importate due volte non producono duplicati. Lotto sintetico.</p>
-      <h2>Catalogo lavorazioni</h2>
-      <input id="searchCatalog" placeholder="Cerca codice o descrizione">
-      <div id="catalog"></div>
-      <h3>Nuova voce privata</h3>
-      <input id="newCode" placeholder="Codice"><input id="newTitle" placeholder="Titolo">
-      <input id="newUnit" placeholder="Unità, es. m2"><input id="newCategory" placeholder="Categoria">
-      <button id="addWork">Crea voce</button>
-    </aside>
-    <article>
-      <div class="actionbar">
-        <button id="save">Salva bozza</button><button id="revision">Archivia revisione</button>
-        <button id="previewPrices">Aggiorna prezzi…</button><button id="pdf">PDF cliente</button>
-      </div>
-      <div id="editor" class="empty">Crea o apri una bozza per iniziare.</div>
-      <section id="externalTool" class="externaltool">
+    <div class="body-workspace">
+      <aside class="body-toolbar">
+        <h2>Operazioni sul preventivo</h2>
+        <label>Filtra per capitolo
+          <select id="chapterFilter" aria-label="Filtro capitoli del preventivo">
+            <option value="all">Tutti</option>
+          </select>
+        </label>
+        <div class="tool-heading">Aggiungi</div>
+        <div class="tool-actions" role="group" aria-label="Aggiungi al preventivo">
+          <button type="button" class="tool-action" data-tool="chapter">Capitolo</button>
+          <button type="button" class="tool-action" data-tool="materials">Distinta materiali</button>
+          <button type="button" class="tool-action" data-tool="section">Sezione esterna</button>
+          <button type="button" class="tool-action" data-tool="line">Voce</button>
+          <button type="button" class="tool-action" data-tool="image">Immagine</button>
+        </div>
+        <div class="tool-context" id="toolContext">
+          <p id="toolStatus" class="hint">Seleziona una funzione Aggiungi o una voce della griglia.</p>
+          <section id="toolChapter" class="tool-mode" hidden>
+            <h3>Aggiungi capitolo</h3>
+            <label>Capitolo dall'archivio
+              <select id="chapterToInsert"></select>
+            </label>
+            <button id="insertChosenChapter" type="button">Aggiungi capitolo al preventivo</button>
+            <p class="hint">Il capitolo viene inserito una sola volta. Per modificarne l'anagrafica usa la scheda Capitoli.</p>
+          </section>
+          <section id="toolMaterials" class="tool-mode" hidden>
+            <h3>Distinta materiali</h3>
+            <label>Distinta disponibile nel dossier DEMO
+              <select id="batch"></select>
+            </label>
+            <button id="import" type="button">Importa distinta nel capitolo</button>
+            <p class="hint">Seleziona un capitolo nel filtro. Le righe della stessa distinta non vengono duplicate.</p>
+          </section>
+          <section id="toolSection" class="tool-mode" hidden>
+            <h3>Sezione esterna</h3>
+            <label>Titolo<input id="sectionTitle" maxlength="140" placeholder="Es. Relazione tecnica"></label>
+            <label>Testo<textarea id="sectionText" maxlength="3000" placeholder="Testo da riportare nel PDF"></textarea></label>
+            <label>Collocazione<select id="sectionChapter"><option value="">Sezione generale</option></select></label>
+            <label>Ordine<input id="sectionOrder" type="number" min="0" max="10000" value="10"></label>
+            <button id="sectionAdd" type="button">Inserisci sezione</button>
+            <div id="sectionList"></div>
+          </section>
+          <section id="toolLine" class="tool-mode" hidden>
+            <h3>Aggiungi voce</h3>
+            <label>Cerca nel catalogo<input id="searchCatalog" placeholder="Codice o descrizione"></label>
+            <div id="catalog"></div>
+            <details class="inline-subform"><summary>Crea nuova voce nel catalogo</summary>
+              <label>Codice<input id="newCode" placeholder="Codice"></label>
+              <label>Descrizione<input id="newTitle" placeholder="Titolo"></label>
+              <label>Unità di misura<input id="newUnit" placeholder="m², cad, ..."></label>
+              <label>Categoria<input id="newCategory" placeholder="Categoria"></label>
+              <button id="addWork" type="button">Crea voce privata</button>
+            </details>
+          </section>
+          <section id="toolEditLine" class="tool-mode" hidden>
+            <h3>Modifica voce selezionata</h3>
+            <p id="editingLineTitle" class="hint"></p>
+            <label>Quantità<input id="editLineQuantity" type="number" min="0" step=".0001"></label>
+            <label>Prezzo unitario di vendita<input id="editLinePrice" type="number" min="0" step=".0001"></label>
+            <label class="inline-checkbox"><input id="editLineLocked" type="checkbox"> Blocca prezzo manuale</label>
+            <div class="actionbar">
+              <button id="editLineSave" type="button">Salva voce</button>
+              <button id="editLineDelete" type="button" class="button-danger">Rimuovi voce</button>
+            </div>
+          </section>
+          <section id="toolImage" class="tool-mode" hidden>
+                  <section id="externalTool" class="externaltool">
         <h3>Aggiungi elemento esterno — immagine e didascalia</h3>
         <p class="hint">L'immagine è conservata nel dossier demo sul server, fuori dal computo e dai calcoli.</p>
         <div class="grid2">
@@ -275,15 +338,33 @@
         <img id="externalImage" alt="Anteprima immagine dossier" hidden>
         <h3>Elementi esterni della bozza</h3><div id="externalList"></div>
       </section>
-      <h3>Revisioni conservate</h3><div id="revisions"></div>
-    </article>
-    <aside>
-      <h2>Prezziario corrente aziendale</h2>
-      <p class="hint">Il motore economico è sul server Render. Il browser riceve soltanto i prezzi di vendita DEMO, mai costi e ricarichi interni.</p>
-      <div id="priceList"></div>
-    </aside>
-  </div>
+
+          </section>
+        </div>
+      </aside>
+      <article class="body-grid-content">
+        <div class="body-grid-header">
+          <h2>Voci del preventivo</h2>
+          <span id="bodyDocumentLabel" class="hint">Apri un preventivo per compilare il computo.</span>
+        </div>
+        <div id="editor">Crea o apri una bozza per iniziare.</div>
+        <div id="totals"></div>
+      </article>
+    </div>
+    <div id="bodyLegacyHidden" hidden aria-hidden="true">
+      <span id="chosenIssuer"></span>
+      <button id="backIssuer" type="button">Torna a Capitoli</button>
+    </div>
+  </section>
+  <section id="pricesPanel" class="step-panel" role="tabpanel" aria-labelledby="tabPrices" hidden>
+    <div class="prices-workspace">
+      <div class="prices-title">
+        <h2>4. Prezziario</h2>
+        <p class="hint">Prezzi di vendita dell'emittente selezionato. Nessun costo interno o ricarico viene mostrato al browser.</p>
+      </div>
+      <div id="priceList" class="prices-grid"></div>
+    </div>
   </section>
 </main>
-<script src="app.js?v=1.5.0"></script>
+<script src="app.js?v=1.6.0"></script>
 </body></html>
