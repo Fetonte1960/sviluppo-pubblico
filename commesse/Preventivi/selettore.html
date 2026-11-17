@@ -59,7 +59,7 @@ td button{padding:7px 11px}
 <div id="workspace" hidden>
  <section>
   <h1>Nuova commessa da preventivo</h1>
-  <p>Archivio Preventivi DEMO della sessione corrente. Seleziona un preventivo: alla conferma sarà creata una commessa con copia del suo corpo commerciale (capitoli e voci), senza costi interni.</p>
+  <p>Archivio Preventivi. Seleziona un preventivo: alla conferma sarà creata una commessa con copia del suo corpo commerciale (capitoli e voci), senza costi interni.</p>
   <div class="filters">
    <label>Numero, destinatario, emittente o oggetto
     <input id="search" type="search" maxlength="160" autocomplete="off" placeholder="Cerca tra i preventivi…">
@@ -87,7 +87,7 @@ td button{padding:7px 11px}
    <span id="choice">Nessun preventivo selezionato.</span>
    <button type="button" id="confirm" disabled>Crea commessa da questo preventivo</button>
   </div>
-  <p class="hint">Al risveglio di Render le richieste di sola lettura vengono ritentate automaticamente. I preventivi DEMO sono conservati solo in memoria sul server e possono scomparire dopo uno standby o riavvio. La conferma crea una copia permanente in Commesse TEST su Neon.</p>
+  <p id="archivePersistence" class="hint">Le richieste di lettura gestiscono il risveglio Render. La copia commerciale acquisita da Commesse resta autonoma e non modificabile.</p>
  </section>
 </div>
 </main>
@@ -175,7 +175,11 @@ async function getConfig(){
     new URL(data.oidcAuthorization).origin!=="https://contatti-fastpharma-api.onrender.com"||
     new URL(data.oidcToken).origin!=="https://contatti-fastpharma-api.onrender.com")
   throw Error("FastPharma Access non è configurato per il selettore Preventivi.");
- config=data;return data;
+ config=data;
+ $("archivePersistence").textContent=data.storage==="postgres"
+   ? "Archivio Preventivi persistente su PostgreSQL Neon. La copia commerciale acquisita da Commesse rimane autonoma e non modificabile."
+   : "Archivio DEMO in RAM: i preventivi potrebbero scomparire dopo riavvio Render. La copia Commesse rimane persistente su Neon.";
+ return data;
 }
 async function login(){
  if(!validContext)throw Error("Apri questo selettore soltanto da Gestione Commesse.");
@@ -322,7 +326,8 @@ async function load(){
   $("stateFilter").value=states.includes(current)?current:"";
   if(!quotes.some(q=>q.id===selectedId))selectedId="";
   page=1;draw();
-  setStatus(quotes.length+" preventivi disponibili nella sessione DEMO.");
+  setStatus(quotes.length+" preventivi disponibili "+(config?.storage==="postgres"?
+     "nell'archivio Neon.":"nella sessione DEMO."));
  }catch(e){
   quotes=[];selectedId="";draw();setStatus("Lettura non riuscita: "+e.message,true);
  }
