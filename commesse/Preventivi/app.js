@@ -1,7 +1,7 @@
 "use strict";
 // Demo only. GitHub Pages hosts this static frontend; the authorized API URL is configured explicitly.
 // No Neon credentials, company identity tokens or internal secrets in the frontend.
-const APP_VERSION="1.9.2";
+const APP_VERSION="1.9.3";
 const $ = id => document.getElementById(id);
 const escapeHtml = s => String(s ?? "").replace(/[&<>"']/g, c =>
   ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -1460,6 +1460,7 @@ function clearOpenedQuote(){
   quote=null;selectedLineId=null;pendingChapterFocus=null;
   if(toolMode==="editLine"){toolMode="line";showTool("line");}
   renderFinancialSettings(); // Clear historic PDF buttons and stale print fields.
+  $("printedArchiveList").innerHTML='<p class="hint">Apri un preventivo per vedere le stampe.</p>';
   renderQuote();renderGeneralQuote();renderQuoteChapterSummary();
   void refreshBimCad();
   showStep("general",true);
@@ -1498,16 +1499,70 @@ async function openQuote(id){
     $("chapterFilter").value="all";
   }
   renderFinancialSettings();renderQuote();renderGeneralQuote();renderQuoteChapterSummary();
+  void refreshPrintedArchive();
+}
+let lastPrintRequest=null;
+function printRequestKey(revision){
+  return quote.id+":"+(revision??"draft");
+}
+function savePdfToBrowser(pdf,name){
+  const url=URL.createObjectURL(pdf),a=document.createElement("a");
+  a.href=url;a.download=name;
+  a.click();setTimeout(()=>URL.revokeObjectURL(url),1200);
+}
+async function refreshPrintedArchive(){
+  const host=$("printedArchiveList");
+  if(!quote){
+    host.innerHTML='<p class="hint">Apri un preventivo per vedere le stampe.</p>';
+    return;
+  }
+  const ids={quote:quote.id,company:companyId};
+  try{
+    const prints=await request("/api/quotes/"+ids.quote+"/prints?companyId="+ids.company);
+    if(!quote||quote.id!==ids.quote||companyId!==ids.company)return;
+    host.innerHTML=prints.length?prints.map(doc=>
+      '<div class="printed-archive-row"><div><b>'+
+      escapeHtml(doc.fileName)+'</b><div class="hint">'+
+      escapeHtml(new Date(doc.createdAt).toLocaleString("it-IT"))+
+      ' · '+escapeHtml(doc.sourceKind==="revision"?
+          "Revisione "+doc.revisionNumber:"Bozza al momento della stampa")+
+      ' · '+escapeHtml(doc.lengthBytes)+" byte"+
+      '</div><div class="hint">ID documento: <code>'+escapeHtml(doc.id)+
+      '</code> · SHA-256 '+escapeHtml(doc.pdfSha256.slice(0,16))+'…</div></div>'+
+      '<button type="button" data-print-download="'+escapeHtml(doc.id)+
+      '" data-print-filename="'+escapeHtml(doc.fileName)+'">Apri PDF archiviato</button>'+
+      '<button type="button" data-print-copy="'+escapeHtml(doc.id)+
+      '">Copia ID</button></div>').join(""):
+      '<p class="hint">Nessuna stampa archiviata per questo preventivo.</p>';
+  }catch(error){
+    host.textContent="Impossibile leggere le stampe archiviate: "+error.message;
+  }
+}
+async function downloadStoredPdf(id,fileName){
+  if(!quote)throw Error("Apri un preventivo.");
+  const path="/api/prints/"+id+"/pdf?companyId="+companyId;
+  const pdf=await request(path); // GET with bounded Render wake-up retry
+  savePdfToBrowser(pdf,fileName);
 }
 async function downloadPdf(revision){
-  if(!quote)return;
-  const postfix=revision?"&revision="+revision:"";
-  const pdf=await request("/api/quotes/"+quote.id+"/pdf?companyId="+companyId+postfix);
-  const url=URL.createObjectURL(pdf);const a=document.createElement("a");
-  a.href=url;a.download=quote.reference+(revision?"-r"+revision:"")+
-    (accessMeta?.storage==="postgres"?"":"-DEMO")+".pdf";a.click();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  if(!quote)throw Error("Apri un preventivo.");
+  const currentKey=printRequestKey(revision);
+  if(!lastPrintRequest||lastPrintRequest.key!==currentKey)
+    lastPrintRequest={key:currentKey,id:crypto.randomUUID()};
+  const requestedId=lastPrintRequest.id;
+  // Never retry POST automatically. The UUID makes a deliberate later retry
+  // idempotent even if the original response was lost on Render cold start.
+  const doc=await request("/api/quotes/"+quote.id+"/prints",
+    json("POST",{companyId,requestId:requestedId,revision:revision??null}));
+  if(doc.requestId!==requestedId || doc.quoteId!==quote.id ||
+     doc.companyId!==companyId)
+    throw Error("Conferma della stampa non coerente con il preventivo.");
+  lastPrintRequest=null;
+  status("Stampa salvata su Neon con ID "+doc.id+"; download in corso.");
+  await refreshPrintedArchive();
+  await downloadStoredPdf(doc.id,doc.fileName);
 }
+
 async function pricePreview(){
   await save();
   const plan=await request("/api/quotes/"+quote.id+"/price-preview?companyId="+companyId);
@@ -2000,6 +2055,15 @@ $("printSaveSetup").onclick=()=>guard(async()=>{
 });
 $("pdf").onclick=()=>guard(async()=>{await save();await downloadPdf()});
 $("revisions").onclick=e=>{const b=e.target.closest("[data-historic]");if(b)guard(()=>downloadPdf(Number(b.dataset.historic)))};
+$("printedArchiveList").onclick=e=>guard(async()=>{
+  const download=e.target.closest("[data-print-download]");
+  if(download){
+    await downloadStoredPdf(download.dataset.printDownload,
+      download.dataset.printFilename);return;
+  }
+  const copy=e.target.closest("[data-print-copy]");
+  if(copy)await navigator.clipboard.writeText(copy.dataset.printCopy);
+});
 showTool("line");
 $("import").onclick=()=>guard(async()=>{
   if(!quote)throw Error("Apri una bozza");
