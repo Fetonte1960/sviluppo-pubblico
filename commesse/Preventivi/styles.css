@@ -290,3 +290,16 @@
 .prices-table td:nth-child(5){white-space:nowrap}
 .prices-table td:last-child{white-space:nowrap;text-align:right}
 .prices-table button{padding:7px 12px}
+
+/* V1.8.4: independent chapter totals in the Chapters workspace. */
+.chapter-totals-scroll{max-width:100%;overflow:auto;border:1px solid #d7e2ed;border-radius:8px}
+.chapter-totals-table{min-width:980px;width:100%;border-collapse:collapse}
+.chapter-totals-table th{position:sticky;top:0;background:#eaf1f8;color:#294665;z-index:1}
+.chapter-totals-table td,.chapter-totals-table th{padding:10px 8px;vertical-align:middle;border-bottom:1px solid #e0e8ef}
+.chapter-totals-table td:first-child{min-width:250px}
+.chapter-totals-table td:nth-child(3){min-width:170px;white-space:nowrap}
+.chapter-totals-table td:nth-child(4){min-width:135px}
+.chapter-totals-table td:nth-child(5){min-width:210px}
+.chapter-totals-table input{font-size:.84rem;padding:7px}
+.chapter-totals-table tr:nth-child(even){background:#f9fbfd}
+.chapter-totals-table button{white-space:nowrap}
