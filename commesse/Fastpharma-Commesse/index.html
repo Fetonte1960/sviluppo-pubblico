@@ -1,4 +1,4 @@
-<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gestione Commesse V4.3.0 · FastPharma TEST</title>
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gestione Commesse V4.4.0 · FastPharma TEST</title>
 <style>body{font:15px system-ui,sans-serif;background:#f2f6f8;color:#203648;margin:0}header{background:#163849;color:white;padding:22px max(20px,calc((100% - 1100px)/2))}main{max-width:1100px;margin:26px auto;padding:0 16px}a{color:#116b74}header a{color:#c8e8df;margin-right:20px}section{background:white;padding:22px;border:1px solid #e1e8ed;border-radius:12px;margin:15px 0}h1{margin:0 0 6px}h2{font-size:19px}.muted{color:#687b87}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}.metric{padding:14px;background:#edf5f7;border-radius:9px}.metric b{display:block;font-size:20px}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid #e5edf0;padding:9px;text-align:left}label{display:block;margin:9px 0;font-size:13px;font-weight:600}input,select,textarea{display:block;width:100%;max-width:500px;padding:9px;margin-top:5px;box-sizing:border-box}button{background:#087d78;color:white;border:0;border-radius:7px;padding:10px 14px;cursor:pointer}.warn{padding:12px;background:#fff0d9;border-left:4px solid #d58e14}.bad{color:#aa2834}.good{color:#168057}.test{font-weight:bold;background:#ffe8ad;color:#5b3b00;padding:5px 10px;border-radius:6px}.inline{display:inline}.inline button{font-size:12px;padding:5px 8px}@media(max-width:700px){table{display:block;overflow-x:auto}}
 /* Solo cornice della specifica offline, l'interfaccia V4 conserva lo stile originale. */
 .demo-ribbon{background:#f8edd6;color:#6b4900;padding:10px 20px;text-align:center;font:600 13px system-ui,sans-serif;border-bottom:1px solid #e6d5ab}
@@ -69,7 +69,6 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 .step-tab{background:#e1e8f2;color:#324960;border-radius:7px 7px 0 0;padding:12px 22px;font-size:.96rem}
 .step-tab.active{background:#fff;color:#164875;border-bottom:3px solid #1773a6;box-shadow:0 -1px 3px #152e4514}
 .step-tab:disabled{background:#d9dce2;color:#8a97a4;border-bottom:0;opacity:1}
-.commesse-selection-note{font-size:.83rem;color:#65798b;margin-bottom:9px}
 #page>main{max-width:none;margin:0;padding:0}
 #page section{border:1px solid #d7e2ed;border-radius:8px;padding:15px;background:#fff;margin:12px 0}
 #page h1{font-size:1.13rem;letter-spacing:0;margin:6px 0 12px}
@@ -194,6 +193,19 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 #page .snapshot-empty{padding:18px;color:#647589;font-size:.86rem}
 #page .snapshot-note{font-size:.81rem;color:#66798b}
 @media(max-width:860px){#page .identity-grid{grid-template-columns:1fr}}
+
+/* V4.4.0: comandi PDF contestuali (documenti, non preventivi) */
+#page .document-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+#page .document-actions h2{margin:0;font-size:1rem}
+#page .document-actions .document-buttons{display:flex;gap:9px;flex-wrap:wrap}
+#page .document-actions button{padding:10px 18px}
+#page .document-actions button:disabled{background:#d9dce2;color:#8a97a4;opacity:1;cursor:not-allowed}
+#page .document-actions .document-hint{flex:1 1 340px;font-size:.82rem;margin:0;color:#5e7182}
+#page .document-source-panel{width:100%;margin-top:8px;border-top:1px solid #dce5ef;padding-top:12px}
+#page .document-source-panel h3{font-size:.94rem;margin:5px 0 8px}
+#page .document-source-panel table{width:100%;font-size:.82rem}
+#page .document-source-panel td,#page .document-source-panel th{vertical-align:top}
+#page .document-source-panel .document-draft-note{color:#6a6470;font-size:.82rem}
 </style></head><body>
 
 <div id="commesse-auth">
@@ -206,7 +218,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 </div>
 <div id="commesse-app" hidden>
 <header class="compact-header">
-  <strong class="brand-version">Gestione Commesse — <span id="commesse-version">V4.3.0</span> <small>TEST</small></strong>
+  <strong class="brand-version">Gestione Commesse — <span id="commesse-version">V4.4.0</span> <small>TEST</small></strong>
   <span id="currentProjectHeader">Commessa in elaborazione: nessuna</span>
   <span class="header-actions">
     <button type="button" id="help">Informazioni</button>
@@ -219,7 +231,6 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
     <button id="tab-details" class="step-tab" role="tab" type="button" aria-selected="false" aria-controls="page" disabled>2 · Dati commessa</button>
     <button id="tab-quote" class="step-tab" role="tab" type="button" aria-selected="false" aria-controls="page" disabled>3 · Preventivo</button>
   </nav>
-  <div id="selection-note" class="commesse-selection-note">Seleziona una commessa dalla griglia per abilitare «Dati commessa».</div>
   <nav id="demo-navigation" class="demo-navigation" aria-label="Navigazione interna ai dati della commessa" hidden>
     <button id="demo-back" type="button">← Indietro</button><span id="demo-current"></span>
   </nav>
@@ -232,7 +243,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 <script>
 (function(){
 'use strict';
-const UI_VERSION='4.3.0';
+const UI_VERSION='4.4.0';
 const pages=JSON.parse(document.getElementById('screens').textContent);
 // Archivio originale ricevuto: non convertirne le proposte in requisiti approvati.
 const originalClientAnalysis=JSON.parse(document.getElementById('client-analysis-original').textContent);
@@ -450,9 +461,7 @@ function syncCommessaTabs(page='commesse'){
  view.setAttribute('aria-labelledby',active);
  const label=selected?(currentProjectCaption||('ID '+currentProjectId)):'nessuna';
  document.getElementById('currentProjectHeader').textContent='Commessa in elaborazione: '+label;
- document.getElementById('selection-note').textContent=selected
-  ?'Commessa selezionata: '+label+' · Dati commessa: identificazione; Preventivo: copia in sola lettura.'
-  :'Seleziona una commessa dalla griglia per abilitare le altre schede.';
+ syncDocumentActions();
 }
 function selectCommessa(id,caption=''){
  if(!Number.isSafeInteger(id)||id<=0)return;
@@ -468,6 +477,76 @@ function selectCommessa(id,caption=''){
   if(b){b.textContent=active?'Selezionata':'Seleziona';b.setAttribute('aria-pressed',String(active));}
  }
 }
+
+function syncDocumentActions(){
+ const selected=Number.isSafeInteger(currentProjectId)&&currentProjectId>0;
+ for(const button of view.querySelectorAll('[data-pdf-document]')){
+  button.disabled=!selected;
+  button.title=selected
+   ?'Apri la mappatura delle fonti del contratto PDF (generazione in progettazione)'
+   :'Seleziona prima una commessa nella griglia Generale';
+ }
+ const panel=view.querySelector('#contract-sources');
+ if(panel){
+  if(!selected)panel.hidden=true;
+  else{
+   const context=panel.querySelector('[data-contract-commessa]');
+   if(context)context.textContent=currentProjectCaption||('ID '+currentProjectId);
+  }
+ }
+}
+function buildDocumentActions(){
+ const section=document.createElement('section');section.className='document-actions';
+ const heading=document.createElement('h2');heading.textContent='Documenti PDF';
+ const buttons=document.createElement('div');buttons.className='document-buttons';
+ // Aggiungere qui i futuri artefatti quando le relative specifiche saranno approvate.
+ const definitions=[{id:'contratto',label:'Contratto'}];
+ for(const definition of definitions){
+  const button=document.createElement('button');button.type='button';
+  button.dataset.pdfDocument=definition.id;button.textContent=definition.label;
+  button.disabled=true;
+  button.addEventListener('click',()=>{
+   if(!currentProjectId)return;
+   if(definition.id==='contratto'){
+    const panel=section.querySelector('#contract-sources');
+    panel.hidden=!panel.hidden;
+    syncDocumentActions();
+   }
+  });
+  buttons.append(button);
+ }
+ const hint=document.createElement('p');hint.className='document-hint';
+ hint.textContent='Contratto: stiamo definendo le fonti dei dati. Il comando apre la scheda di analisi; il PDF non viene ancora generato.';
+ const panel=document.createElement('div');panel.id='contract-sources';
+ panel.className='document-source-panel';panel.hidden=true;
+ const h=document.createElement('h3');h.textContent='Contratto — Passo 1: anagrafica delle parti';
+ const selected=document.createElement('p');
+ const bold=document.createElement('strong');bold.textContent='Commessa: ';
+ const context=document.createElement('span');context.dataset.contractCommessa='1';
+ selected.append(bold,context);
+ const table=document.createElement('table');
+ const hr=document.createElement('tr');
+ for(const label of ['Dato del contratto','Fonte da integrare','Verifica da fare']){
+  const th=document.createElement('th');th.textContent=label;hr.append(th);
+ }
+ table.append(hr);
+ const rows=[
+  ['Committente · ragione sociale e P.IVA','Organizzazione Contatti FastPharma','La selezione oggi trasmette solo UUID e nome. Serve lettura anagrafica autorizzata.'],
+  ['Appaltatore · sede, P.IVA e rappresentante','Configurazione aziendale FastPharma','Definire e confermare la scheda unica dell’emittente.'],
+  ['Immobile · indirizzo e disponibilità','Dati specifici della commessa','Non confondere sede del cliente e luogo dei lavori; non presumere affitto o proprietà.']
+ ];
+ for(const row of rows){
+  const tr=document.createElement('tr');
+  for(const text of row){const td=document.createElement('td');td.textContent=text;tr.append(td);}
+  table.append(tr);
+ }
+ const foot=document.createElement('p');foot.className='document-draft-note';
+ foot.textContent='Documento di riferimento: CONTRATTO POASCO.pdf, pagina 1. Il modello non è ancora un contratto pronto da emettere.';
+ panel.append(h,selected,table,foot);
+ section.append(heading,buttons,hint,panel);
+ return section;
+}
+
 function decorateGeneral(){
  const main=view.querySelector('main');if(!main)return;
  main.classList.add('general-screen');
@@ -493,6 +572,8 @@ function decorateGeneral(){
  if(tr)for(const label of ['Selezione','Apri']){
   const th=document.createElement('th');th.textContent=label;tr.append(th);
  }
+ grid.before(buildDocumentActions());
+ syncDocumentActions();
 }
 
 function makeIdentityForm(){
@@ -925,7 +1006,7 @@ async function loadTestData(page){
    const caption=[...main.querySelectorAll('p b')].find(x=>x.textContent.includes('Imponibile:'));
    if(caption)caption.textContent='Imponibile: '+euro(total)+' — IVA: '+euro(vat)+' — Totale: '+euro(total+vat);
   }
-  note.textContent='Archivio Neon TEST collegato · dati salvati permanentemente · accesso con FastPharma Access.';
+  note.remove(); // Eliminato messaggio ridondante: il contenuto è stato caricato correttamente.
  }catch(e){
   if(requestSerial!==renderSerial)return;
   note.textContent='Impossibile leggere l’archivio: '+(e.message||'errore')+
