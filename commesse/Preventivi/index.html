@@ -209,7 +209,7 @@
   </section>
   <dialog id="issuerDialog" class="app-dialog">
     <div class="dialog-title"><h2>Gestione emittenti</h2><button type="button" id="closeIssuer" class="button-secondary">Chiudi</button></div>
-    <p class="hint">Archivio dimostrativo degli emittenti. Seleziona, modifica o crea un emittente.</p>
+    <p class="hint">Seleziona o modifica l'emittente. I dati sono registrati nell'archivio aziendale e acquisiti nei nuovi preventivi.</p>
         <h3 class="general-subheading">Anagrafica emittente</h3>
     <div class="issuer-layout">
       <aside class="issuer-directory">
@@ -221,20 +221,20 @@
       </aside>
       <article class="issuer-editor">
         <h3 id="issuerMode">Anagrafica emittente</h3>
-        <p class="hint">I dati vengono riportati nell'intestazione dei nuovi preventivi. Usa solo informazioni inventate per questa demo.</p>
+        <p class="hint">I dati dell'emittente, compreso il logo, vengono acquisiti nei nuovi preventivi. Per aggiornare un preventivo già aperto usa l'apposito comando della scheda Generale.</p>
         <form id="issuerForm">
           <div class="grid2">
             <label>Ragione sociale / nome emittente *
-              <input id="issuerName" maxlength="160" autocomplete="off" required placeholder="Es. Impresa Gamma — DEMO">
+              <input id="issuerName" maxlength="160" autocomplete="off" required placeholder="Es. Ragione sociale dell'emittente">
             </label>
             <label>Partita IVA / codice fiscale
-              <input id="issuerTaxId" maxlength="40" autocomplete="off" placeholder="Solo dato sintetico">
+              <input id="issuerTaxId" maxlength="40" autocomplete="off" placeholder="Partita IVA o codice fiscale">
             </label>
             <label>Indirizzo e sede *
-              <input id="issuerAddress" maxlength="300" autocomplete="off" required placeholder="Via, numero, città — DEMO">
+              <input id="issuerAddress" maxlength="300" autocomplete="off" required placeholder="Via, numero civico, CAP e città">
             </label>
             <label>Recapiti (telefono, email, PEC)
-              <input id="issuerContact" maxlength="180" autocomplete="off" placeholder="Recapiti dimostrativi">
+              <input id="issuerContact" maxlength="180" autocomplete="off" placeholder="Telefono, email o PEC">
             </label>
           </div>
           <fieldset class="issuer-print-panel">
