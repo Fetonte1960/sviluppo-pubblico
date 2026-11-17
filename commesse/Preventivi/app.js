@@ -1,7 +1,7 @@
 "use strict";
 // Demo only. GitHub Pages hosts this static frontend; the authorized API URL is configured explicitly.
 // No Neon credentials, company identity tokens or internal secrets in the frontend.
-const APP_VERSION="1.7.2";
+const APP_VERSION="1.8.0";
 const $ = id => document.getElementById(id);
 const escapeHtml = s => String(s ?? "").replace(/[&<>"']/g, c =>
   ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -47,7 +47,11 @@ async function loadAccessMetadata(){
       typeof info.oidcToken!=="string"||!info.oidcToken.startsWith("https://")||
       new URL(info.oidcAuthorization).origin!==new URL(info.oidcToken).origin)
      throw Error("Il servizio Preventivi non è configurato per FastPharma Access.");
-   accessMeta=info;return info;
+   accessMeta=info;
+   $("storageDescription").textContent=info.storage==="postgres"
+     ? "Archivio aziendale PostgreSQL Neon: preventivi e progetti sono persistenti e riapribili dopo un riavvio."
+     : "Modalità DEMO: i dati sintetici in RAM possono scomparire dopo il riavvio del servizio.";
+   return info;
   }catch(e){if(attempt===2)throw e;}
  }
  throw Error("Provider FastPharma Access non disponibile.");
@@ -200,7 +204,8 @@ async function request(url, opts={}){
       throw Error("Sessione Preventivi scaduta.");
     }
     if(!response.ok){let t=await response.text();try{t=JSON.parse(t).detail||t}catch{} throw Error(response.status+" "+t);}
-    status("API collegata · modalità DEMO");
+    status("API collegata · "+(accessMeta?.storage==="postgres"?
+       "archivio PostgreSQL Neon":"modalità DEMO RAM"));
     return ["application/pdf","image/png"].some(t=>response.headers.get("content-type")?.includes(t)) ? await response.blob() : await response.json();
   }finally{clearTimeout(timeout)}
 }
@@ -352,7 +357,18 @@ async function recordCrmNote(created){
   try {await Promise.race([note,timeout]);}
   finally {pendingCrmNote=null;}
 }
+function syncQuoteTabs(){
+  const hasQuote=Boolean(quote);
+  for(const id of ["tabChapters","tabBimCad","tabQuote","tabPrices"]){
+    const tab=$(id);
+    tab.disabled=!hasQuote;
+    tab.setAttribute("aria-disabled",String(!hasQuote));
+  }
+  $("closeQuote").disabled=!hasQuote;
+  if(!hasQuote && $("issuerPanel").hidden)showStep("general",true);
+}
 function updateHeaderQuote(){
+  syncQuoteTabs();
   $("appVersion").textContent="V"+APP_VERSION;
   $("infoVersion").textContent="V"+APP_VERSION;
   $("currentQuoteHeader").textContent=quote
@@ -565,6 +581,9 @@ function renderGeneralQuote(){
   updateHeaderQuote();
   document.querySelectorAll("#quoteList [data-open]").forEach(button=>{
     button.setAttribute("aria-current",String(exists&&button.dataset.open===quote.id));
+  });
+  document.querySelectorAll("#quoteList [data-quote-row]").forEach(row=>{
+    row.setAttribute("aria-selected",String(exists&&row.dataset.quoteRow===quote.id));
   });
 }
 async function saveGeneral(){
@@ -866,8 +885,12 @@ async function onBimCadMessage(event){
 }
 window.addEventListener("message",event=>{void onBimCadMessage(event)});
 
-function showStep(which){
-  if(which!=="general"){
+function showStep(which,force=false){
+  if(which!=="general"&&!quote){
+    status("Crea o apri un preventivo da Generale prima di utilizzare questa scheda.",true);
+    return false;
+  }
+  if(!force&&which!=="general"){
     if(creatingIssuer){
       status("Completa o annulla la creazione dell'emittente.",true);
       return false;
@@ -883,7 +906,7 @@ function showStep(which){
       return false;
     }
   }
-  if(which!=="chapters" && templateDirty() &&
+  if(!force&&which!=="chapters" && templateDirty() &&
      !$("chapterPanel").hidden){
     status("Salva o annulla le modifiche al capitolo prima di cambiare scheda.",true);
     return false;
@@ -908,7 +931,14 @@ function showStep(which){
 }
 
 async function refresh(){
-  if(!companyId)return;
+  if(!companyId){
+    catalog=[];prices=[];batches=[];allQuotes=[];recipients=[];chapterTemplates=[];
+    $("quoteList").innerHTML='<tr><td colspan="7" class="empty">Archivio vuoto. Apri Gestione emittente e crea il primo emittente.</td></tr>';
+    $("demoInfo").textContent="Nessun emittente. "+
+      (accessMeta?.storage==="postgres"?"Archivio PostgreSQL Neon attivo.":"Archivio DEMO RAM.");
+    renderGeneralQuote();renderQuoteChapterSummary();
+    return;
+  }
   [catalog,prices,batches,allQuotes,recipients,chapterTemplates]=await Promise.all([
     request("/api/catalog?companyId="+companyId),
     request("/api/prices/"+companyId),
@@ -927,16 +957,18 @@ async function refresh(){
     '<td><b>'+escapeHtml(q.reference)+'</b></td>'+
     '<td>'+escapeHtml(q.issuerName||companies.find(c=>c.id===companyId)?.details.name||"—")+'</td>'+
     '<td>'+escapeHtml(q.recipientName||"—")+
-    (q.recipientOrganizationId?' <span class="muted">CRM</span>':' <span class="muted">DEMO</span>')+'</td>'+
+    (q.recipientOrganizationId?' <span class="muted">CRM</span>':' <span class="muted">MANUALE</span>')+'</td>'+
     '<td>'+escapeHtml(q.subject)+'</td><td>'+escapeHtml(q.status)+'</td>'+
     '<td>'+escapeHtml(q.revisions)+'</td>'+
     '<td><button type="button" data-open="'+escapeHtml(q.id)+'">Apri</button>'+
+    '<button type="button" class="button-danger" data-delete-quote="'+escapeHtml(q.id)+'">Cancella</button>'+
     (selectForCommesse?'<button type="button" data-pick-commesse="'+escapeHtml(q.id)+'">Usa in Commesse</button>':'')+
     '</td></tr>').join("")||
     '<tr><td colspan="7" class="empty">Nessun preventivo disponibile per questo emittente.</td></tr>';
   $("batch").innerHTML=batches.map(b=>'<option value="'+escapeHtml(b.batchId)+'">'+escapeHtml(b.sourceProjectId+" / "+b.sourceRevision)+"</option>").join("");
   $("demoInfo").textContent=allQuotes.length+" preventivi complessivi · "+
-    "Emittente attivo: "+(companies.find(c=>c.id===companyId)?.details.name||"—");
+    "Emittente attivo: "+(companies.find(c=>c.id===companyId)?.details.name||"—")+
+    (accessMeta?.storage==="postgres"?" · PostgreSQL Neon":" · DEMO RAM");
   dossierProject = batches[0]?.sourceProjectId || "farmacia-demo";
   await loadDossier();
   renderCatalog();renderPrices();renderFinancialSettings();
@@ -953,7 +985,7 @@ function renderPrices(){
   $("priceList").innerHTML=catalog.map(w=>{
     const p=prices.find(x=>x.workItemId===w.id)||{};
     return '<div class="priceitem" data-price="'+w.id+'"><b>'+escapeHtml(w.code+" — "+w.title)+'</b>'+
-      '<label>Prezzo vendita DEMO<input data-field="manualSalePrice" type="number" step=".0001" min="0" value="'+value(p.manualSalePrice)+'"></label>'+
+      '<label>Prezzo vendita<input data-field="manualSalePrice" type="number" step=".0001" min="0" value="'+value(p.manualSalePrice)+'"></label>'+
       '<button data-saveprice="'+w.id+'">Aggiorna prezziario</button></div>';
   }).join("");
 }
@@ -1171,6 +1203,36 @@ function collect(){
   return d;
 }
 async function save(){await request("/api/quotes/"+quote.id+"/draft?companyId="+companyId,json("PUT",collect())); await openQuote(quote.id)}
+function clearOpenedQuote(){
+  if(bimCadWindow&&!bimCadWindow.closed)bimCadWindow.close();
+  bimCadWindow=null;bimCadOpen=null;bimCadProjects=[];bimCadTypes=[];
+  quote=null;selectedLineId=null;pendingChapterFocus=null;
+  if(toolMode==="editLine"){toolMode="line";showTool("line");}
+  renderQuote();renderGeneralQuote();renderQuoteChapterSummary();
+  void refreshBimCad();
+  showStep("general",true);
+}
+function closeCurrentQuote(){
+  if(!quote)return;
+  if(!confirm("Chiudere il preventivo "+quote.reference+
+      "? Le modifiche non salvate e gli eventuali disegni BIM-CAD ancora aperti andranno persi."))return;
+  clearOpenedQuote();
+  status("Preventivo chiuso. Selezionane uno dalla scheda Generale.");
+}
+async function deleteQuoteFromArchive(id){
+  const choice=allQuotes.find(item=>item.id===id);
+  if(!choice)throw Error("Preventivo non presente nell'archivio aggiornato.");
+  const message="Cancellare definitivamente il preventivo "+choice.reference+
+    " — "+choice.subject+"?\nEmittente: "+choice.issuerName+"\n"+
+    "Saranno rimossi anche tutte le revisioni, gli allegati e i progetti BIM-CAD associati. "+
+    "Questa operazione non può essere annullata.";
+  if(!confirm(message))return;
+  await request("/api/quotes/"+encodeURIComponent(choice.id)+
+    "?companyId="+encodeURIComponent(choice.companyId),{method:"DELETE"});
+  if(quote?.id===choice.id)clearOpenedQuote();
+  await refresh();
+  status("Preventivo "+choice.reference+" cancellato dall'archivio DEMO.");
+}
 async function openQuote(id){
   const previousId=quote?.id;
   quote=await request("/api/quotes/"+id+"?companyId="+companyId);
@@ -1287,7 +1349,7 @@ $("closeIssuer").onclick=()=>$("issuerDialog").close();
 $("openContacts").onclick=openContactsLegacy;
 $("loadFromContacts").onclick=loadFromContacts;
 $("exitButton").onclick=()=>{
- if(!confirm("Terminare la sessione dimostrativa Preventivi?"))return;
+ if(!confirm("Terminare la sessione Preventivi? Le modifiche non salvate non saranno conservate."))return;
  localStorage.removeItem("preventivi-demo-session");
  demoSession=crypto.randomUUID(); // Old in-memory session is abandoned, never deleted in CRM.
  quote=null;updateHeaderQuote();
@@ -1360,6 +1422,7 @@ $("bimCadGrid").onclick=e=>{
  if(remove)guard(()=>deleteBimCad(remove.dataset.bimcadDelete));
 };
 $("reload").onclick=()=>guard(refresh);
+$("closeQuote").onclick=closeCurrentQuote;
 $("newQuote").onclick=()=>guard(async()=>{
   if(creatingIssuer||issuerIsDirty())
     throw Error("Salva o annulla le modifiche dell'emittente.");
@@ -1394,6 +1457,8 @@ $("newQuote").onclick=()=>guard(async()=>{
   }finally{$("newQuote").disabled=false;}
 });
 $("quoteList").onclick=e=>{
+ const removing=e.target.closest("[data-delete-quote]");
+ if(removing){guard(()=>deleteQuoteFromArchive(removing.dataset.deleteQuote));return;}
  const selected=e.target.closest("[data-pick-commesse]");
  if(selected){guard(()=>chooseForCommesse(selected.dataset.pickCommesse));return;}
  const b=e.target.closest("[data-open]");if(b)guard(async()=>{
