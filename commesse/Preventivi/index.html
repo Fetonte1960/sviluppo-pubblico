@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="it">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Preventivi V1.9.1 — FastPharma Access TEST</title><link rel="stylesheet" href="styles.css?v=1.9.1"></head>
+<title>Preventivi V1.9.2 — FastPharma Access TEST</title><link rel="stylesheet" href="styles.css?v=1.9.2"></head>
 <body>
 <header class="compact-header" hidden>
-  <strong class="brand-version">Preventivi — <span id="appVersion">V1.9.1</span> <small>TEST</small></strong>
+  <strong class="brand-version">Preventivi — <span id="appVersion">V1.9.2</span> <small>TEST</small></strong>
   <span id="currentQuoteHeader">Preventivo in elaborazione: nessuno</span>
   <span class="header-actions">
     <button type="button" id="infoButton" class="button-secondary">Informazioni</button>
@@ -13,7 +13,7 @@
 </header>
 <dialog id="infoDialog" class="app-dialog info-dialog">
  <div class="dialog-title"><h2>Preventivi — informazioni</h2><button type="button" id="closeInfo" class="button-secondary">Chiudi</button></div>
- <p><b>Versione: <span id="infoVersion">V1.9.1</span></b></p>
+ <p><b>Versione: <span id="infoVersion">V1.9.2</span></b></p>
  <p id="storageDescription" class="hint">Frontend GitHub Pages, backend .NET su Render. Modalità archivio in verifica.</p>
  <p id="status" aria-live="polite">Connessione non inizializzata</p>
  <details class="connection-settings"><summary>Connessione demo (avanzate)</summary>
@@ -89,10 +89,10 @@
     <section class="general-document-actions">
       <h3>Gestione del preventivo in elaborazione</h3>
       <div class="actionbar document-buttons">
-        <button type="button" id="save">Salva bozza</button>
-        <button type="button" id="revision">Archivia revisione</button>
-        <button type="button" id="previewPrices">Aggiorna prezzi della bozza…</button>
-        <button type="button" id="pdf">PDF cliente</button>
+        <button type="button" id="save" disabled>Salva bozza</button>
+        <button type="button" id="revision" disabled>Archivia revisione</button>
+        <button type="button" id="previewPrices" disabled>Aggiorna prezzi della bozza…</button>
+        <button type="button" id="pdf" disabled aria-disabled="true">Stampa preventivo</button>
       </div>
       <div class="general-doc-config">
         <details id="commercialDetails">
@@ -129,7 +129,7 @@
             <label><input id="printPoascoPhotos" type="checkbox"> Includi le due immagini originali degli arredi Poasco</label>
           </div>
           <p class="hint">Le fotografie, se associate agli allegati del preventivo, vengono collocate presso la relativa voce. Le impostazioni non modificano prezzi, quantità o struttura.</p>
-          <button type="button" id="printSaveSetup">Salva impostazioni di stampa</button>
+          <button type="button" id="printSaveSetup" disabled>Salva impostazioni di stampa</button>
         </details>
         <details>
           <summary>Revisioni e PDF storici</summary>
@@ -137,7 +137,13 @@
         </details>
       </div>
     </section>
-    <div class="next-step"><button id="goQuote" type="button">Vai a 2 · Capitoli</button></div>
+    <div class="next-step">
+      <button id="issuerApplyToQuote" type="button" class="button-secondary" disabled
+        title="Copia sul preventivo aperto il logo e il piè di pagina dell'emittente salvato">
+        Aggiorna intestazione dal profilo emittente
+      </button>
+      <button id="goQuote" type="button" disabled>Vai a 2 · Capitoli</button>
+    </div>
     <div id="legacyRecipientControls" hidden aria-hidden="true">
           <section class="general-section">
       <h3 class="general-subheading">Anagrafica destinatario</h3>
@@ -231,6 +237,26 @@
               <input id="issuerContact" maxlength="180" autocomplete="off" placeholder="Recapiti dimostrativi">
             </label>
           </div>
+          <fieldset class="issuer-print-panel">
+            <legend>Intestazione e piè di pagina dei preventivi</legend>
+            <label>Indirizzo nel piè di pagina
+              <input id="issuerPrintAddress" maxlength="220"
+                placeholder="Es. MILANO - 20123 - via Mazzini n. 16">
+            </label>
+            <label>Recapiti nel piè di pagina
+              <input id="issuerPrintContact" maxlength="180"
+                placeholder="Es. Tel/Fax 02 36568008">
+            </label>
+            <label>Logo emittente (JPEG, massimo 180 KB)
+              <input id="issuerLogoFile" type="file" accept="image/jpeg">
+            </label>
+            <div class="issuer-logo-box">
+              <img id="issuerLogoPreview" alt="Anteprima logo dell'emittente" hidden>
+              <span id="issuerLogoStatus" class="hint">Nessun logo associato.</span>
+              <button id="issuerLogoClear" type="button" class="button-secondary">Rimuovi logo</button>
+            </div>
+            <p class="hint">Logo e piè di pagina appartengono all'emittente. Nei preventivi esistenti usa «Aggiorna intestazione».</p>
+          </fieldset>
           <div class="actionbar">
             <button id="issuerSave" type="submit">Salva emittente</button>
             <button id="issuerCancel" type="button" class="button-secondary">Annulla modifiche</button>
@@ -463,5 +489,5 @@
     </div>
   </section>
 </main>
-<script src="app.js?v=1.9.1"></script>
+<script src="app.js?v=1.9.2"></script>
 </body></html>
