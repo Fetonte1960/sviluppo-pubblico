@@ -87,7 +87,7 @@ td button{padding:7px 11px}
    <span id="choice">Nessun preventivo selezionato.</span>
    <button type="button" id="confirm" disabled>Crea commessa da questo preventivo</button>
   </div>
-  <p class="hint">La conferma richiede a Gestione Commesse di creare una commessa TEST su Neon con la copia commerciale completa del preventivo. Il preventivo DEMO originale resta temporaneo e non verrà modificato.</p>
+  <p class="hint">Al risveglio di Render le richieste di sola lettura vengono ritentate automaticamente. I preventivi DEMO sono conservati solo in memoria sul server e possono scomparire dopo uno standby o riavvio. La conferma crea una copia permanente in Commesse TEST su Neon.</p>
  </section>
 </div>
 </main>
@@ -130,9 +130,43 @@ function setLoginStatus(message,error=false){
  $("loginStatus").textContent=message;
  $("loginStatus").style.color=error?"#b12626":"#52697d";
 }
+
+const transientStatus=new Set([408,425,429,502,503,504]);
+const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+// Solo richieste GET: è sicuro ritentarle dopo lo standby di Render.
+// Non ritentare mai automaticamente POST di token monouso o creazione commessa.
+async function getWithWake(url,headers,feedback){
+ const maxAttempts=5;
+ for(let attempt=1;attempt<=maxAttempts;attempt++){
+  let response;
+  try{
+   response=await fetch(url,{
+    method:"GET",headers,cache:"no-store",signal:AbortSignal.timeout(35000)
+   });
+  }catch(error){
+   if(attempt===maxAttempts)
+    throw Error("Il servizio Render non risponde dopo "+maxAttempts+
+      " tentativi. Verifica la connessione e riprova senza cambiare il Preferito.");
+   feedback("Risveglio di Render in corso: tentativo "+attempt+" di "+maxAttempts+"…");
+   await sleep(Math.min(2000*attempt,8000));
+   continue;
+  }
+  if(transientStatus.has(response.status)){
+   if(attempt===maxAttempts)
+    throw Error("Servizio Render temporaneamente non disponibile (HTTP "+
+      response.status+") dopo "+maxAttempts+" tentativi.");
+   feedback("Servizio Render in avvio (HTTP "+response.status+
+     "). Nuovo tentativo "+(attempt+1)+" di "+maxAttempts+"…");
+   await sleep(Math.min(2000*attempt,8000));
+   continue;
+  }
+  return response; // 400/401/403 e gli errori applicativi NON sono un risveglio.
+ }
+ throw Error("Servizio Render non disponibile.");
+}
 async function getConfig(){
  if(config)return config;
- const response=await fetch(backendOrigin+"/api/meta",{cache:"no-store",signal:AbortSignal.timeout(25000)});
+ const response=await getWithWake(backendOrigin+"/api/meta",{},setLoginStatus);
  if(!response.ok)throw Error("Servizio Preventivi non disponibile (HTTP "+response.status+").");
  const data=await response.json();
  if(data.authentication!=="openid-connect" || data.oidcClientId!==clientId ||
@@ -179,18 +213,26 @@ async function completeCallback(){
   grant_type:"authorization_code",client_id:clientId,code,
   redirect_uri:redirectUri,code_verifier:saved.verifier
  });
+ // Il codice OAuth è monouso: il POST non viene ritentato automaticamente.
  const response=await fetch(cfg.oidcToken,{
   method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},
-  body,credentials:"omit",cache:"no-store"
+  body,credentials:"omit",cache:"no-store",signal:AbortSignal.timeout(60000)
  });
  const data=await response.json().catch(()=>({}));
  if(!response.ok||typeof data.access_token!=="string")
   throw Error("Token Preventivi non ottenuto ("+(data.error||response.status)+").");
  token=data.access_token;
- const check=await fetch(backendOrigin+"/api/auth/check",{
-  headers:{Authorization:"Bearer "+token},cache:"no-store"
- });
- if(!check.ok)throw Error("Il backend Preventivi ha rifiutato il token ("+check.status+").");
+ // Anche /api/auth/check attraversa il middleware DEMO: servono ENTRAMBI
+ // Authorization e X-Preventivi-Demo-Session. Senza il secondo torna HTTP 400.
+ const check=await getWithWake(backendOrigin+"/api/auth/check",{
+  Authorization:"Bearer "+token,
+  "X-Preventivi-Demo-Session":demoSession()
+ },setLoginStatus);
+ if(!check.ok){
+  if(check.status===401||check.status===403)
+   throw Error("Sessione FastPharma Access non autorizzata (HTTP "+check.status+").");
+  throw Error("Verifica sessione Preventivi non riuscita (HTTP "+check.status+").");
+ }
  $("login").hidden=true;$("workspace").hidden=false;
  // Gestione Commesse deve confermare la finestra e il nonce prima di leggere i dati.
  window.opener.postMessage({type:"fastpharma.quote-picker.ready",nonce},applicationOrigin);
@@ -206,10 +248,9 @@ function demoSession(){
 }
 async function api(path){
  if(!token||!connected)throw Error("Selettore non ancora autorizzato da Commesse.");
- const response=await fetch(backendOrigin+path,{
-  headers:{Authorization:"Bearer "+token,"X-Preventivi-Demo-Session":demoSession()},
-  cache:"no-store",signal:AbortSignal.timeout(45000)
- });
+ const response=await getWithWake(backendOrigin+path,{
+  Authorization:"Bearer "+token,"X-Preventivi-Demo-Session":demoSession()
+ },setStatus);
  if(response.status===401){
   token="";connected=false;$("workspace").hidden=true;$("login").hidden=false;
   $("loginButton").disabled=false;setLoginStatus("Sessione Preventivi scaduta. Accedi di nuovo.",true);
