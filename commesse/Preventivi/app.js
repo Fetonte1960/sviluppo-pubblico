@@ -1,7 +1,7 @@
 "use strict";
 // Demo only. GitHub Pages hosts this static frontend; the authorized API URL is configured explicitly.
 // No Neon credentials, company identity tokens or internal secrets in the frontend.
-const APP_VERSION="1.8.3";
+const APP_VERSION="1.8.4";
 const $ = id => document.getElementById(id);
 const escapeHtml = s => String(s ?? "").replace(/[&<>"']/g, c =>
   ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -742,11 +742,43 @@ function renderQuoteChapterSummary(){
     host.innerHTML='<p class="chapter-preview-empty">Apri o crea un preventivo da Generale.</p>';
     return;
   }
-  host.innerHTML=quote.draft.chapters.length?
-    [...quote.draft.chapters].sort((a,b)=>a.order-b.order).map(c=>
-      '<div class="chapter-summary"><span><b>'+escapeHtml(c.title)+'</b> · '+
-      c.lines.length+' voci</span></div>').join(""):
-    '<p class="chapter-preview-empty">Preventivo ancora senza capitoli. Doppio clic su un capitolo nell’archivio per aggiungerlo.</p>';
+  if(!quote.draft.chapters.length){
+    host.innerHTML='<p class="chapter-preview-empty">Preventivo ancora senza capitoli. Doppio clic su un capitolo nell’archivio per aggiungerlo.</p>';
+    return;
+  }
+  const all=quote.draft.chapters;
+  const anchors=new Set(all.filter(c=>c.documentedSubtotal!=null&&c.lines.length===0&&
+    (c.isGroupTotal||String(c.title).toLowerCase().includes("totale")))
+    .map(c=>c.title.split(" — ")[0]));
+  host.innerHTML='<div class="chapter-totals-scroll"><table class="chapter-totals-table">'+
+    '<thead><tr><th>Capitolo</th><th>Voci</th><th>Totale analitico</th>'+
+    '<th>Totale autonomo (€)</th><th>Fonte / riferimento</th><th>Operazione</th>'+
+    '</tr></thead><tbody>'+
+    [...all].sort((a,b)=>a.order-b.order).map(c=>{
+      const priced=c.lines.filter(l=>l.quantity!=null&&l.saleUnitPrice!=null);
+      const sum=priced.reduce((n,l)=>n+Number(l.quantity)*Number(l.saleUnitPrice),0);
+      const complete=c.lines.length>0&&priced.length===c.lines.length;
+      const group=c.title.split(" — ")[0];
+      const covered=c.lines.length>0&&anchors.has(group);
+      const independent=c.documentedSubtotal;
+      const detail=complete?'Dettaglio: '+fmt(sum):priced.length?
+        fmt(sum)+' (incompleto)':'Non disponibile';
+      const extra=covered?' · incluso nel totale di gruppo':'';
+      return '<tr data-chapter-total="'+escapeHtml(c.id)+'">'+
+        '<td><strong>'+escapeHtml(c.title)+'</strong>'+extra+'</td>'+
+        '<td>'+c.lines.length+'</td>'+
+        '<td>'+detail+'</td>'+
+        '<td><input data-total-amount type="number" step=".01" min="0" '+
+          'aria-label="Totale autonomo '+escapeHtml(c.title)+'" placeholder="Non indicato" '+
+          'value="'+(independent==null?'':escapeHtml(independent))+'"></td>'+
+        '<td><input data-total-source maxlength="240" '+
+          'aria-label="Fonte del totale '+escapeHtml(c.title)+'" '+
+          'placeholder="Contratto, pagina o accordo" '+
+          'value="'+escapeHtml(c.documentedSubtotalSource||"")+'"></td>'+
+        '<td><button type="button" data-save-chapter-total="'+escapeHtml(c.id)+'">Salva totale</button></td></tr>';
+    }).join('')+'</tbody></table></div>'+
+    '<p class="hint">Il totale autonomo è indipendente dal computo delle voci. Il prezzo mancante non vale zero. '+
+    'Se un gruppo ha un totale complessivo, gli importi dei capitoli sottostanti non vengono sommati due volte.</p>';
 }
 async function addTemplateToQuote(id){
   if(chapterAttachBusy)return;
@@ -1181,8 +1213,14 @@ function renderBodyGrid(){
       .reduce((sum,l)=>sum+Number(l.quantity)*Number(l.saleUnitPrice),0);
     const partial=chapter.lines.some(l=>l.quantity==null||l.saleUnitPrice==null);
     const documented=chapter.documentedSubtotal;
+    const group=chapter.title.split(" — ")[0];
+    const coverGroup=d.chapters.some(c=>c.id!==chapter.id&&
+      c.documentedSubtotal!=null&&c.lines.length===0&&
+      (c.isGroupTotal||String(c.title).toLowerCase().includes("totale"))&&
+      c.title.split(" — ")[0]===group);
     const subtotalLabel=documented!=null?
-      'Totale da contratto · '+fmt(documented):
+      'Totale autonomo · '+fmt(documented):
+      coverGroup?'Compreso nel totale di gruppo'+(partial?'':' · Computo '+fmt(valued)):
       partial?(valued>0?'Parziale · '+fmt(valued):'Prezzi non riportati'):fmt(valued);
     rows.push('<tr class="body-chapter-row"><td colspan="4"><b>'+
       escapeHtml(chapter.title)+'</b> <span class="muted">('+
@@ -1462,6 +1500,26 @@ $("recipientNew").onclick=()=>guard(async()=>{
 $("recipientCancel").onclick=renderRecipientForm;
 $("recipientForm").onsubmit=e=>{e.preventDefault();guard(saveRecipient)};
 $("generalSave").onclick=()=>guard(saveGeneral);
+$("quoteChapterSummary").onclick=e=>{
+  const button=e.target.closest("[data-save-chapter-total]");
+  if(!button||!quote)return;
+  guard(async()=>{
+    const chapterId=button.dataset.saveChapterTotal;
+    const row=button.closest("[data-chapter-total]");
+    const raw=row.querySelector("[data-total-amount]").value.trim();
+    const source=row.querySelector("[data-total-source]").value.trim();
+    const amount=raw===""?null:Number(raw);
+    if(amount!==null&&(!Number.isFinite(amount)||amount<0))
+      throw Error("Il totale autonomo deve essere un importo positivo o nullo.");
+    if(amount!==null&&!source)throw Error("Indica la fonte dell'importo autonomo.");
+    const id=quote.id;
+    if(quote)await save();
+    await request("/api/quotes/"+id+"/chapters/"+chapterId+"/total",
+      json("PUT",{companyId,amount,source:amount===null?null:source}));
+    await openQuote(id);
+    status(amount===null?"Totale autonomo rimosso.":"Totale autonomo del capitolo salvato su Neon.");
+  });
+};
 $("templateList").onclick=e=>{
   const button=e.target.closest("[data-template-id]");
   if(button)chooseTemplate(button.dataset.templateId);
