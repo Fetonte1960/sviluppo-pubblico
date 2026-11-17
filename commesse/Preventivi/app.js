@@ -308,6 +308,9 @@ function onCrmMessage(event){
     crmOrganizations=new Map(data.organizations.filter(o=>crmUuid.test(o.id)&&
       typeof o.name==="string"&&o.name.length>0&&o.name.length<=300)
       .map(o=>[o.id,{id:o.id,name:o.name}]));
+    // Il CRM legacy non elimina la scelta del nuovo selettore Access.
+    if(selectedCrmOrganization&&!crmOrganizations.has(selectedCrmOrganization.id))
+      crmOrganizations.set(selectedCrmOrganization.id,selectedCrmOrganization);
     renderCrmOrganizations();
   }
   if(data.type==="fastpharma-preventivi.organization-selected"){
