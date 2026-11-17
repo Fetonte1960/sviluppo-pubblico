@@ -1,4 +1,4 @@
-<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gestione Commesse V4.2.0 · FastPharma TEST</title>
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gestione Commesse V4.3.0 · FastPharma TEST</title>
 <style>body{font:15px system-ui,sans-serif;background:#f2f6f8;color:#203648;margin:0}header{background:#163849;color:white;padding:22px max(20px,calc((100% - 1100px)/2))}main{max-width:1100px;margin:26px auto;padding:0 16px}a{color:#116b74}header a{color:#c8e8df;margin-right:20px}section{background:white;padding:22px;border:1px solid #e1e8ed;border-radius:12px;margin:15px 0}h1{margin:0 0 6px}h2{font-size:19px}.muted{color:#687b87}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}.metric{padding:14px;background:#edf5f7;border-radius:9px}.metric b{display:block;font-size:20px}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid #e5edf0;padding:9px;text-align:left}label{display:block;margin:9px 0;font-size:13px;font-weight:600}input,select,textarea{display:block;width:100%;max-width:500px;padding:9px;margin-top:5px;box-sizing:border-box}button{background:#087d78;color:white;border:0;border-radius:7px;padding:10px 14px;cursor:pointer}.warn{padding:12px;background:#fff0d9;border-left:4px solid #d58e14}.bad{color:#aa2834}.good{color:#168057}.test{font-weight:bold;background:#ffe8ad;color:#5b3b00;padding:5px 10px;border-radius:6px}.inline{display:inline}.inline button{font-size:12px;padding:5px 8px}@media(max-width:700px){table{display:block;overflow-x:auto}}
 /* Solo cornice della specifica offline, l'interfaccia V4 conserva lo stile originale. */
 .demo-ribbon{background:#f8edd6;color:#6b4900;padding:10px 20px;text-align:center;font:600 13px system-ui,sans-serif;border-bottom:1px solid #e6d5ab}
@@ -168,6 +168,32 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 @media(max-width:530px){
  #page .commesse-create-main-row,#page .commesse-extra-fields{grid-template-columns:1fr}
 }
+
+/* Commesse V4.3.0: Generale → Dati commessa → Preventivo */
+#page .create-row-section{display:flex;align-items:center;gap:15px;flex-wrap:wrap}
+#page .create-row-section h2{margin:0;font-size:.99rem}
+#page #newCommessaFromQuote{padding:12px 18px;font-size:.94rem}
+#page .create-row-section .hint{flex:1 1 320px;margin:0}
+#page .identity-card{border:1px solid #d5e3ef;background:#f7fafd}
+#page .identity-grid{display:grid;grid-template-columns:minmax(130px,.7fr) minmax(200px,1.2fr)
+ minmax(200px,1.4fr);gap:12px}
+#page .identity-grid label{margin:0}
+#page .identity-grid input{margin-top:5px}
+#page .identity-meta{font-size:.85rem;color:#425b6b;margin:8px 0}
+#page .identity-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+#page .snapshot-section{min-height:320px}
+#page .snapshot-info{display:flex;gap:15px;flex-wrap:wrap;align-items:center}
+#page .snapshot-chapter{border:1px solid #cfdeea;border-radius:8px;margin:10px 0;overflow:hidden;background:white}
+#page .snapshot-chapter summary{cursor:pointer;background:#eef4f9;padding:12px 14px;
+ font-weight:700;color:#194b70;display:flex;justify-content:space-between;gap:12px}
+#page .snapshot-chapter[open] summary{border-bottom:1px solid #d5e3ed}
+#page .snapshot-chapter .snapshot-table{overflow-x:auto}
+#page .snapshot-chapter table{width:100%;table-layout:auto}
+#page .snapshot-chapter td:nth-child(n+4){white-space:nowrap}
+#page .snapshot-summary{padding:12px;background:#f1f6fb;border-radius:7px}
+#page .snapshot-empty{padding:18px;color:#647589;font-size:.86rem}
+#page .snapshot-note{font-size:.81rem;color:#66798b}
+@media(max-width:860px){#page .identity-grid{grid-template-columns:1fr}}
 </style></head><body>
 
 <div id="commesse-auth">
@@ -180,7 +206,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 </div>
 <div id="commesse-app" hidden>
 <header class="compact-header">
-  <strong class="brand-version">Gestione Commesse — <span id="commesse-version">V4.2.0</span> <small>TEST</small></strong>
+  <strong class="brand-version">Gestione Commesse — <span id="commesse-version">V4.3.0</span> <small>TEST</small></strong>
   <span id="currentProjectHeader">Commessa in elaborazione: nessuna</span>
   <span class="header-actions">
     <button type="button" id="help">Informazioni</button>
@@ -191,6 +217,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
   <nav class="step-tabs" role="tablist" aria-label="Fasi di Gestione Commesse">
     <button id="tab-general" class="step-tab active" role="tab" type="button" aria-selected="true" aria-controls="page">1 · Generale</button>
     <button id="tab-details" class="step-tab" role="tab" type="button" aria-selected="false" aria-controls="page" disabled>2 · Dati commessa</button>
+    <button id="tab-quote" class="step-tab" role="tab" type="button" aria-selected="false" aria-controls="page" disabled>3 · Preventivo</button>
   </nav>
   <div id="selection-note" class="commesse-selection-note">Seleziona una commessa dalla griglia per abilitare «Dati commessa».</div>
   <nav id="demo-navigation" class="demo-navigation" aria-label="Navigazione interna ai dati della commessa" hidden>
@@ -205,7 +232,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 <script>
 (function(){
 'use strict';
-const UI_VERSION='4.2.0';
+const UI_VERSION='4.3.0';
 const pages=JSON.parse(document.getElementById('screens').textContent);
 // Archivio originale ricevuto: non convertirne le proposte in requisiti approvati.
 const originalClientAnalysis=JSON.parse(document.getElementById('client-analysis-original').textContent);
@@ -213,8 +240,8 @@ const view=document.getElementById('page'),toast=document.getElementById('toast'
 const navigation=document.getElementById('demo-navigation');
 const backButton=document.getElementById('demo-back');
 const currentLabel=document.getElementById('demo-current');
-const parentPage={commesse:null,fornitori:'commessa',commessa:'commesse',fattura:'commessa'};
-const pageLabel={commesse:'Commesse',fornitori:'Fornitori',commessa:'Dettaglio commessa',fattura:'Dettaglio fattura'};
+const parentPage={commesse:null,fornitori:'commessa',commessa:'commesse',fattura:'commessa',preventivo:'commesse'};
+const pageLabel={commesse:'Commesse',fornitori:'Fornitori',commessa:'Dati commessa',fattura:'Dettaglio fattura',preventivo:'Preventivo'};
 let toastTimeout;
 function alertDemo(message){toast.textContent=message;toast.style.display='block';clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>toast.style.display='none',4500)}
 function routeFor(href){if(href==='/')return 'commesse';if(href.startsWith('/fornitori'))return 'fornitori';if(href.startsWith('/fattura-attiva'))return 'fattura';if(href.startsWith('/commessa'))return 'commessa';return null}
@@ -383,20 +410,22 @@ let currentInvoiceId=1;
 
 function syncCommessaTabs(page='commesse'){
  const selected=Number.isSafeInteger(currentProjectId)&&currentProjectId>0;
- const second=selected&&page!=='commesse';
- const general=document.getElementById('tab-general'),details=document.getElementById('tab-details');
- details.disabled=!selected;
- for(const [button,active] of [[general,!second],[details,second]]){
-  button.classList.toggle('active',active);
-  button.setAttribute('aria-selected',String(active));
-  button.tabIndex=active?0:-1;
+ const general=document.getElementById('tab-general'),
+   details=document.getElementById('tab-details'),
+   quote=document.getElementById('tab-quote');
+ details.disabled=!selected;quote.disabled=!selected;
+ const active=selected&&page==='preventivo'?'tab-quote':
+  selected&&page!=='commesse'?'tab-details':'tab-general';
+ for(const tab of [general,details,quote]){
+  const on=tab.id===active;tab.classList.toggle('active',on);
+  tab.setAttribute('aria-selected',String(on));tab.tabIndex=on?0:-1;
  }
- view.setAttribute('aria-labelledby',second?'tab-details':'tab-general');
+ view.setAttribute('aria-labelledby',active);
  const label=selected?(currentProjectCaption||('ID '+currentProjectId)):'nessuna';
  document.getElementById('currentProjectHeader').textContent='Commessa in elaborazione: '+label;
  document.getElementById('selection-note').textContent=selected
-  ?'Commessa selezionata: '+label+' · usa «Dati commessa» per il dettaglio.'
-  :'Seleziona una commessa dalla griglia per abilitare «Dati commessa».';
+  ?'Commessa selezionata: '+label+' · Dati commessa: identificazione; Preventivo: copia in sola lettura.'
+  :'Seleziona una commessa dalla griglia per abilitare le altre schede.';
 }
 function selectCommessa(id,caption=''){
  if(!Number.isSafeInteger(id)||id<=0)return;
@@ -416,16 +445,78 @@ function decorateGeneral(){
  const main=view.querySelector('main');if(!main)return;
  main.classList.add('general-screen');
  const h=main.querySelector('h1');if(h)h.textContent='Generale — Gestione Commesse';
- main.querySelector('form[action="/nuova"]')?.closest('section')?.classList.add('create-row-section');
+ const section=main.querySelector('form[action="/nuova"]')?.closest('section');
+ if(section){
+  section.classList.add('create-row-section');
+  const title=document.createElement('h2');title.textContent='Nuova commessa';
+  const button=document.createElement('button');button.id='newCommessaFromQuote';
+  button.type='button';button.textContent='+ Nuova commessa da preventivo';
+  button.onclick=openQuotePicker;
+  const note=document.createElement('p');note.className='hint';
+  note.textContent='Seleziona un preventivo per creare la commessa TEST. I dati identificativi e il corpo del preventivo sono nei due tab successivi.';
+  section.replaceChildren(title,button,note);
+ }
  const grid=main.querySelectorAll(':scope > section')[1];
  if(!grid)return;
  grid.classList.add('grid-main');
  const hint=document.createElement('p');hint.className='selected-hint';
- hint.textContent='Un clic seleziona la commessa; premi «Apri» o fai doppio clic per il dettaglio.';
+ hint.textContent='Seleziona una riga per abilitare i tab successivi; «Apri» apre Dati commessa.';
  grid.querySelector('h2')?.after(hint);
  const tr=grid.querySelector('table tr');
- if(tr)for(const label of ['Selezione','Apri']){const th=document.createElement('th');th.textContent=label;tr.append(th);}
+ if(tr)for(const label of ['Selezione','Apri']){
+  const th=document.createElement('th');th.textContent=label;tr.append(th);
+ }
 }
+
+function makeIdentityForm(){
+ const section=document.createElement('section');section.id='identificativi-commessa';
+ section.className='identity-card';
+ const h=document.createElement('h2');h.textContent='Dati identificativi modificabili';
+ const explanatory=document.createElement('p');explanatory.className='identity-meta';
+ explanatory.textContent='Codice, denominazione, oggetto e associazione Organizzazione sono gli unici campi modificabili. La copia del preventivo non si modifica in Commesse.';
+ const form=document.createElement('form');form.action='/identificativi';
+ const grid=document.createElement('div');grid.className='identity-grid';
+ function add(name,caption,max){
+  const label=document.createElement('label');label.textContent=caption;
+  const input=document.createElement('input');input.name=name;input.type='text';
+  input.required=true;input.maxLength=max;
+  label.append(input);grid.append(label);return input;
+ }
+ add('codice','Codice commessa',120);
+ const customer=add('cliente','Cliente / organizzazione',250);
+ add('titolo','Oggetto della commessa',240);
+ const crm=document.createElement('label');crm.textContent='UUID Organizzazione Contatti';
+ const crmId=document.createElement('input');crmId.name='farmacia_id';crmId.readOnly=true;
+ crmId.placeholder='Non associata';crm.append(crmId);
+ const immutable=document.createElement('p');immutable.className='identity-meta';
+ immutable.id='commessa-noneditable';
+ immutable.textContent='Il riferimento al preventivo e l’imponibile acquisito sono di sola lettura.';
+ const actions=document.createElement('div');actions.className='identity-actions';
+ const choose=document.createElement('button');choose.type='button';
+ choose.textContent='Carica da Contatti';
+ choose.onclick=()=>{
+  const origin=organizationPickerOrigin();
+  if(!origin){alertDemo('FastPharma Access non disponibile.');return;}
+  organizationPickerNonce=newPickerNonce();
+  const url=new URL('/organization-picker',origin);
+  url.searchParams.set('client','commesse');url.searchParams.set('nonce',organizationPickerNonce);
+  organizationPicker=window.open(url.href,'fastpharma-commesse-picker',
+   'width=1100,height=760,resizable=yes,scrollbars=yes');
+  if(!organizationPicker){organizationPickerNonce='';
+   alertDemo('Il browser ha bloccato la finestra Contatti.');}
+  else organizationPicker.focus();
+ };
+ const submit=document.createElement('button');submit.type='submit';
+ submit.textContent='Salva dati identificativi';
+ actions.append(choose,submit);
+ form.append(grid,crm,immutable,actions);
+ customer.addEventListener('input',()=>{
+  crmId.value='';
+  immutable.textContent='Nome cliente modificato: ricollega l’Organizzazione se necessario. Il preventivo non viene modificato.';
+ });
+ section.append(h,explanatory,form);return section;
+}
+
 function decorateData(page){
  if(page==='commesse')return;
  const main=view.querySelector('main');if(!main)return;
@@ -457,6 +548,119 @@ function decorateData(page){
  iframe.setAttribute('referrerpolicy','no-referrer');iframe.setAttribute('loading','lazy');
  iframe.srcdoc=originalClientAnalysis;
  details.append(summary,note,iframe);panel.append(details);main.prepend(panel);
+ if(page==='commessa')main.prepend(makeIdentityForm());
+}
+
+
+function fmtSnapshotNumber(value,money=false){
+ if(value==null||value==='')return '—';
+ const n=Number(value);if(!Number.isFinite(n))return '—';
+ return money?euro(n):n.toLocaleString('it-IT',{maximumFractionDigits:5});
+}
+function quoteText(parent,label,value){
+ const span=document.createElement('span'),strong=document.createElement('strong');
+ strong.textContent=label+': ';span.append(strong,document.createTextNode(value==null||value===''?'—':String(value)));
+ parent.append(span);
+}
+function buildQuoteTab(){
+ const main=document.createElement('main');main.className='snapshot-screen';
+ const title=document.createElement('h1');title.textContent='Preventivo associato — copia di sola lettura';
+ const section=document.createElement('section');section.id='snapshot-content';
+ section.className='snapshot-section';
+ section.textContent='Caricamento copia acquisita in Neon TEST…';
+ main.append(title,section);view.replaceChildren(main);
+}
+async function readQuoteTab(requestSerial){
+ const panel=view.querySelector('#snapshot-content');if(!panel)return;
+ try{
+  const rows=await readList('/api/commesse/'+currentProjectId);
+  if(requestSerial!==renderSerial||!panel.isConnected)return;
+  const project=rows[0];if(!project)throw Error('Commessa non disponibile');
+  panel.replaceChildren();
+  const intro=document.createElement('p');intro.className='snapshot-note';
+  intro.textContent='Corpo commerciale conservato alla creazione della commessa. Non è possibile modificare capitoli, voci o prezzi.';
+  panel.append(intro);
+  const heading=document.createElement('div');heading.className='snapshot-info snapshot-summary';
+  quoteText(heading,'Commessa',project.codice);
+  quoteText(heading,'Preventivo',project.preventivoRiferimento);
+  quoteText(heading,'Cliente',project.cliente);panel.append(heading);
+  let snap;
+  try{snap=typeof project.preventivoSnapshot==='string'
+   ?JSON.parse(project.preventivoSnapshot):project.preventivoSnapshot;}catch{snap=null;}
+  if(!snap||snap.version!=='commesse-quote-v1'||!Array.isArray(snap.chapters)){
+   const warning=document.createElement('p');warning.className='snapshot-empty';
+   warning.textContent='Questa commessa storica non contiene il corpo del preventivo archiviato. È disponibile il solo riferimento commerciale, ove presente. Nessuna ricostruzione presunta.';
+   panel.append(warning);return;
+  }
+  const meta=document.createElement('div');meta.className='snapshot-info';
+  quoteText(meta,'Oggetto',snap.subject);quoteText(meta,'Emittente',snap.issuerName);
+  quoteText(meta,'Stato al momento della copia',snap.status);panel.append(meta);
+  const total=document.createElement('p');total.className='snapshot-summary';
+  total.textContent='Imponibile acquisito: '+fmtSnapshotNumber(snap.taxable,true)+
+   (snap.partial?' · Preventivo con dati parziali':'');
+  panel.append(total);
+  if(!snap.chapters.length){
+   const empty=document.createElement('p');empty.className='snapshot-empty';
+   empty.textContent='Il preventivo selezionato non conteneva capitoli.';
+   panel.append(empty);
+  }
+  for(const [index,ch] of snap.chapters.map((chapter,i)=>({chapter,i}))
+   .sort((a,b)=>Number(a.chapter.order??a.i)-Number(b.chapter.order??b.i))
+   .map((item,i)=>[i,item.chapter])){
+   const details=document.createElement('details');details.className='snapshot-chapter';
+   const summary=document.createElement('summary');
+   const name=document.createElement('span');name.textContent=(index+1)+'. '+(ch.title||'Capitolo');
+   const count=document.createElement('span');
+   const lines=Array.isArray(ch.lines)?ch.lines:[];
+   count.textContent=lines.length+' voci · espandi';
+   summary.append(name,count);details.append(summary);
+   if(ch.notes){
+    const note=document.createElement('p');note.className='snapshot-note';
+    note.style.padding='6px 14px';note.textContent=ch.notes;details.append(note);
+   }
+   const wrap=document.createElement('div');wrap.className='snapshot-table';
+   const table=document.createElement('table'),thead=document.createElement('thead');
+   const tr=document.createElement('tr');
+   for(const heading of ['Codice','Descrizione','U.M.','Quantità','Prezzo unitario','Importo','Note']){
+    const th=document.createElement('th');th.textContent=heading;tr.append(th);
+   }
+   thead.append(tr);table.append(thead);
+   const body=document.createElement('tbody');let subtotal=0,priced=0;
+   for(const item of lines){
+    const quantity=item.quantity==null?null:Number(item.quantity);
+    const price=item.saleUnitPrice==null?null:Number(item.saleUnitPrice);
+    const valid=quantity!==null&&price!==null&&Number.isFinite(quantity)&&Number.isFinite(price);
+    const amount=valid?quantity*price:null;
+    if(valid){subtotal+=amount;priced++;}
+    const row=document.createElement('tr');
+    for(const value of [item.code||'—',item.description||'—',item.unit||'—',
+      fmtSnapshotNumber(quantity),fmtSnapshotNumber(price,true),
+      fmtSnapshotNumber(amount,true),item.notes||'']){
+      const td=document.createElement('td');td.textContent=String(value);row.append(td);
+    }
+    body.append(row);
+   }
+   if(!lines.length){
+    const row=document.createElement('tr'),td=document.createElement('td');
+    td.colSpan=7;td.textContent='Nessuna voce in questo capitolo.';row.append(td);body.append(row);
+   }
+   table.append(body);wrap.append(table);details.append(wrap);
+   const footer=document.createElement('p');footer.className='snapshot-note';
+   footer.style.padding='0 14px 10px';
+   footer.textContent='Somma delle voci valorizzate: '+fmtSnapshotNumber(subtotal,true)+
+    (priced<lines.length?' · alcune voci prive di prezzo o quantità':'');
+   details.append(footer);panel.append(details);
+  }
+  const note=document.createElement('p');note.className='snapshot-note';
+  note.textContent='Le somme delle voci possono differire dal totale imponibile per sconti e rettifiche generali. Il contenuto è di sola consultazione.';
+  panel.append(note);
+ }catch(e){
+  if(requestSerial!==renderSerial)return;
+  panel.replaceChildren();
+  const error=document.createElement('p');error.className='snapshot-empty';
+  error.textContent='Impossibile leggere il preventivo archiviato: '+(e.message||'errore');
+  panel.append(error);
+ }
 }
 
 let renderSerial=0;
@@ -560,6 +764,7 @@ async function loadTestData(page){
  if(!authToken)return;
  const requestSerial=++renderSerial;
  const main=view.querySelector('main');if(!main)return;
+ if(page==='preventivo'){await readQuoteTab(requestSerial);return;}
  const note=document.createElement('p');note.className='demo-cloud-status';
  note.textContent='Caricamento dati persistenti da Neon TEST…';main.prepend(note);
  try{
@@ -605,8 +810,23 @@ async function loadTestData(page){
     'fornitore',data.map(x=>x.id));
   }else if(page==='commessa'){
    const base='/api/commesse/'+currentProjectId;
-   const quadro=(await readList(base+'/quadro'))[0];
-   if(!quadro)throw Error('Commessa non trovata');
+   const [identificativi,quadroRows]=await Promise.all([readList(base),readList(base+'/quadro')]);
+   const identity=identificativi[0],quadro=quadroRows[0];
+   if(!identity||!quadro)throw Error('Commessa non trovata');
+   const identityForm=main.querySelector('form[action="/identificativi"]');
+   if(identityForm){
+    for(const field of ['codice','cliente','titolo']){
+     const input=identityForm.querySelector('[name="'+field+'"]');
+     if(input)input.value=String(identity[field]||'');
+    }
+    const crm=identityForm.querySelector('[name="farmacia_id"]');
+    if(crm)crm.value=identity.farmaciaCrmId||'';
+    const meta=identityForm.querySelector('#commessa-noneditable');
+    if(meta)meta.textContent='Preventivo: '+
+      (identity.preventivoRiferimento||'non disponibile: commessa storica')+
+      ' · imponibile acquisito: '+euro(identity.ricaviPrevisti)+
+      ' · entrambi non modificabili.';
+   }
    const paths=['/voci','/offerte','/varianti','/sal','/fatture-passive','/fatture-attive',
     '/attivita','/documenti'];
    const extra=['/api/fornitori','/api/v4/commesse/'+currentProjectId+'/affidamenti',
@@ -764,7 +984,10 @@ window.addEventListener('message',event=>{
  if(d?.type!=='fastpharma.organization-selected'||d.nonce!==organizationPickerNonce)return;
  if(typeof d.id!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(d.id))return;
  if(typeof d.name!=='string'||!d.name.trim()||d.name.length>250)return;
- const field=view.querySelector('input[name="cliente"]'),idField=view.querySelector('input[name="farmacia_id"]');
+ const field=view.querySelector('form[action="/identificativi"] input[name="cliente"]')||
+   view.querySelector('form[action="/nuova"] input[name="cliente"]');
+ const idField=view.querySelector('form[action="/identificativi"] input[name="farmacia_id"]')||
+   view.querySelector('form[action="/nuova"] input[name="farmacia_id"]');
  if(!field||!idField)return;
  field.value=d.name.trim();idField.value=d.id;
  const form=view.querySelector('form[action="/nuova"]');
@@ -792,138 +1015,94 @@ window.addEventListener('message',event=>{
    i preventivi DEMO sono su backend separato e non su Neon. */
 const preventiviUrl='https://fetonte1960.github.io/sviluppo-pubblico/commesse/Preventivi/';
 let preventiviPicker=null,preventiviNonce='',preventiviReady=false;
-function decoratePreventivi(page){
- if(page!=='commesse')return;
- const main=view.querySelector('main');
- const form=main?.querySelector('form[action="/nuova"]');
- if(!form)return;
- const title=form.closest('section')?.querySelector('h2');
- if(title)title.textContent='Nuova commessa';
- const getLabel=name=>form.querySelector('[name="'+name+'"]')?.closest('label');
- const codeLabel=getLabel('codice'),clientLabel=getLabel('cliente'),
-       crmIdLabel=getLabel('farmacia_id'),subjectLabel=getLabel('titolo'),
-       revenueLabel=getLabel('ricavi');
- const submit=form.querySelector('button:not([type]),button[type="submit"]');
- if(!codeLabel||!clientLabel||!crmIdLabel||!subjectLabel||!revenueLabel||!submit)return;
- const subjectText=subjectLabel.firstChild;
- if(subjectText?.nodeType===Node.TEXT_NODE)subjectText.textContent='Oggetto della nuova commessa';
- const row=document.createElement('div');row.className='commesse-create-main-row';
- const quoteLabel=document.createElement('label');
- quoteLabel.className='commesse-quote-field';
- quoteLabel.textContent='Preventivo selezionato';
- const select=document.createElement('select');
- select.id='commesse-quote-select';select.disabled=true;
- select.title='Il preventivo si seleziona tramite Carica da Preventivi';
- select.add(new Option('— Carica da Preventivi —',''));
- quoteLabel.append(select);
- const choose=document.createElement('button');
- choose.type='button';choose.id='loadFromQuotes';choose.textContent='Carica da Preventivi';
- choose.className='button-secondary';
- choose.addEventListener('click',()=>{
-  preventiviNonce=newPickerNonce();preventiviReady=false;
-  const url=new URL('selettore.html',preventiviUrl);
-  url.searchParams.set('client','commesse');url.searchParams.set('nonce',preventiviNonce);
-  preventiviPicker=window.open(url.href,'fastpharma-preventivi-selettore',
-    'width=1180,height=820,resizable=yes,scrollbars=yes');
-  if(!preventiviPicker){
-    preventiviNonce='';
-    alertDemo('Popup bloccato: consenti le finestre emergenti per il selettore Preventivi.');
-  }else{
-    preventiviPicker.focus();
-    alertDemo('Seleziona un preventivo nella finestra specializzata FastPharma Access.');
-  }
- });
- const open=document.createElement('a');
- open.href=preventiviUrl;open.target='_blank';open.rel='noopener noreferrer';
- open.className='commesse-quote-open';open.textContent='Apri Preventivi';
- submit.textContent='+ Nuova commessa';submit.type='submit';
- row.append(codeLabel,quoteLabel,choose,open,subjectLabel,submit);
- const more=document.createElement('details');more.className='commesse-create-extra';
- more.id='new-commessa-details';
- const summary=document.createElement('summary');
- summary.textContent='Altri dati della nuova commessa · cliente, ricavi e collegamento Contatti';
- const fields=document.createElement('div');fields.className='commesse-extra-fields';
- fields.append(clientLabel,crmIdLabel,revenueLabel);
- more.append(summary,fields);
- const notice=document.createElement('p');
- notice.className='quote-client-note';notice.id='quote-client-note';
- notice.textContent='Seleziona un preventivo per compilare destinatario, oggetto e ricavi. '+
-  'La commessa viene salvata in Neon soltanto premendo «Nuova commessa».';
- const hidden=[];
- for(const field of ['preventivo_id','preventivo_riferimento','preventivo_snapshot']){
-  const input=document.createElement('input');
-  input.type='hidden';input.name=field;hidden.push(input);
+
+let commessaCreationPending=false;
+function openQuotePicker(){
+ if(commessaCreationPending){
+  alertDemo('Creazione della commessa già in corso. Attendi la risposta del server TEST.');
+  return;
  }
- form.replaceChildren(row,notice,more,...hidden);
- form.addEventListener('invalid',()=>{
-  // Un campo required collocato nei dettagli deve essere mostrato prima della correzione.
-  more.open=true;
- },true);
- const clear=()=>{
-  for(const field of ['preventivo_id','preventivo_riferimento','preventivo_snapshot']){
-   const input=form.querySelector('[name="'+field+'"]');if(input)input.value='';
-  }
-  select.replaceChildren(new Option('— Carica da Preventivi —',''));
-  notice.textContent='Dati destinatario/ricavi modificati: per mantenere il collegamento al preventivo selezionalo nuovamente.';
- };
- // Il titolo della commessa è modificabile senza perdere il collegamento al preventivo.
- for(const field of ['cliente','ricavi']){
-  form.querySelector('[name="'+field+'"]')?.addEventListener('input',clear);
+ preventiviNonce=newPickerNonce();preventiviReady=false;
+ const url=new URL('selettore.html',preventiviUrl);
+ url.searchParams.set('client','commesse');url.searchParams.set('nonce',preventiviNonce);
+ preventiviPicker=window.open(url.href,'fastpharma-preventivi-selettore',
+  'width=1180,height=820,resizable=yes,scrollbars=yes');
+ if(!preventiviPicker){
+  preventiviNonce='';alertDemo('Popup bloccato: abilita finestre emergenti per il selettore.');
+ }else{
+  preventiviPicker.focus();
+  alertDemo('Scegli un preventivo: la conferma nel selettore creerà la commessa TEST.');
  }
 }
-window.addEventListener('message',event=>{
- if(event.origin!==new URL(preventiviUrl).origin||event.source!==preventiviPicker||!preventiviNonce)return;
+window.addEventListener('message',async event=>{
+ if(event.origin!==new URL(preventiviUrl).origin ||
+    event.source!==preventiviPicker||!preventiviNonce)return;
  const d=event.data;
  if(d?.type==='fastpharma.quote-picker.ready'&&d.nonce===preventiviNonce){
   preventiviPicker.postMessage({type:'fastpharma.quote-picker.ack',nonce:preventiviNonce},event.origin);
-  preventiviReady=true;
+  preventiviReady=true;return;
+ }
+ if(!preventiviReady||d?.type!=='fastpharma-commesse.quote-selected'||
+    d.nonce!==preventiviNonce||commessaCreationPending)return;
+ if(typeof d.id!=='string'||!/^[0-9a-f-]{36}$/i.test(d.id)||
+    typeof d.reference!=='string'||d.reference.length>160||
+    typeof d.subject!=='string'||!d.subject.trim()||d.subject.length>240||
+    typeof d.recipientName!=='string'||!d.recipientName.trim()||
+    d.recipientName.length>250||typeof d.taxable!=='number'||
+    !Number.isFinite(d.taxable)||d.taxable<0||d.taxable>999999999999||
+    !d.snapshot||d.snapshot.version!=='commesse-quote-v1'||
+    d.snapshot.id!==d.id||d.snapshot.reference!==d.reference||
+    !Array.isArray(d.snapshot.chapters)){
+  alertDemo('Selezione del preventivo incompleta: nessuna commessa creata.');
   return;
  }
- if(!preventiviReady||d?.type!=='fastpharma-commesse.quote-selected'||d.nonce!==preventiviNonce)return;
- if(typeof d.id!=='string'||d.id.length>160||typeof d.reference!=='string'||d.reference.length>160)return;
- if(typeof d.subject!=='string'||d.subject.length>240||
-    typeof d.recipientName!=='string'||d.recipientName.length>250)return;
- if(typeof d.taxable!=='number'||!Number.isFinite(d.taxable)||d.taxable<0||d.taxable>999999999999)return;
- const form=view.querySelector('form[action="/nuova"]');
- if(!form)return;
- for(const [name,value] of Object.entries({cliente:d.recipientName,titolo:d.subject,ricavi:String(d.taxable),
-   preventivo_id:d.id,preventivo_riferimento:d.reference,
-   preventivo_snapshot:JSON.stringify({
-      id:d.id,reference:d.reference,subject:d.subject,
-      recipientName:d.recipientName,taxable:d.taxable,
-      source:'Preventivi-DEMO',partial:!!d.partial
-   })
- })){
-  const control=form.querySelector('[name="'+name+'"]');if(control)control.value=value;
+ const snapshotText=JSON.stringify(d.snapshot);
+ if(snapshotText.length>1024*1024){
+  alertDemo('Il corpo del preventivo supera 1 MB: nessuna commessa creata.');
+  return;
  }
- const note=view.querySelector('#quote-client-note');
- if(note)note.textContent='Preventivo '+d.reference+' selezionato (snapshot TEST). Premi «Nuova commessa» per salvarlo in Neon.';
- const quoteField=view.querySelector('#commesse-quote-select');
- if(quoteField)quoteField.replaceChildren(new Option(d.reference+' · '+d.recipientName,d.id,true,true));
- const status=view.querySelector('#crm-client-feedback');
- if(status)status.textContent='Destinatario impostato dal preventivo DEMO. Se diverso dalla farmacia CRM, associa nuovamente l’Organizzazione.';
- const crmName=form.querySelector('[name="cliente"]');
- const crmId=form.querySelector('[name="farmacia_id"]');
- if(crmId&&crmId.value)crmId.value='';
- preventiviNonce='';preventiviPicker=null;preventiviReady=false;
- alertDemo('Preventivo '+d.reference+' caricato: dati pronti per il salvataggio.');
+ // Blocca ogni ripetizione dell'evento prima di inviare la richiesta POST.
+ commessaCreationPending=true;preventiviNonce='';preventiviReady=false;
+ const createButton=view.querySelector('#newCommessaFromQuote');
+ if(createButton)createButton.disabled=true;
+ try{
+  const response=await apiCall('/api/v4/save/nuova',{
+   method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({
+    preventivo_id:d.id,preventivo_riferimento:d.reference,
+    preventivo_snapshot:snapshotText
+   })
+  });
+  const result=await response.json();
+  if(!response.ok||!result.saved||!Number.isSafeInteger(Number(result.id)))
+   throw Error(result.error||'Creazione della commessa non confermata dal backend.');
+  currentProjectId=Number(result.id);
+  currentProjectCaption=String(result.codice||('ID '+currentProjectId))+' — '+d.subject;
+  alertDemo('Commessa creata in Neon TEST dal preventivo '+d.reference+'.');
+  goTo('commessa');
+ }catch(error){
+  alertDemo('Creazione NON confermata: '+(error.message||'errore')+
+   '. Controlla l’archivio prima di ripetere, per evitare duplicazioni.');
+ }finally{
+  commessaCreationPending=false;preventiviPicker=null;
+  if(createButton?.isConnected)createButton.disabled=false;
+ }
 });
 
 function show(page,scrollTop=true){
- if(!pages[page])page='commesse';
+ if(page!=='preventivo'&&!pages[page])page='commesse';
  if(page!=='commesse'&&(!Number.isSafeInteger(currentProjectId)||currentProjectId<=0)){
-   page='commesse';
-   alertDemo('Seleziona prima una commessa nella scheda Generale.');
+  page='commesse';alertDemo('Seleziona prima una commessa nella scheda Generale.');
  }
- view.innerHTML=pages[page];
- decorateClienteField(page);
- decoratePreventivi(page);
- if(page==='commesse')decorateGeneral();else decorateData(page);
- // Conservate integralmente le schermate V4 ricevute.
+ if(page==='preventivo')buildQuoteTab();
+ else {
+  view.innerHTML=pages[page];
+  if(page==='commesse')decorateGeneral();else decorateData(page);
+ }
  view.querySelectorAll('a[href^="/file"]').forEach(a=>{a.dataset.demoFile='1';a.href='#';});
  view.querySelectorAll('input[type="date"]').forEach(i=>{if(i.value)i.value='2026-11-14'});
  const parent=parentPage[page];
- navigation.hidden=page==='commesse'||page==='commessa';
+ navigation.hidden=page==='commesse'||page==='commessa'||page==='preventivo';
  backButton.textContent=parent==='commessa'?'← Torna alla commessa':'← Torna alle commesse';
  currentLabel.textContent=pageLabel[page];
  syncCommessaTabs(page);
@@ -932,7 +1111,7 @@ function show(page,scrollTop=true){
  loadTestData(page);
 }
 function goTo(page){
- if(!pages[page])page='commesse';
+ if(page!=='preventivo'&&!pages[page])page='commesse';
  if(page!=='commesse'&&!currentProjectId){show('commesse');return;}
  if(location.hash.slice(1)===page)show(page);else location.hash=page;
 }
@@ -1015,6 +1194,20 @@ document.addEventListener('submit',async e=>{
  const submit=form.querySelector('[type="submit"],button:not([type])');
  if(submit)submit.disabled=true;
  try{
+  if(kind==='identificativi'){
+   if(!currentProjectId)throw Error('Seleziona una commessa prima di modificare gli identificativi.');
+   const data=Object.fromEntries(new FormData(form));
+   const response=await apiCall('/api/v4/commesse/'+currentProjectId+'/identificativi',{
+    method:'PUT',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(data)
+   });
+   const result=await response.json();
+   if(!response.ok||!result.saved||!result.identificativiOnly)
+    throw Error(result.error||'Salvataggio identificativi non confermato dal server.');
+   currentProjectCaption=data.codice+' — '+data.titolo;
+   alertDemo('Identificativi aggiornati in Neon TEST; preventivo e importi invariati.');
+   show('commessa',false);return;
+  }
   const isUpload=kind==='allega';
   const fields=new FormData(form);
   if(isUpload){
@@ -1042,9 +1235,10 @@ document.addEventListener('submit',async e=>{
 });
 document.getElementById('tab-general').onclick=()=>goTo('commesse');
 document.getElementById('tab-details').onclick=()=>{if(currentProjectId)goTo('commessa');};
+ document.getElementById('tab-quote').onclick=()=>{if(currentProjectId)goTo('preventivo');};
 document.getElementById('commesse-version').textContent='V'+UI_VERSION;
 syncCommessaTabs('commesse');
-document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse TEST: accesso centralizzato tramite FastPharma Access, salvataggi persistenti su Neon. Dati di prova sotto la responsabilità dell’operatore.');
+document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse V4.3.0 TEST: una commessa nasce soltanto dal preventivo. Dati identificativi modificabili, preventivo consultabile in sola lettura per capitoli. Analisi originali del committente preservate in Dati commessa.');
 backButton.addEventListener('click',()=>goTo(parentPage[location.hash.slice(1)]||'commesse'));
 window.addEventListener('hashchange',()=>{if(authToken)show(location.hash.slice(1));});
 // Avvio chiuso: nessuna vista gestionale prima di login().
