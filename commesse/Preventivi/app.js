@@ -1,7 +1,7 @@
 "use strict";
 // Demo only. GitHub Pages hosts this static frontend; the authorized API URL is configured explicitly.
 // No Neon credentials, company identity tokens or internal secrets in the frontend.
-const APP_VERSION="1.8.1";
+const APP_VERSION="1.8.3";
 const $ = id => document.getElementById(id);
 const escapeHtml = s => String(s ?? "").replace(/[&<>"']/g, c =>
   ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -1010,12 +1010,53 @@ function renderCatalog(){
     '<button data-add="'+w.id+'">Aggiungi riga</button></div>').join("");
 }
 function renderPrices(){
-  $("priceList").innerHTML=catalog.map(w=>{
-    const p=prices.find(x=>x.workItemId===w.id)||{};
-    return '<div class="priceitem" data-price="'+w.id+'"><b>'+escapeHtml(w.code+" — "+w.title)+'</b>'+
-      '<label>Prezzo vendita<input data-field="manualSalePrice" type="number" step=".0001" min="0" value="'+value(p.manualSalePrice)+'"></label>'+
-      '<button data-saveprice="'+w.id+'">Aggiorna prezziario</button></div>';
-  }).join("");
+  const host=$("priceList");
+  const search=$("priceSearch").value.trim().toLocaleLowerCase("it");
+  const categoryControl=$("priceCategory");
+  const previousCategory=categoryControl.value;
+  const categories=[...new Set(catalog.map(w=>w.category||"").filter(Boolean))]
+    .sort((a,b)=>a.localeCompare(b,"it"));
+  categoryControl.innerHTML='<option value="">Tutte le categorie</option>'+
+    categories.map(c=>'<option value="'+escapeHtml(c)+'">'+escapeHtml(c)+'</option>').join("");
+  categoryControl.value=categories.includes(previousCategory)?previousCategory:"";
+  const matches=catalog.filter(w=>{
+    if(categoryControl.value&&w.category!==categoryControl.value)return false;
+    return !search||[w.code,w.title,w.description,w.category,w.subcategory]
+      .some(x=>String(x||"").toLocaleLowerCase("it").includes(search));
+  }).sort((a,b)=>
+    String(a.category||"").localeCompare(String(b.category||""),"it")||
+    String(a.subcategory||"").localeCompare(String(b.subcategory||""),"it")||
+    String(a.code||"").localeCompare(String(b.code||""),"it"));
+  $("priceCount").textContent=matches.length+" di "+catalog.length+" voci";
+  if(!matches.length){
+    host.innerHTML='<p class="empty">Nessuna voce del prezziario corrisponde ai filtri.</p>';
+    return;
+  }
+  const priceByWork=new Map(prices.map(p=>[p.workItemId,p]));
+  host.innerHTML='<table class="prices-table"><thead><tr>'+
+    '<th>Codice</th><th>Descrizione</th><th>Categoria</th>'+
+    '<th>Sottocategoria</th><th>U.M.</th><th>Prezzo vendita (€)</th>'+
+    '<th>Azioni</th></tr></thead><tbody>'+
+    matches.map(w=>{
+      const p=priceByWork.get(w.id)||{};
+      const privateItem=w.scope===1||String(w.scope).toLowerCase()==="private";
+      const readonly=privateItem?'':' readonly title="Voce condivisa: classificazione non modificabile dall’emittente"';
+      const currentPrice=p.manualSalePrice==null?'':String(p.manualSalePrice);
+      return '<tr data-price="'+escapeHtml(w.id)+'">'+
+        '<td class="price-code">'+escapeHtml(w.code)+'</td>'+
+        '<td class="price-description" title="'+escapeHtml(w.description||w.title)+'">'+
+          escapeHtml(w.title)+'</td>'+
+        '<td><input data-field="category" aria-label="Categoria '+escapeHtml(w.code)+
+          '" maxlength="100" value="'+escapeHtml(w.category||"")+'"'+readonly+'></td>'+
+        '<td><input data-field="subcategory" aria-label="Sottocategoria '+escapeHtml(w.code)+
+          '" maxlength="120" value="'+escapeHtml(w.subcategory||"")+'"'+readonly+'></td>'+
+        '<td>'+escapeHtml(w.unit||"—")+'</td>'+
+        '<td><input data-field="manualSalePrice" type="number" step=".0001" min="0" '+
+          'aria-label="Prezzo '+escapeHtml(w.code)+'" placeholder="—" value="'+
+          escapeHtml(currentPrice)+'"></td>'+
+        '<td><button type="button" data-saveprice="'+escapeHtml(w.id)+
+          '">Salva</button></td></tr>';
+    }).join('')+'</tbody></table>';
 }
 
 function showSelectedChapter(){
@@ -1139,11 +1180,15 @@ function renderBodyGrid(){
     const valued=chapter.lines.filter(l=>l.quantity!=null&&l.saleUnitPrice!=null)
       .reduce((sum,l)=>sum+Number(l.quantity)*Number(l.saleUnitPrice),0);
     const partial=chapter.lines.some(l=>l.quantity==null||l.saleUnitPrice==null);
+    const documented=chapter.documentedSubtotal;
+    const subtotalLabel=documented!=null?
+      'Totale da contratto · '+fmt(documented):
+      partial?(valued>0?'Parziale · '+fmt(valued):'Prezzi non riportati'):fmt(valued);
     rows.push('<tr class="body-chapter-row"><td colspan="4"><b>'+
       escapeHtml(chapter.title)+'</b> <span class="muted">('+
       chapter.lines.length+' voci)</span></td>'+
-      '<td class="align-right">'+(partial?'Parziale · ':'')+fmt(valued)+'</td>'+
-      '<td>'+(chapter.lines.length===0?'<button type="button" data-remove-chapter="'+
+      '<td class="align-right">'+subtotalLabel+'</td>'+
+      '<td>'+(chapter.lines.length===0&&documented==null?'<button type="button" data-remove-chapter="'+
         escapeHtml(chapter.id)+'" title="Rimuovi solo se vuoto">Rimuovi</button>':'')+'</td></tr>');
     addDocumentRows(chapter.id);
     for(const line of chapter.lines){
@@ -1280,7 +1325,8 @@ async function downloadPdf(revision){
   const postfix=revision?"&revision="+revision:"";
   const pdf=await request("/api/quotes/"+quote.id+"/pdf?companyId="+companyId+postfix);
   const url=URL.createObjectURL(pdf);const a=document.createElement("a");
-  a.href=url;a.download=quote.reference+(revision?"-r"+revision:"")+"-DEMO.pdf";a.click();
+  a.href=url;a.download=quote.reference+(revision?"-r"+revision:"")+
+    (accessMeta?.storage==="postgres"?"":"-DEMO")+".pdf";a.click();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 async function pricePreview(){
@@ -1513,15 +1559,29 @@ $("catalog").onclick=e=>guard(async()=>{
 });
 $("addWork").onclick=()=>guard(async()=>{
   await request("/api/catalog",json("POST",{companyId,code:$("newCode").value,title:$("newTitle").value,
-    unit:$("newUnit").value,category:$("newCategory").value,description:"Voce privata DEMO"}));
+    unit:$("newUnit").value,category:$("newCategory").value,
+    subcategory:$("newSubcategory").value,description:""}));
   await refresh();
 });
+$("priceSearch").oninput=renderPrices;
+$("priceCategory").onchange=renderPrices;
 $("priceList").onclick=e=>guard(async()=>{
-  const b=e.target.closest("[data-saveprice]");if(!b)return;const p=b.closest("[data-price]");
-  const field=f=>number(p.querySelector('[data-field="'+f+'"]').value);
+  const b=e.target.closest("[data-saveprice]");if(!b)return;
+  const row=b.closest("[data-price]");
+  const work=catalog.find(w=>w.id===b.dataset.saveprice);
+  if(!work)throw Error("Voce non trovata nel catalogo.");
+  const isPrivate=work.scope===1||String(work.scope).toLowerCase()==="private";
+  const saleValue=row.querySelector('[data-field="manualSalePrice"]').value.trim();
+  const payload={manualSalePrice:saleValue===""?null:number(saleValue)};
+  if(isPrivate){
+    payload.category=row.querySelector('[data-field="category"]').value.trim();
+    payload.subcategory=row.querySelector('[data-field="subcategory"]').value.trim();
+    if(!payload.category)throw Error("La categoria è obbligatoria.");
+  }
   if(quote)await save();
-  await request("/api/prices/"+companyId+"/"+b.dataset.saveprice,json("PUT",{
-    manualSalePrice:field("manualSalePrice")}));await refresh();
+  await request("/api/prices/"+companyId+"/"+b.dataset.saveprice,json("PUT",payload));
+  await refresh();
+  status("Voce "+work.code+" aggiornata nel prezziario dell'emittente.");
 });
 $("editor").onclick=e=>guard(async()=>{
   const row=e.target.closest("[data-select-line]");
