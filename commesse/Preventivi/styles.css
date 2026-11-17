@@ -331,3 +331,14 @@
 #printSetupDetails{border:1px solid #dae3ec;border-radius:8px;padding:10px 13px}
 @media(max-width:700px){.print-setup-grid{grid-template-columns:1fr}
   .print-setup-grid .print-setup-wide{grid-column:auto}}
+
+/* V1.9.2 - issuer letterhead belonging to the issuer master. */
+.issuer-print-panel{margin:16px 0 12px;border:1px solid #cad8e4;border-radius:8px;padding:12px}
+.issuer-print-panel legend{font-weight:650;color:#234a68;padding:0 6px}
+.issuer-print-panel>label{display:block;margin:8px 0}
+.issuer-print-panel input[type="text"],.issuer-print-panel input:not([type]){width:100%}
+.issuer-logo-box{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:10px 0}
+.issuer-logo-box img{max-width:200px;max-height:115px;object-fit:contain;
+ border:1px solid #dae4ed;background:#fff;border-radius:5px;padding:5px}
+.issuer-logo-box img[hidden]{display:none}
+.general-document-actions button:disabled,.next-step button:disabled{opacity:.48;cursor:not-allowed}
