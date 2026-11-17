@@ -342,3 +342,10 @@
  border:1px solid #dae4ed;background:#fff;border-radius:5px;padding:5px}
 .issuer-logo-box img[hidden]{display:none}
 .general-document-actions button:disabled,.next-step button:disabled{opacity:.48;cursor:not-allowed}
+
+/* V1.9.3: immutable PDF print history */
+.printed-archive-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px;
+  padding:10px 0;border-bottom:1px solid #d8e2e9}
+.printed-archive-row>div{flex:1 1 290px;min-width:0;overflow-wrap:anywhere}
+.printed-archive-row button{flex:0 0 auto;font-size:.79rem}
+#printedArchiveDetails{margin-top:10px}
