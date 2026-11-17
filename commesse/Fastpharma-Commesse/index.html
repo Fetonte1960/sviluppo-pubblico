@@ -264,29 +264,50 @@ const pkceStorageKey='fastpharma.commesse.pkce.v1';
 const oidcRedirectUri=location.origin+location.pathname;
 let oidcMeta=null;
 const pause=(ms)=>new Promise(resolve=>setTimeout(resolve,ms));
-function transientStatus(code){return [429,502,503,504].includes(code);}
+function transientStatus(code){return [408,425,429,502,503,504].includes(code);}
+async function getReadWithWake(url,options={},onProgress=()=>{}){
+ // Retry solo su GET/HEAD idempotenti: nessun doppio POST verso Neon o OAuth.
+ const method=String(options.method||'GET').toUpperCase();
+ if(method!=='GET'&&method!=='HEAD')
+  throw Error('Il risveglio automatico è consentito solo per letture idempotenti.');
+ const maxAttempts=5;
+ for(let attempt=1;attempt<=maxAttempts;attempt++){
+  let response;
+  try{
+   response=await fetch(url,{...options,method,cache:'no-store',
+    signal:AbortSignal.timeout(35000)});
+  }catch(error){
+   if(attempt===maxAttempts)
+    throw Error('Server Render non raggiungibile dopo '+maxAttempts+' tentativi.');
+   onProgress('Risveglio del server Render: nuovo tentativo '+(attempt+1)+' di '+maxAttempts+'…');
+   await pause(Math.min(2000*attempt,8000));continue;
+  }
+  if(transientStatus(response.status)){
+   if(attempt===maxAttempts)
+    throw Error('Server Render temporaneamente indisponibile (HTTP '+
+      response.status+') dopo '+maxAttempts+' tentativi.');
+   onProgress('Server Render in avvio (HTTP '+response.status+
+      '), tentativo '+(attempt+1)+' di '+maxAttempts+'…');
+   await pause(Math.min(2000*attempt,8000));continue;
+  }
+  return response; // Non ritentare 400/401/403: sono errori non dovuti al risveglio.
+ }
+ throw Error('Server Render non disponibile.');
+}
 async function loadOidcMeta(){
  if(oidcMeta)return oidcMeta;
- for(let attempt=0;attempt<2;attempt++){
-  if(attempt)await pause(3000);
-  try{
-   const resp=await fetch(testApi+'/api/meta',{cache:'no-store',signal:AbortSignal.timeout(20000)});
-   if(!resp.ok){if(transientStatus(resp.status))continue;throw Error('HTTP '+resp.status);}
-   const info=await resp.json();
-   if(info.authentication!=='openid-connect'||
-      typeof info.oidcAuthorization!=='string'||
-      typeof info.oidcToken!=='string'||
-      info.oidcClientId!=='fastpharma-commesse')
-     throw Error('Il server Commesse non è ancora configurato come client FastPharma Access.');
-   if(!info.oidcAuthorization.startsWith('https://') ||
-      !info.oidcToken.startsWith('https://'))
-     throw Error('Endpoint FastPharma Access non HTTPS.');
-   oidcMeta=info;return info;
-  }catch(error){
-   if(attempt===1)throw error;
-  }
- }
- throw Error('Server Commesse temporaneamente non disponibile.');
+ const resp=await getReadWithWake(testApi+'/api/meta',{},msg=>authFeedback(msg));
+ if(!resp.ok)throw Error('Server Commesse HTTP '+resp.status);
+ const info=await resp.json();
+ if(info.authentication!=='openid-connect'||
+    typeof info.oidcAuthorization!=='string'||
+    typeof info.oidcToken!=='string'||
+    info.oidcClientId!=='fastpharma-commesse')
+   throw Error('Il server Commesse non è configurato come client FastPharma Access.');
+ if(!info.oidcAuthorization.startsWith('https://')||
+    !info.oidcToken.startsWith('https://'))
+   throw Error('Endpoint FastPharma Access non HTTPS.');
+ oidcMeta=info;return info;
 }
 function base64url(bytes){
  const input=Array.from(bytes,x=>String.fromCharCode(x)).join('');
@@ -324,7 +345,13 @@ async function apiCall(path,options={}){
  if(!authToken)throw Error('Accesso richiesto: usa FastPharma Access');
  const headers=new Headers(options.headers||{});
  headers.set('Authorization','Bearer '+authToken);
- const response=await fetch(testApi+path,{...options,headers,cache:'no-store'});
+ const method=String(options.method||'GET').toUpperCase();
+ // Letture protette anche durante il risveglio Render. Le scritture
+ // POST/PUT/DELETE vengono effettuate UNA sola volta per evitare duplicati.
+ const response=(method==='GET'||method==='HEAD')
+  ?await getReadWithWake(testApi+path,{...options,headers},
+    msg=>alertDemo(msg))
+  :await fetch(testApi+path,{...options,headers,cache:'no-store'});
  if(response.status===401){
   authToken='';
   document.getElementById('commesse-app').hidden=true;
