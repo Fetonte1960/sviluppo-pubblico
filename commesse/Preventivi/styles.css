@@ -318,3 +318,16 @@
 .group-row button{font-size:.76rem;padding:5px 8px}
 #toolGroup .actionbar{display:flex;flex-wrap:wrap;gap:7px;margin:9px 0}
 #toolGroup label{display:block;margin:8px 0}
+
+/* FastPharma printable profile (V1.9.1) */
+.print-setup-grid{display:grid;grid-template-columns:repeat(2,minmax(190px,1fr));
+  gap:10px;margin:14px 0}
+.print-setup-grid label{display:flex;flex-direction:column;gap:4px}
+.print-setup-grid .print-setup-wide{grid-column:span 2}
+.print-setup-grid textarea{min-height:55px;resize:vertical}
+.print-setup-switches{display:flex;flex-wrap:wrap;gap:10px 18px;margin:10px 0 14px}
+.print-setup-switches label{display:flex;gap:6px;align-items:center;font-size:.87rem}
+.print-setup-switches input{width:auto;min-width:0}
+#printSetupDetails{border:1px solid #dae3ec;border-radius:8px;padding:10px 13px}
+@media(max-width:700px){.print-setup-grid{grid-template-columns:1fr}
+  .print-setup-grid .print-setup-wide{grid-column:auto}}
