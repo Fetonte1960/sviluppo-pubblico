@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="it">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Preventivi V1.7.1 — Demo sintetica</title><link rel="stylesheet" href="styles.css"></head>
+<title>Preventivi V1.7.2 — FastPharma Access TEST</title><link rel="stylesheet" href="styles.css"></head>
 <body>
-<header class="compact-header">
-  <strong class="brand-version">Preventivi — <span id="appVersion">V1.7.1</span> <small>TEST</small></strong>
+<header class="compact-header" hidden>
+  <strong class="brand-version">Preventivi — <span id="appVersion">V1.7.2</span> <small>TEST</small></strong>
   <span id="currentQuoteHeader">Preventivo in elaborazione: nessuno</span>
   <span class="header-actions">
     <button type="button" id="infoButton" class="button-secondary">Informazioni</button>
@@ -13,7 +13,7 @@
 </header>
 <dialog id="infoDialog" class="app-dialog info-dialog">
  <div class="dialog-title"><h2>Preventivi — informazioni</h2><button type="button" id="closeInfo" class="button-secondary">Chiudi</button></div>
- <p><b>Versione: <span id="infoVersion">V1.7.1</span></b></p>
+ <p><b>Versione: <span id="infoVersion">V1.7.2</span></b></p>
  <p class="hint">Frontend GitHub Pages, backend .NET su Render Free. DEMO sintetica: quote in memoria non persistenti su Neon.</p>
  <p id="status" aria-live="polite">Connessione non inizializzata</p>
  <details class="connection-settings"><summary>Connessione demo (avanzate)</summary>
@@ -25,12 +25,20 @@
  </details>
  <p class="hint">Per le Organizzazioni è necessario l'accesso autorizzato a Contatti FastPharma; la chiave non viene trasmessa a Preventivi.</p>
 </dialog>
-<section id="exitOverlay" class="exit-overlay" hidden>
+<section id="accessGate" class="access-gate">
+  <h2>Preventivi TEST · FastPharma Access</h2>
+  <p>Per aprire Preventivi utilizza l'autenticazione centralizzata FastPharma.
+  La password si inserisce soltanto nella pagina FastPharma Access.</p>
+  <button type="button" id="accessLogin">Accedi con FastPharma Access</button>
+  <p id="accessStatus" role="status" aria-live="polite">Verifica dell'accesso in corso…</p>
+  <p class="hint">Preventivi mantiene archivi DEMO in memoria; le API sono protette con token dedicato.</p>
+ </section>
+ <section id="exitOverlay" class="exit-overlay" hidden>
  <h2>Sessione dimostrativa terminata</h2>
  <p>La sessione locale di Preventivi è stata chiusa.</p>
  <button type="button" id="reenter">Rientra in Preventivi</button>
 </section>
-<main>
+<main hidden>
   <nav class="step-tabs" role="tablist" aria-label="Fasi di compilazione preventivo">
     <button id="tabIssuer" class="step-tab active" type="button" role="tab" aria-selected="true" aria-controls="issuerPanel">1 · Generale</button>
     <button id="tabChapters" class="step-tab" type="button" role="tab" aria-selected="false" aria-controls="chapterPanel">2 · Capitoli</button>
@@ -43,15 +51,16 @@
     <div class="general-create-row">
       <button type="button" id="manageIssuer" class="button-secondary issuer-open" title="Apri la gestione emittenti">Gestione emittente <strong id="selectedIssuerName">—</strong></button>
       <label class="inline-field recipient-choice">Destinatario (Organizzazione Contatti)
-        <select id="crmOrganization"><option value="">— Apri Contatti per scegliere —</option></select>
+        <select id="crmOrganization" aria-label="Destinatario selezionato" disabled><option value="">— Carica da Contatti —</option></select>
       </label>
-      <button type="button" id="openContacts" class="button-secondary">Apri Contatti</button>
+      <button type="button" id="loadFromContacts" class="button-secondary">Carica da Contatti</button>
+       <button type="button" id="openContacts" class="button-secondary">Apri Contatti</button>
       <label class="inline-field subject-choice">Oggetto del nuovo preventivo
         <input id="newSubject" maxlength="240" placeholder="Oggetto del lavoro">
       </label>
       <button type="button" id="newQuote">+ Nuovo preventivo</button>
     </div>
-    <p id="crmLinkStatus" class="hint crm-status">Il destinatario è un riferimento all'Organizzazione del CRM. Per selezionarlo apri Contatti FastPharma e accedi.</p>
+    <p id="crmLinkStatus" class="hint crm-status">Seleziona un'Organizzazione tramite FastPharma Access; il CRM completo rimane disponibile separatamente con «Apri Contatti».</p>
     <section class="quote-archive">
       <div class="archive-heading">
         <h3>Archivio preventivi</h3>
@@ -398,5 +407,5 @@
     </div>
   </section>
 </main>
-<script src="app.js?v=1.7.1"></script>
+<script src="app.js?v=1.7.2"></script>
 </body></html>
