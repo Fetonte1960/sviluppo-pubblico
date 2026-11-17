@@ -268,3 +268,25 @@
 .quote-grid button[data-delete-quote]:hover{
   background:#ffdddd!important;
 }
+
+/* V1.8.3: prices as a searchable editable table. */
+.prices-filters{display:flex;align-items:end;gap:14px;flex-wrap:wrap;margin:10px 0 14px}
+.prices-filters label{min-width:180px;max-width:440px;flex:1 1 230px}
+.prices-filters #priceCount{padding-bottom:11px;white-space:nowrap}
+#priceList.prices-table-wrap{display:block;max-height:70vh!important;overflow:auto!important;
+  border:1px solid #d7e2ed;border-radius:8px;background:#fff}
+.prices-table{width:100%;min-width:1060px;border-collapse:separate;border-spacing:0;font-size:.83rem}
+.prices-table thead th{position:sticky;top:0;z-index:2;background:#e8f0f8;
+  color:#22405b;white-space:nowrap;padding:10px;border-bottom:2px solid #cbd9e6}
+.prices-table td{vertical-align:middle;padding:7px 9px;border-bottom:1px solid #e4eaf1}
+.prices-table tbody tr:nth-child(even){background:#f8fafc}
+.prices-table tbody tr:hover{background:#eef6ff}
+.prices-table .price-code{font-weight:650;white-space:nowrap;min-width:125px}
+.prices-table .price-description{min-width:260px;max-width:510px;overflow-wrap:anywhere}
+.prices-table td:nth-child(3),.prices-table td:nth-child(4){min-width:160px}
+.prices-table td:nth-child(6){min-width:155px}
+.prices-table input{min-width:0;width:100%;padding:7px 8px;font-size:.83rem}
+.prices-table input[readonly]{color:#55677b;background:#f1f4f8}
+.prices-table td:nth-child(5){white-space:nowrap}
+.prices-table td:last-child{white-space:nowrap;text-align:right}
+.prices-table button{padding:7px 12px}
