@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Seleziona preventivo · FastPharma Access</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#eef2f6;color:#203648}
+*{box-sizing:border-box}
+body{margin:0}
+header{background:#17394b;color:white;padding:15px 24px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+header strong{font-size:1.13rem}
+header small{background:#f6dfab;color:#44320f;border-radius:4px;padding:4px 7px;font-weight:700}
+main{max-width:1260px;margin:20px auto;padding:0 18px}
+h1{font-size:1.25rem;margin:0 0 8px}
+h2{font-size:1rem}
+section{background:white;border:1px solid #d4e0ec;border-radius:9px;padding:18px;margin:12px 0}
+p{font-size:.88rem;color:#52697d;line-height:1.5}
+.hint{font-size:.82rem;color:#63778a}
+label{font-size:.82rem;font-weight:600;display:block}
+input,select{width:100%;border:1px solid #bccedd;border-radius:6px;padding:10px;margin-top:5px;font:inherit}
+button{padding:10px 14px;border:0;border-radius:6px;background:#1767aa;color:white;font:600 .87rem system-ui,sans-serif;cursor:pointer}
+button:hover{background:#0d4c81}
+button:disabled{background:#b0bdc9;color:#455669;cursor:default}
+button.secondary{background:#e1e8f2;color:#234d6c}
+button.secondary:hover{background:#cbddea}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #eaa824;outline-offset:2px}
+[hidden]{display:none!important}
+.filters{display:grid;grid-template-columns:2.5fr 1fr auto;align-items:end;gap:12px}
+.actions{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:12px 0}
+.table-wrap{overflow-x:auto;border:1px solid #dce5ef;border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:.82rem}
+th,td{padding:10px 11px;text-align:left;border-bottom:1px solid #e1e8ee}
+th{background:#eff4f9;color:#36536b}
+tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#f0f8fd}
+tbody tr.selected{background:#dceef9;border-left:4px solid #1767aa}
+td strong{font-weight:700;color:#174a6b}
+td:last-child{text-align:right;white-space:nowrap}
+td button{padding:7px 11px}
+#status{font-size:.86rem;min-height:22px}
+#status.error{color:#b12626}
+#choice{font-size:.86rem;color:#264a65}
+.pager{display:flex;gap:12px;align-items:center;justify-content:flex-end;padding:12px 0}
+#login{max-width:650px;margin:9vh auto}
+@media(max-width:700px){.filters{grid-template-columns:1fr}.filters button{width:100%}main{padding:0 9px}header{padding:13px}}
+</style>
+</head>
+<body>
+<header><strong>FastPharma · Selezione Preventivo</strong><small>TEST · sola lettura</small></header>
+<main>
+<section id="login">
+ <h1>Collegamento a FastPharma Access</h1>
+ <p>Il selettore si autentica con il client Preventivi, senza richiedere credenziali a Gestione Commesse.</p>
+ <button type="button" id="loginButton">Accedi con FastPharma Access</button>
+ <p id="loginStatus" role="status" aria-live="polite">Verifica della sessione…</p>
+</section>
+<div id="workspace" hidden>
+ <section>
+  <h1>Seleziona un preventivo</h1>
+  <p>Archivio Preventivi DEMO della sessione corrente. Scegli una bozza per compilare i dati commerciali della nuova commessa.</p>
+  <div class="filters">
+   <label>Numero, destinatario, emittente o oggetto
+    <input id="search" type="search" maxlength="160" autocomplete="off" placeholder="Cerca tra i preventivi…">
+   </label>
+   <label>Stato
+    <select id="stateFilter"><option value="">Tutti</option></select>
+   </label>
+   <button type="button" id="refresh" class="secondary">Aggiorna elenco</button>
+  </div>
+  <div class="actions">
+   <span id="status" role="status" aria-live="polite">Caricamento preventivi…</span>
+   <button type="button" class="secondary" id="cancel">Annulla</button>
+  </div>
+  <div class="table-wrap">
+   <table aria-label="Preventivi disponibili"><thead><tr>
+    <th>Numero</th><th>Emittente</th><th>Destinatario</th><th>Oggetto</th><th>Stato</th><th>Revisioni</th><th>Selezione</th>
+   </tr></thead><tbody id="rows"></tbody></table>
+  </div>
+  <div class="pager">
+   <button type="button" class="secondary" id="previous" disabled>Precedente</button>
+   <span id="pageInfo">—</span>
+   <button type="button" class="secondary" id="next" disabled>Successiva</button>
+  </div>
+  <div class="actions">
+   <span id="choice">Nessun preventivo selezionato.</span>
+   <button type="button" id="confirm" disabled>Conferma preventivo</button>
+  </div>
+  <p class="hint">I preventivi DEMO sono temporanei e restano sul backend Preventivi. In Gestione Commesse sarà salvato soltanto uno snapshot commerciale quando premi «Nuova commessa».</p>
+ </section>
+</div>
+</main>
+<script>
+"use strict";
+(function(){
+const applicationOrigin="https://fetonte1960.github.io";
+const parentPath="/sviluppo-pubblico/commesse/Fastpharma-Commesse/";
+const redirectUri=applicationOrigin+"/sviluppo-pubblico/commesse/Preventivi/selettore.html";
+const backendOrigin="https://preventivi-demo-api.onrender.com";
+const clientId="fastpharma-preventivi";
+const contextKey="fastpharma.preventivi.quote-selector.context.v1";
+const pkceKey="fastpharma.preventivi.quote-selector.pkce.v1";
+const $=id=>document.getElementById(id);
+const params=new URLSearchParams(location.search);
+const fromCommesse=params.get("client")==="commesse" &&
+ /^[a-f0-9]{32}$/.test(params.get("nonce")||"") &&
+ params.size===2 && Boolean(window.opener) &&
+ document.referrer.startsWith(applicationOrigin+parentPath);
+if(fromCommesse){
+ sessionStorage.setItem(contextKey,JSON.stringify({nonce:params.get("nonce"),at:Date.now()}));
+}
+let context;
+try{context=JSON.parse(sessionStorage.getItem(contextKey)||"null");}catch{context=null;}
+const callback=params.has("code")||params.has("error");
+const validContext=Boolean(window.opener) && context &&
+ /^[a-f0-9]{32}$/.test(context.nonce||"") && Number.isFinite(context.at) &&
+ Date.now()-context.at<10*60*1000 &&
+ (fromCommesse||callback);
+const nonce=validContext?context.nonce:"";
+let token="",config=null,connected=false,loading=false,quotes=[],filtered=[],selectedId="",page=1;
+const pageSize=25;
+const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const b64url=bytes=>btoa(Array.from(bytes,x=>String.fromCharCode(x)).join(""))
+ .replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+function setStatus(message,error=false){
+ $("status").textContent=message;$("status").classList.toggle("error",error);
+}
+function setLoginStatus(message,error=false){
+ $("loginStatus").textContent=message;
+ $("loginStatus").style.color=error?"#b12626":"#52697d";
+}
+async function getConfig(){
+ if(config)return config;
+ const response=await fetch(backendOrigin+"/api/meta",{cache:"no-store",signal:AbortSignal.timeout(25000)});
+ if(!response.ok)throw Error("Servizio Preventivi non disponibile (HTTP "+response.status+").");
+ const data=await response.json();
+ if(data.authentication!=="openid-connect" || data.oidcClientId!==clientId ||
+    typeof data.oidcAuthorization!=="string"||typeof data.oidcToken!=="string"||
+    !data.oidcAuthorization.startsWith("https://")||!data.oidcToken.startsWith("https://")||
+    new URL(data.oidcAuthorization).origin!=="https://contatti-fastpharma-api.onrender.com"||
+    new URL(data.oidcToken).origin!=="https://contatti-fastpharma-api.onrender.com")
+  throw Error("FastPharma Access non è configurato per il selettore Preventivi.");
+ config=data;return data;
+}
+async function login(){
+ if(!validContext)throw Error("Apri questo selettore soltanto da Gestione Commesse.");
+ $("loginButton").disabled=true;
+ try{
+  setLoginStatus("Apertura del login centralizzato…");
+  const cfg=await getConfig();
+  const verifier=b64url(crypto.getRandomValues(new Uint8Array(32)));
+  const state=b64url(crypto.getRandomValues(new Uint8Array(32)));
+  const nonceOauth=b64url(crypto.getRandomValues(new Uint8Array(32)));
+  const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(verifier));
+  sessionStorage.setItem(pkceKey,JSON.stringify({verifier,state,redirect:redirectUri,at:Date.now()}));
+  const url=new URL(cfg.oidcAuthorization);
+  for(const [name,value] of Object.entries({
+   client_id:clientId,redirect_uri:redirectUri,response_type:"code",response_mode:"query",
+   scope:"openid profile preventivi",state,nonce:nonceOauth,
+   code_challenge:b64url(new Uint8Array(digest)),code_challenge_method:"S256"
+  }))url.searchParams.set(name,value);
+  location.assign(url.toString());
+ }catch(e){setLoginStatus(e.message,true);$("loginButton").disabled=false;}
+}
+async function completeCallback(){
+ const code=params.get("code"),error=params.get("error");
+ history.replaceState(null,"",redirectUri);
+ if(error)throw Error("Accesso rifiutato dal provider: "+error);
+ const raw=sessionStorage.getItem(pkceKey);
+ sessionStorage.removeItem(pkceKey);
+ let saved;try{saved=JSON.parse(raw||"null");}catch{saved=null;}
+ if(!code||!saved||saved.state!==params.get("state") ||
+    typeof saved.verifier!=="string"||saved.redirect!==redirectUri||
+    !Number.isFinite(saved.at)||Date.now()-saved.at>10*60*1000)
+  throw Error("Risposta OIDC non corrispondente o scaduta.");
+ const cfg=await getConfig();
+ const body=new URLSearchParams({
+  grant_type:"authorization_code",client_id:clientId,code,
+  redirect_uri:redirectUri,code_verifier:saved.verifier
+ });
+ const response=await fetch(cfg.oidcToken,{
+  method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},
+  body,credentials:"omit",cache:"no-store"
+ });
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok||typeof data.access_token!=="string")
+  throw Error("Token Preventivi non ottenuto ("+(data.error||response.status)+").");
+ token=data.access_token;
+ const check=await fetch(backendOrigin+"/api/auth/check",{
+  headers:{Authorization:"Bearer "+token},cache:"no-store"
+ });
+ if(!check.ok)throw Error("Il backend Preventivi ha rifiutato il token ("+check.status+").");
+ $("login").hidden=true;$("workspace").hidden=false;
+ // Gestione Commesse deve confermare la finestra e il nonce prima di leggere i dati.
+ window.opener.postMessage({type:"fastpharma.quote-picker.ready",nonce},applicationOrigin);
+ setStatus("Collegamento con Gestione Commesse in corso…");
+}
+function demoSession(){
+ let id=localStorage.getItem("preventivi-demo-session")||"";
+ if(!uuid.test(id)){
+  id=crypto.randomUUID();
+  localStorage.setItem("preventivi-demo-session",id);
+ }
+ return id;
+}
+async function api(path){
+ if(!token||!connected)throw Error("Selettore non ancora autorizzato da Commesse.");
+ const response=await fetch(backendOrigin+path,{
+  headers:{Authorization:"Bearer "+token,"X-Preventivi-Demo-Session":demoSession()},
+  cache:"no-store",signal:AbortSignal.timeout(45000)
+ });
+ if(response.status===401){
+  token="";connected=false;$("workspace").hidden=true;$("login").hidden=false;
+  $("loginButton").disabled=false;setLoginStatus("Sessione Preventivi scaduta. Accedi di nuovo.",true);
+  throw Error("Sessione FastPharma Access scaduta.");
+ }
+ if(!response.ok)throw Error("Archivio Preventivi HTTP "+response.status+".");
+ return response.json();
+}
+function draw(){
+ const q=$("search").value.trim().toLocaleLowerCase("it");
+ const state=$("stateFilter").value;
+ filtered=quotes.filter(item=>{
+  const haystack=[item.reference,item.issuerName,item.recipientName,item.subject]
+   .map(x=>String(x||"")).join(" ").toLocaleLowerCase("it");
+  return (!q||haystack.includes(q))&&(!state||String(item.status||"")===state);
+ });
+ const maxPage=Math.max(1,Math.ceil(filtered.length/pageSize));
+ page=Math.min(Math.max(page,1),maxPage);
+ $("pageInfo").textContent="Pagina "+page+" di "+maxPage+" · "+filtered.length+" preventivi";
+ $("previous").disabled=page<=1;
+ $("next").disabled=page>=maxPage;
+ const body=$("rows");body.replaceChildren();
+ if(!filtered.length){
+  const tr=document.createElement("tr"),cell=document.createElement("td");
+  cell.colSpan=7;cell.textContent="Nessun preventivo corrisponde ai filtri.";
+  tr.append(cell);body.append(tr);
+ }else{
+  for(const item of filtered.slice((page-1)*pageSize,page*pageSize)){
+   const tr=document.createElement("tr");tr.classList.toggle("selected",item.id===selectedId);
+   for(const [i,value] of [item.reference,item.issuerName,item.recipientName,
+     item.subject,item.status,item.revisions].entries()){
+    const td=document.createElement("td");
+    if(i===0){const strong=document.createElement("strong");strong.textContent=value||"—";td.append(strong);}
+    else td.textContent=value??"—";
+    tr.append(td);
+   }
+   const td=document.createElement("td"),button=document.createElement("button");
+   button.type="button";button.className=item.id===selectedId?"":"secondary";
+   button.textContent=item.id===selectedId?"Selezionato":"Seleziona";
+   button.setAttribute("aria-pressed",String(item.id===selectedId));
+   button.addEventListener("click",()=>select(item.id));
+   td.append(button);tr.append(td);
+   tr.addEventListener("dblclick",()=>{select(item.id);void confirm();});
+   body.append(tr);
+  }
+ }
+ const selected=quotes.find(x=>x.id===selectedId);
+ $("choice").textContent=selected
+  ?"Selezionato: "+selected.reference+" · "+(selected.recipientName||"Destinatario non indicato")
+  :"Nessun preventivo selezionato.";
+ $("confirm").disabled=!selected||loading;
+}
+function select(id){
+ if(!quotes.some(q=>q.id===id))return;
+ selectedId=id;draw();
+}
+async function load(){
+ if(!connected)return;
+ setStatus("Lettura dei preventivi in corso…");
+ try{
+  const received=await api("/api/quotes/overview");
+  if(!Array.isArray(received))throw Error("Risposta non valida dal server Preventivi.");
+  quotes=received.filter(x=>uuid.test(String(x.id||""))&&uuid.test(String(x.companyId||"")))
+   .sort((a,b)=>String(b.reference||"").localeCompare(String(a.reference||""),"it"));
+  const states=[...new Set(quotes.map(x=>String(x.status||"")).filter(Boolean))].sort();
+  const current=$("stateFilter").value;
+  $("stateFilter").replaceChildren(new Option("Tutti",""));
+  for(const s of states)$("stateFilter").add(new Option(s,s));
+  $("stateFilter").value=states.includes(current)?current:"";
+  if(!quotes.some(q=>q.id===selectedId))selectedId="";
+  page=1;draw();
+  setStatus(quotes.length+" preventivi disponibili nella sessione DEMO.");
+ }catch(e){
+  quotes=[];selectedId="";draw();setStatus("Lettura non riuscita: "+e.message,true);
+ }
+}
+async function confirm(){
+ if(loading||!connected||!window.opener||window.opener.closed)return;
+ const selected=quotes.find(x=>x.id===selectedId);
+ if(!selected)return;
+ loading=true;$("confirm").disabled=true;setStatus("Verifica dati commerciali del preventivo…");
+ try{
+  const id=encodeURIComponent(selected.id),company=encodeURIComponent(selected.companyId);
+  const [detail,totals]=await Promise.all([
+   api("/api/quotes/"+id+"?companyId="+company),
+   api("/api/quotes/"+id+"/totals?companyId="+company)
+  ]);
+  if(String(detail.id)!==selected.id)throw Error("Identificativo preventivo non coerente.");
+  const recipient=String(detail.draft?.recipient?.name||"").trim();
+  const subject=String(detail.draft?.subject||detail.subject||"").trim();
+  const reference=String(detail.reference||"").trim();
+  const taxable=Number(totals.taxable??totals.totalExcludingVat??NaN);
+  if(!recipient||!subject||!reference||reference.length>160||
+     subject.length>240||recipient.length>250||
+     !Number.isFinite(taxable)||taxable<0||taxable>999999999999)
+   throw Error("Dati commerciali mancanti o non validi. Completa il preventivo prima dell'importazione.");
+  if(!connected||window.opener.closed)throw Error("La finestra Commesse non è più disponibile.");
+  window.opener.postMessage({
+   type:"fastpharma-commesse.quote-selected",nonce,
+   id:String(detail.id),reference,subject,recipientName:recipient,
+   taxable,partial:!!totals.partial
+  },applicationOrigin);
+  sessionStorage.removeItem(contextKey);
+  setStatus("Preventivo inviato a Gestione Commesse.");
+  window.close();
+ }catch(e){setStatus("Selezione non completata: "+e.message,true);}
+ finally{loading=false;draw();}
+}
+window.addEventListener("message",event=>{
+ if(!validContext||!token||connected||!window.opener||
+    event.source!==window.opener||event.origin!==applicationOrigin)return;
+ if(event.data?.type!=="fastpharma.quote-picker.ack"||event.data.nonce!==nonce)return;
+ connected=true;void load();
+});
+$("search").addEventListener("input",()=>{page=1;draw();});
+$("stateFilter").addEventListener("change",()=>{page=1;draw();});
+$("refresh").addEventListener("click",()=>{void load();});
+$("previous").addEventListener("click",()=>{page--;draw();});
+$("next").addEventListener("click",()=>{page++;draw();});
+$("confirm").addEventListener("click",()=>{void confirm();});
+$("cancel").addEventListener("click",()=>window.close());
+$("loginButton").addEventListener("click",()=>{void login();});
+(async()=>{
+ if(!validContext){
+  setLoginStatus("Apri il selettore dalla voce «Carica da Preventivi» in Gestione Commesse.",true);
+  $("loginButton").disabled=true;return;
+ }
+ try{
+  if(callback)await completeCallback();
+  else await login();
+ }catch(e){
+  setLoginStatus(e.message,true);$("loginButton").disabled=false;
+ }
+})();
+})();
+</script>
+</body>
+</html>
