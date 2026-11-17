@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="it">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Preventivi V1.9.2 — FastPharma Access TEST</title><link rel="stylesheet" href="styles.css?v=1.9.2"></head>
+<title>Preventivi V1.9.3 — FastPharma Access TEST</title><link rel="stylesheet" href="styles.css?v=1.9.3"></head>
 <body>
 <header class="compact-header" hidden>
-  <strong class="brand-version">Preventivi — <span id="appVersion">V1.9.2</span> <small>TEST</small></strong>
+  <strong class="brand-version">Preventivi — <span id="appVersion">V1.9.3</span> <small>TEST</small></strong>
   <span id="currentQuoteHeader">Preventivo in elaborazione: nessuno</span>
   <span class="header-actions">
     <button type="button" id="infoButton" class="button-secondary">Informazioni</button>
@@ -13,7 +13,7 @@
 </header>
 <dialog id="infoDialog" class="app-dialog info-dialog">
  <div class="dialog-title"><h2>Preventivi — informazioni</h2><button type="button" id="closeInfo" class="button-secondary">Chiudi</button></div>
- <p><b>Versione: <span id="infoVersion">V1.9.2</span></b></p>
+ <p><b>Versione: <span id="infoVersion">V1.9.3</span></b></p>
  <p id="storageDescription" class="hint">Frontend GitHub Pages, backend .NET su Render. Modalità archivio in verifica.</p>
  <p id="status" aria-live="polite">Connessione non inizializzata</p>
  <details class="connection-settings"><summary>Connessione demo (avanzate)</summary>
@@ -134,6 +134,11 @@
         <details>
           <summary>Revisioni e PDF storici</summary>
           <div id="revisions"></div>
+        </details>
+        <details id="printedArchiveDetails">
+          <summary>Stampe PDF archiviate su Neon</summary>
+          <p class="hint">Ogni stampa è conservata come documento immutabile con UUID, data, revisione e SHA-256. Il PDF archiviato è recuperabile dagli altri servizi autorizzati, per esempio per comporre un contratto.</p>
+          <div id="printedArchiveList" aria-live="polite"><p class="hint">Apri un preventivo per vedere le stampe.</p></div>
         </details>
       </div>
     </section>
@@ -489,5 +494,5 @@
     </div>
   </section>
 </main>
-<script src="app.js?v=1.9.2"></script>
+<script src="app.js?v=1.9.3"></script>
 </body></html>
