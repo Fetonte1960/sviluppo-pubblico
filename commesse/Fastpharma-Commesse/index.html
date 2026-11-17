@@ -427,7 +427,7 @@ async function loadTestData(page){
    const caption=[...main.querySelectorAll('p b')].find(x=>x.textContent.includes('Imponibile:'));
    if(caption)caption.textContent='Imponibile: '+euro(total)+' — IVA: '+euro(vat)+' — Totale: '+euro(total+vat);
   }
-  note.textContent='Archivio Neon TEST collegato · dati salvati permanentemente · accesso protetto dalla password amministrativa FastPharma.';
+  note.textContent='Archivio Neon TEST collegato · dati salvati permanentemente · accesso con FastPharma Access.';
  }catch(e){
   if(requestSerial!==renderSerial)return;
   note.textContent='Impossibile leggere l’archivio: '+(e.message||'errore')+
@@ -435,8 +435,11 @@ async function loadTestData(page){
   for(const table of main.querySelectorAll('table'))renderRows(table,[]);
  }
 }
-/* Selettore organizzazioni: tramite il CRM già autenticato, senza token in Commesse. */
+/* Selettore Organizzazioni ospitato dal backend Contatti e protetto
+   dal cookie FastPharma Access. Il CRM completo resta su GitHub Pages. */
 const contattiUrl='https://fetonte1960.github.io/sviluppo-pubblico/commesse/Contatti-fastpharma/';
+const organizationPickerOrigin=()=>oidcMeta?.oidcIssuer
+ ? new URL(oidcMeta.oidcIssuer).origin : '';
 let organizationPicker=null;
 let organizationPickerNonce='';
 function newPickerNonce(){
@@ -460,16 +463,24 @@ function decorateClienteField(page){
  choose.type='button';choose.id='loadFromContacts';
  choose.textContent='Carica da Contatti';
  choose.addEventListener('click',()=>{
+  const origin=organizationPickerOrigin();
+  if(!origin){
+   alertDemo('FastPharma Access non è configurato. Ricarica Commesse e riprova.');
+   return;
+  }
   organizationPickerNonce=newPickerNonce();
-  const url=new URL(contattiUrl);
-  url.searchParams.set('picker','commesse');
+  const url=new URL('/organization-picker',origin);
+  url.searchParams.set('client','commesse');
   url.searchParams.set('nonce',organizationPickerNonce);
-  organizationPicker=window.open(url.href,'fastpharma-commesse-picker','width=1100,height=760,resizable=yes,scrollbars=yes');
+  // L'apertura avviene durante il click, senza await, per evitare blocchi popup.
+  organizationPicker=window.open(url.href,'fastpharma-commesse-picker',
+   'width=1100,height=760,resizable=yes,scrollbars=yes');
   if(!organizationPicker){
-   alertDemo('Il browser ha bloccato la finestra di Contatti: abilita i popup per questo sito.');
+   organizationPickerNonce='';
+   alertDemo('Chrome ha bloccato il selettore Organizzazioni. Abilita i popup per Commesse.');
   }else{
    organizationPicker.focus();
-   alertDemo('Nel programma Contatti, se richiesto, accedi con la password amministrativa FastPharma e premi «Usa in Commesse» accanto alla farmacia.');
+   alertDemo('Seleziona la farmacia tramite FastPharma Access, senza aprire il CRM.');
   }
  });
  const open=document.createElement('a');
@@ -479,7 +490,7 @@ function decorateClienteField(page){
  input.parentElement.append(actions);
  const message=document.createElement('small');
  message.id='crm-client-feedback';message.className='crm-client-feedback';
- message.textContent='Seleziona una farmacia da Organizzazioni. Nessuna password viene trasferita a Gestione Commesse.';
+ message.textContent='Seleziona una farmacia dall’archivio Contatti tramite FastPharma Access, senza seconda password.';
  input.parentElement.append(message);
  input.addEventListener('input',()=>{
   crmId.value='';
@@ -487,10 +498,19 @@ function decorateClienteField(page){
  });
 }
 window.addEventListener('message',event=>{
- const expected=new URL(contattiUrl).origin;
- if(event.origin!==expected||!organizationPicker||event.source!==organizationPicker)return;
+ const expected=organizationPickerOrigin();
+ if(!expected||event.origin!==expected||!organizationPicker||
+    event.source!==organizationPicker)return;
  const d=event.data;
- if(d?.type!=='fastpharma-commesse.organization-selected'||d.nonce!==organizationPickerNonce)return;
+ // Solo la finestra e il nonce generati dal click possono aprire il selettore.
+ if(d?.type==='fastpharma.organization-picker.ready' &&
+    d.nonce===organizationPickerNonce){
+  organizationPicker.postMessage({
+   type:'fastpharma.organization-picker.ack',nonce:organizationPickerNonce
+  },expected);
+  return;
+ }
+ if(d?.type!=='fastpharma.organization-selected'||d.nonce!==organizationPickerNonce)return;
  if(typeof d.id!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(d.id))return;
  if(typeof d.name!=='string'||!d.name.trim()||d.name.length>250)return;
  const field=view.querySelector('input[name="cliente"]'),idField=view.querySelector('input[name="farmacia_id"]');
@@ -509,7 +529,7 @@ window.addEventListener('message',event=>{
  }
  const status=view.querySelector('#crm-client-feedback');
  if(status)status.textContent='Farmacia selezionata dall’archivio Organizzazioni · ID CRM associato. La commessa sarà salvata realmente premendo «Crea commessa».';
- alertDemo('Farmacia caricata da Contatti: '+d.name.trim());
+ alertDemo('Organizzazione selezionata con FastPharma Access: '+d.name.trim());
  organizationPickerNonce='';
  organizationPicker=null;
 });
