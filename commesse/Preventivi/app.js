@@ -1459,6 +1459,7 @@ function clearOpenedQuote(){
   bimCadWindow=null;bimCadOpen=null;bimCadProjects=[];bimCadTypes=[];
   quote=null;selectedLineId=null;pendingChapterFocus=null;
   if(toolMode==="editLine"){toolMode="line";showTool("line");}
+  renderFinancialSettings(); // Clear historic PDF buttons and stale print fields.
   renderQuote();renderGeneralQuote();renderQuoteChapterSummary();
   void refreshBimCad();
   showStep("general",true);
