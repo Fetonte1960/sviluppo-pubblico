@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="it">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Preventivi V1.8.4 — FastPharma Access TEST</title><link rel="stylesheet" href="styles.css?v=1.8.4"></head>
+<title>Preventivi V1.9.0 — FastPharma Access TEST</title><link rel="stylesheet" href="styles.css?v=1.9.0"></head>
 <body>
 <header class="compact-header" hidden>
-  <strong class="brand-version">Preventivi — <span id="appVersion">V1.8.4</span> <small>TEST</small></strong>
+  <strong class="brand-version">Preventivi — <span id="appVersion">V1.9.0</span> <small>TEST</small></strong>
   <span id="currentQuoteHeader">Preventivo in elaborazione: nessuno</span>
   <span class="header-actions">
     <button type="button" id="infoButton" class="button-secondary">Informazioni</button>
@@ -13,7 +13,7 @@
 </header>
 <dialog id="infoDialog" class="app-dialog info-dialog">
  <div class="dialog-title"><h2>Preventivi — informazioni</h2><button type="button" id="closeInfo" class="button-secondary">Chiudi</button></div>
- <p><b>Versione: <span id="infoVersion">V1.8.4</span></b></p>
+ <p><b>Versione: <span id="infoVersion">V1.9.0</span></b></p>
  <p id="storageDescription" class="hint">Frontend GitHub Pages, backend .NET su Render. Modalità archivio in verifica.</p>
  <p id="status" aria-live="polite">Connessione non inizializzata</p>
  <details class="connection-settings"><summary>Connessione demo (avanzate)</summary>
@@ -302,6 +302,7 @@
         <div class="tool-heading">Aggiungi</div>
         <div class="tool-actions" role="group" aria-label="Aggiungi al preventivo">
           <button type="button" class="tool-action" data-tool="chapter">Capitolo</button>
+          <button type="button" class="tool-action" data-tool="group">Gruppo</button>
           <button type="button" class="tool-action" data-tool="materials">Distinta materiali</button>
           <button type="button" class="tool-action" data-tool="section">Sezione esterna</button>
           <button type="button" class="tool-action" data-tool="line">Voce</button>
@@ -316,6 +317,20 @@
             </label>
             <button id="insertChosenChapter" type="button">Aggiungi capitolo al preventivo</button>
             <p class="hint">Il capitolo viene inserito una sola volta. Per modificarne l'anagrafica usa la scheda Capitoli.</p>
+          </section>
+          <section id="toolGroup" class="tool-mode" hidden>
+            <h3>Gruppo di voci</h3>
+            <p class="hint">Seleziona un Capitolo nel filtro. Il Gruppo può contenere più voci; la quantità moltiplica le quantità interne e il prezzo unitario autonomo sostituisce il computo delle voci.</p>
+            <div id="groupList" aria-live="polite"></div>
+            <input type="hidden" id="editingGroupId">
+            <label>Nome del gruppo<input id="groupTitle" maxlength="140" placeholder="Es. Banco e accessori"></label>
+            <label>Ordine<input id="groupOrder" type="number" min="0" max="10000" value="10"></label>
+            <label>Quantità gruppi<input id="groupQuantity" type="number" step=".0001" min=".0001" placeholder="Se documentata"></label>
+            <label>Prezzo unitario autonomo (€)<input id="groupUnitPrice" type="number" step=".0001" min="0" placeholder="Se previsto"></label>
+            <label>Fonte prezzo autonomo<input id="groupSource" maxlength="240" placeholder="Contratto o listino"></label>
+            <label>Note<input id="groupNotes" maxlength="800"></label>
+            <div class="actionbar"><button id="groupSave" type="button">Salva gruppo</button>
+              <button id="groupNew" type="button" class="button-secondary">Nuovo gruppo</button></div>
           </section>
           <section id="toolMaterials" class="tool-mode" hidden>
             <h3>Distinta materiali</h3>
@@ -336,6 +351,7 @@
           </section>
           <section id="toolLine" class="tool-mode" hidden>
             <h3>Aggiungi voce</h3>
+            <label>Gruppo di destinazione (facoltativo)<select id="newLineGroup"><option value="">Voce autonoma del capitolo</option></select></label>
             <label>Cerca nel catalogo<input id="searchCatalog" placeholder="Codice o descrizione"></label>
             <div id="catalog"></div>
             <details class="inline-subform"><summary>Crea nuova voce nel catalogo</summary>
@@ -350,6 +366,8 @@
           <section id="toolEditLine" class="tool-mode" hidden>
             <h3>Modifica voce selezionata</h3>
             <p id="editingLineTitle" class="hint"></p>
+            <label>Capitolo (obbligatorio)<select id="editLineChapter"></select></label>
+            <label>Gruppo (facoltativo)<select id="editLineGroup"><option value="">Voce autonoma del capitolo</option></select></label>
             <label>Quantità<input id="editLineQuantity" type="number" min="0" step=".0001"></label>
             <label>Prezzo unitario di vendita<input id="editLinePrice" type="number" min="0" step=".0001"></label>
             <label class="inline-checkbox"><input id="editLineLocked" type="checkbox"> Blocca prezzo manuale</label>
@@ -415,5 +433,5 @@
     </div>
   </section>
 </main>
-<script src="app.js?v=1.8.4"></script>
+<script src="app.js?v=1.9.0"></script>
 </body></html>
