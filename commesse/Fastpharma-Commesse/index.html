@@ -1,4 +1,4 @@
-<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>FastPharma — Frontend V4 | Specifica dimostrativa</title>
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gestione Commesse V4.2.0 · FastPharma TEST</title>
 <style>body{font:15px system-ui,sans-serif;background:#f2f6f8;color:#203648;margin:0}header{background:#163849;color:white;padding:22px max(20px,calc((100% - 1100px)/2))}main{max-width:1100px;margin:26px auto;padding:0 16px}a{color:#116b74}header a{color:#c8e8df;margin-right:20px}section{background:white;padding:22px;border:1px solid #e1e8ed;border-radius:12px;margin:15px 0}h1{margin:0 0 6px}h2{font-size:19px}.muted{color:#687b87}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}.metric{padding:14px;background:#edf5f7;border-radius:9px}.metric b{display:block;font-size:20px}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid #e5edf0;padding:9px;text-align:left}label{display:block;margin:9px 0;font-size:13px;font-weight:600}input,select,textarea{display:block;width:100%;max-width:500px;padding:9px;margin-top:5px;box-sizing:border-box}button{background:#087d78;color:white;border:0;border-radius:7px;padding:10px 14px;cursor:pointer}.warn{padding:12px;background:#fff0d9;border-left:4px solid #d58e14}.bad{color:#aa2834}.good{color:#168057}.test{font-weight:bold;background:#ffe8ad;color:#5b3b00;padding:5px 10px;border-radius:6px}.inline{display:inline}.inline button{font-size:12px;padding:5px 8px}@media(max-width:700px){table{display:block;overflow-x:auto}}
 /* Solo cornice della specifica offline, l'interfaccia V4 conserva lo stile originale. */
 .demo-ribbon{background:#f8edd6;color:#6b4900;padding:10px 20px;text-align:center;font:600 13px system-ui,sans-serif;border-bottom:1px solid #e6d5ab}
@@ -127,6 +127,47 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 @media(max-width:460px){
  #page .general-screen .create-row-section form{grid-template-columns:1fr}
 }
+
+/* Gestione Commesse V4.2.0: prima riga coerente con Preventivi. */
+#page .general-screen .create-row-section form{display:block}
+#page .commesse-create-main-row{
+ display:grid;grid-template-columns:minmax(132px,.8fr) minmax(220px,1.9fr)
+ auto auto minmax(210px,1.3fr) auto;
+ align-items:end;gap:9px;padding:2px 0 8px
+}
+#page .commesse-create-main-row label{font-size:.76rem;margin:0;min-width:0}
+#page .commesse-create-main-row input,#page .commesse-create-main-row select{
+ display:block;width:100%;margin-top:5px;min-height:39px;
+ overflow:hidden;text-overflow:ellipsis
+}
+#page .commesse-create-main-row button,#page .commesse-quote-open{
+ min-height:39px;white-space:nowrap;display:inline-flex;align-items:center;
+ justify-content:center;text-decoration:none;padding:9px 11px;border-radius:5px;
+ box-sizing:border-box;font-size:.84rem
+}
+#page .commesse-create-main-row button.button-secondary,#page .commesse-quote-open{
+ background:#e0e9f2;color:#234d6c
+}
+#page .commesse-quote-field select:disabled{opacity:1;background:#f2f6fa;color:#50677b}
+#page .commesse-create-extra{padding:9px 12px;margin-top:7px;border:1px solid #dce5ee;border-radius:7px}
+#page .commesse-create-extra summary{font-size:.82rem;font-weight:600;color:#2d566f;cursor:pointer}
+#page .commesse-extra-fields{display:grid;grid-template-columns:1.2fr 1fr .75fr;gap:12px;margin:12px 0 3px}
+#page .commesse-extra-fields label{margin:0}
+#page .general-screen .create-row-section .quote-client-note{font-size:.8rem;margin:4px 0 7px}
+@media(max-width:1400px){
+ #page .commesse-create-main-row{
+  grid-template-columns:minmax(110px,.65fr) minmax(180px,1.5fr)
+   auto auto minmax(180px,1.2fr) auto;
+ }
+}
+@media(max-width:1000px){
+ #page .commesse-create-main-row{grid-template-columns:repeat(2,minmax(180px,1fr))}
+ #page .commesse-create-main-row button[type="submit"]{grid-column:auto}
+ #page .commesse-extra-fields{grid-template-columns:1fr 1fr}
+}
+@media(max-width:530px){
+ #page .commesse-create-main-row,#page .commesse-extra-fields{grid-template-columns:1fr}
+}
 </style></head><body>
 
 <div id="commesse-auth">
@@ -139,7 +180,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 </div>
 <div id="commesse-app" hidden>
 <header class="compact-header">
-  <strong class="brand-version">Gestione Commesse — <span id="commesse-version">V4.1.0</span> <small>TEST</small></strong>
+  <strong class="brand-version">Gestione Commesse — <span id="commesse-version">V4.2.0</span> <small>TEST</small></strong>
   <span id="currentProjectHeader">Commessa in elaborazione: nessuna</span>
   <span class="header-actions">
     <button type="button" id="help">Informazioni</button>
@@ -164,7 +205,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 <script>
 (function(){
 'use strict';
-const UI_VERSION='4.1.0';
+const UI_VERSION='4.2.0';
 const pages=JSON.parse(document.getElementById('screens').textContent);
 // Archivio originale ricevuto: non convertirne le proposte in requisiti approvati.
 const originalClientAnalysis=JSON.parse(document.getElementById('client-analysis-original').textContent);
@@ -735,6 +776,8 @@ window.addEventListener('message',event=>{
    }
    const quoteNote=view.querySelector('#quote-client-note');
    if(quoteNote)quoteNote.textContent='Farmacia modificata da Contatti: seleziona nuovamente il preventivo, se pertinente.';
+   const quoteField=view.querySelector('#commesse-quote-select');
+   if(quoteField)quoteField.replaceChildren(new Option('— Carica da Preventivi —',''));
   }
  }
  const status=view.querySelector('#crm-client-feedback');
@@ -748,49 +791,95 @@ window.addEventListener('message',event=>{
 /* Selezione di preventivi: ricevi solo riferimento e snapshot commerciale;
    i preventivi DEMO sono su backend separato e non su Neon. */
 const preventiviUrl='https://fetonte1960.github.io/sviluppo-pubblico/commesse/Preventivi/';
-let preventiviPicker=null,preventiviNonce='';
+let preventiviPicker=null,preventiviNonce='',preventiviReady=false;
 function decoratePreventivi(page){
  if(page!=='commesse')return;
  const main=view.querySelector('main');
- const title=[...main.querySelectorAll('h2')].find(x=>x.textContent.trim()==='Nuova commessa');
- const form=main.querySelector('form[action="/nuova"]');
- if(!title||!form)return;
- const actions=document.createElement('div');actions.className='quote-client-actions';
- const choose=document.createElement('button');choose.type='button';
- choose.id='loadFromQuotes';choose.textContent='Carica da Preventivi';
+ const form=main?.querySelector('form[action="/nuova"]');
+ if(!form)return;
+ const title=form.closest('section')?.querySelector('h2');
+ if(title)title.textContent='Nuova commessa';
+ const getLabel=name=>form.querySelector('[name="'+name+'"]')?.closest('label');
+ const codeLabel=getLabel('codice'),clientLabel=getLabel('cliente'),
+       crmIdLabel=getLabel('farmacia_id'),subjectLabel=getLabel('titolo'),
+       revenueLabel=getLabel('ricavi');
+ const submit=form.querySelector('button:not([type]),button[type="submit"]');
+ if(!codeLabel||!clientLabel||!crmIdLabel||!subjectLabel||!revenueLabel||!submit)return;
+ const subjectText=subjectLabel.firstChild;
+ if(subjectText?.nodeType===Node.TEXT_NODE)subjectText.textContent='Oggetto della nuova commessa';
+ const row=document.createElement('div');row.className='commesse-create-main-row';
+ const quoteLabel=document.createElement('label');
+ quoteLabel.className='commesse-quote-field';
+ quoteLabel.textContent='Preventivo selezionato';
+ const select=document.createElement('select');
+ select.id='commesse-quote-select';select.disabled=true;
+ select.title='Il preventivo si seleziona tramite Carica da Preventivi';
+ select.add(new Option('— Carica da Preventivi —',''));
+ quoteLabel.append(select);
+ const choose=document.createElement('button');
+ choose.type='button';choose.id='loadFromQuotes';choose.textContent='Carica da Preventivi';
+ choose.className='button-secondary';
  choose.addEventListener('click',()=>{
-  preventiviNonce=newPickerNonce();
-  const url=new URL(preventiviUrl);
-  url.searchParams.set('picker','commesse');
-  url.searchParams.set('nonce',preventiviNonce);
-  preventiviPicker=window.open(url.href,'fastpharma-preventivi-picker','width=1150,height=830,resizable=yes,scrollbars=yes');
-  if(!preventiviPicker)alertDemo('Popup bloccato: abilita finestre emergenti per Preventivi.');
-  else{preventiviPicker.focus();alertDemo('In Preventivi apri la scheda Generale e premi «Usa in Commesse» su un preventivo.');}
- });
- const link=document.createElement('a');link.href=preventiviUrl;link.target='_blank';
- link.rel='noopener noreferrer';link.textContent='Apri Preventivi';
- actions.append(choose,link);
- title.after(actions);
- const note=document.createElement('p');note.className='quote-client-note';
- note.id='quote-client-note';
- note.textContent='Il preventivo DEMO selezionato compila cliente, titolo, ricavi e un riferimento snapshot. Le modifiche saranno salvate in Neon solo dopo «Crea commessa».';
- actions.after(note);
- for(const field of ['preventivo_id','preventivo_riferimento','preventivo_snapshot']){
-  const input=document.createElement('input');input.type='hidden';input.name=field;
-  form.appendChild(input);
- }
- const clear=()=>{
-  for(const name of ['preventivo_id','preventivo_riferimento','preventivo_snapshot']){
-   const i=form.querySelector('[name="'+name+'"]');if(i)i.value='';
+  preventiviNonce=newPickerNonce();preventiviReady=false;
+  const url=new URL('selettore.html',preventiviUrl);
+  url.searchParams.set('client','commesse');url.searchParams.set('nonce',preventiviNonce);
+  preventiviPicker=window.open(url.href,'fastpharma-preventivi-selettore',
+    'width=1180,height=820,resizable=yes,scrollbars=yes');
+  if(!preventiviPicker){
+    preventiviNonce='';
+    alertDemo('Popup bloccato: consenti le finestre emergenti per il selettore Preventivi.');
+  }else{
+    preventiviPicker.focus();
+    alertDemo('Seleziona un preventivo nella finestra specializzata FastPharma Access.');
   }
-  note.textContent='Dati modificati manualmente: associa nuovamente il preventivo per mantenere il riferimento.';
+ });
+ const open=document.createElement('a');
+ open.href=preventiviUrl;open.target='_blank';open.rel='noopener noreferrer';
+ open.className='commesse-quote-open';open.textContent='Apri Preventivi';
+ submit.textContent='+ Nuova commessa';submit.type='submit';
+ row.append(codeLabel,quoteLabel,choose,open,subjectLabel,submit);
+ const more=document.createElement('details');more.className='commesse-create-extra';
+ more.id='new-commessa-details';
+ const summary=document.createElement('summary');
+ summary.textContent='Altri dati della nuova commessa · cliente, ricavi e collegamento Contatti';
+ const fields=document.createElement('div');fields.className='commesse-extra-fields';
+ fields.append(clientLabel,crmIdLabel,revenueLabel);
+ more.append(summary,fields);
+ const notice=document.createElement('p');
+ notice.className='quote-client-note';notice.id='quote-client-note';
+ notice.textContent='Seleziona un preventivo per compilare destinatario, oggetto e ricavi. '+
+  'La commessa viene salvata in Neon soltanto premendo «Nuova commessa».';
+ const hidden=[];
+ for(const field of ['preventivo_id','preventivo_riferimento','preventivo_snapshot']){
+  const input=document.createElement('input');
+  input.type='hidden';input.name=field;hidden.push(input);
+ }
+ form.replaceChildren(row,notice,more,...hidden);
+ form.addEventListener('invalid',()=>{
+  // Un campo required collocato nei dettagli deve essere mostrato prima della correzione.
+  more.open=true;
+ },true);
+ const clear=()=>{
+  for(const field of ['preventivo_id','preventivo_riferimento','preventivo_snapshot']){
+   const input=form.querySelector('[name="'+field+'"]');if(input)input.value='';
+  }
+  select.replaceChildren(new Option('— Carica da Preventivi —',''));
+  notice.textContent='Dati destinatario/ricavi modificati: per mantenere il collegamento al preventivo selezionalo nuovamente.';
  };
- for(const name of ['cliente','titolo','ricavi'])form.querySelector('[name="'+name+'"]')?.addEventListener('input',clear);
+ // Il titolo della commessa è modificabile senza perdere il collegamento al preventivo.
+ for(const field of ['cliente','ricavi']){
+  form.querySelector('[name="'+field+'"]')?.addEventListener('input',clear);
+ }
 }
 window.addEventListener('message',event=>{
  if(event.origin!==new URL(preventiviUrl).origin||event.source!==preventiviPicker||!preventiviNonce)return;
  const d=event.data;
- if(d?.type!=='fastpharma-commesse.quote-selected'||d.nonce!==preventiviNonce)return;
+ if(d?.type==='fastpharma.quote-picker.ready'&&d.nonce===preventiviNonce){
+  preventiviPicker.postMessage({type:'fastpharma.quote-picker.ack',nonce:preventiviNonce},event.origin);
+  preventiviReady=true;
+  return;
+ }
+ if(!preventiviReady||d?.type!=='fastpharma-commesse.quote-selected'||d.nonce!==preventiviNonce)return;
  if(typeof d.id!=='string'||d.id.length>160||typeof d.reference!=='string'||d.reference.length>160)return;
  if(typeof d.subject!=='string'||d.subject.length>240||
     typeof d.recipientName!=='string'||d.recipientName.length>250)return;
@@ -808,13 +897,15 @@ window.addEventListener('message',event=>{
   const control=form.querySelector('[name="'+name+'"]');if(control)control.value=value;
  }
  const note=view.querySelector('#quote-client-note');
- if(note)note.textContent='Preventivo '+d.reference+' acquisito (snapshot TEST). Premi «Crea commessa» per salvarlo realmente.';
+ if(note)note.textContent='Preventivo '+d.reference+' selezionato (snapshot TEST). Premi «Nuova commessa» per salvarlo in Neon.';
+ const quoteField=view.querySelector('#commesse-quote-select');
+ if(quoteField)quoteField.replaceChildren(new Option(d.reference+' · '+d.recipientName,d.id,true,true));
  const status=view.querySelector('#crm-client-feedback');
  if(status)status.textContent='Destinatario impostato dal preventivo DEMO. Se diverso dalla farmacia CRM, associa nuovamente l’Organizzazione.';
  const crmName=form.querySelector('[name="cliente"]');
  const crmId=form.querySelector('[name="farmacia_id"]');
  if(crmId&&crmId.value)crmId.value='';
- preventiviNonce='';preventiviPicker=null;
+ preventiviNonce='';preventiviPicker=null;preventiviReady=false;
  alertDemo('Preventivo '+d.reference+' caricato: dati pronti per il salvataggio.');
 });
 
