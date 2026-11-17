@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="it">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Preventivi V1.8.1 — FastPharma Access TEST</title><link rel="stylesheet" href="styles.css?v=1.8.0"></head>
+<title>Preventivi V1.8.3 — FastPharma Access TEST</title><link rel="stylesheet" href="styles.css?v=1.8.3"></head>
 <body>
 <header class="compact-header" hidden>
-  <strong class="brand-version">Preventivi — <span id="appVersion">V1.8.1</span> <small>TEST</small></strong>
+  <strong class="brand-version">Preventivi — <span id="appVersion">V1.8.3</span> <small>TEST</small></strong>
   <span id="currentQuoteHeader">Preventivo in elaborazione: nessuno</span>
   <span class="header-actions">
     <button type="button" id="infoButton" class="button-secondary">Informazioni</button>
@@ -13,7 +13,7 @@
 </header>
 <dialog id="infoDialog" class="app-dialog info-dialog">
  <div class="dialog-title"><h2>Preventivi — informazioni</h2><button type="button" id="closeInfo" class="button-secondary">Chiudi</button></div>
- <p><b>Versione: <span id="infoVersion">V1.8.1</span></b></p>
+ <p><b>Versione: <span id="infoVersion">V1.8.3</span></b></p>
  <p id="storageDescription" class="hint">Frontend GitHub Pages, backend .NET su Render. Modalità archivio in verifica.</p>
  <p id="status" aria-live="polite">Connessione non inizializzata</p>
  <details class="connection-settings"><summary>Connessione demo (avanzate)</summary>
@@ -341,7 +341,8 @@
               <label>Codice<input id="newCode" placeholder="Codice"></label>
               <label>Descrizione<input id="newTitle" placeholder="Titolo"></label>
               <label>Unità di misura<input id="newUnit" placeholder="m², cad, ..."></label>
-              <label>Categoria<input id="newCategory" placeholder="Categoria"></label>
+              <label>Categoria<input id="newCategory" placeholder="Es. Lavori edili"></label>
+              <label>Sottocategoria<input id="newSubcategory" placeholder="Es. Impianto elettrico"></label>
               <button id="addWork" type="button">Crea voce privata</button>
             </details>
           </section>
@@ -402,11 +403,16 @@
     <div class="prices-workspace">
       <div class="prices-title">
         <h2>5. Prezziario</h2>
-        <p class="hint">Prezzi di vendita dell'emittente selezionato. Nessun costo interno o ricarico viene mostrato al browser.</p>
+        <p class="hint">Archivio voci per categoria e sottocategoria, con prezzo di vendita per l'emittente. I prezzi assenti rimangono vuoti. Costi interni e ricarichi non sono mostrati al browser.</p>
       </div>
-      <div id="priceList" class="prices-grid"></div>
+      <div class="prices-filters">
+        <label>Cerca voce<input id="priceSearch" type="search" placeholder="Codice, descrizione, categoria…"></label>
+        <label>Categoria<select id="priceCategory"><option value="">Tutte le categorie</option></select></label>
+        <span id="priceCount" class="hint" role="status"></span>
+      </div>
+      <div id="priceList" class="prices-table-wrap"></div>
     </div>
   </section>
 </main>
-<script src="app.js?v=1.8.1"></script>
+<script src="app.js?v=1.8.3"></script>
 </body></html>
