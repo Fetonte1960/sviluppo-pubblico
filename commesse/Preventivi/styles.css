@@ -245,3 +245,12 @@
 .bimcad-table td button{width:auto;margin-right:6px}
 @media(max-width:790px){.bimcad-create{flex-wrap:wrap}.bimcad-create label{flex-basis:100%}
 .bimcad-header{align-items:start;flex-wrap:wrap}}
+
+/* FastPharma Access: la UI operativa non compare prima dell'autenticazione. */
+[hidden]{display:none!important}
+.access-gate{max-width:570px;margin:9vh auto 28px;padding:30px;background:#fff;
+ border:1px solid #cadce1;border-radius:13px;box-shadow:0 10px 35px #2341;
+ font:15px system-ui,-apple-system,Segoe UI,sans-serif;color:#254557}
+.access-gate h2{font-size:23px;margin-top:0}
+.access-gate button{margin:14px 0 6px}
+.access-gate p{line-height:1.55}
