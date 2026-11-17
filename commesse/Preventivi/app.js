@@ -1,7 +1,7 @@
 "use strict";
 // Demo only. GitHub Pages hosts this static frontend; the authorized API URL is configured explicitly.
 // No Neon credentials, company identity tokens or internal secrets in the frontend.
-const APP_VERSION="1.9.0";
+const APP_VERSION="1.9.1";
 const $ = id => document.getElementById(id);
 const escapeHtml = s => String(s ?? "").replace(/[&<>"']/g, c =>
   ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -1183,6 +1183,20 @@ function renderGroupEditor(){
 function renderFinancialSettings(){
   const d=quote?.draft;
   $("conditions").value=d?.conditions||"";
+  const print=d?.printSettings||{};
+  $("printProfile").value=print.template||"Standard";
+  $("printFirstPage").value=print.firstPageNumber??1;
+  $("printCoverTitle").value=print.coverTitle||"";
+  $("printCoverRecipient").value=print.coverRecipient||"";
+  $("printCoverAddress").value=print.coverAddress||"";
+  $("printPaymentTerms").value=print.paymentTerms||"";
+  $("printBankReference").value=print.bankReference||"";
+  $("printCover").checked=print.cover!==false;
+  $("printShowCodes").checked=!!print.showCodes;
+  $("printShowQty").checked=!!print.showLineQuantities;
+  $("printSections").checked=!!print.includeSections;
+  $("printConditions").checked=!!print.includeConditions;
+  $("printPoascoPhotos").checked=!!print.usePoascoExampleImages;
   $("vat").value=value(d?.options?.vatRate);
   $("financialFields").innerHTML=[["general","Spese generali"],
     ["contingency","Imprevisti"],["discount","Sconto"]].map(([key,label])=>{
@@ -1341,6 +1355,24 @@ function collect(){
   if(!quote)throw Error("Nessuna bozza aperta");
   const d=quote.draft;
   d.conditions=$("conditions").value;
+  d.printSettings={
+    template:$("printProfile").value,
+    cover:$("printCover").checked,
+    coverTitle:$("printCoverTitle").value.trim()||null,
+    coverRecipient:$("printCoverRecipient").value.trim()||null,
+    coverAddress:$("printCoverAddress").value.trim()||null,
+    showCodes:$("printShowCodes").checked,
+    showLineQuantities:$("printShowQty").checked,
+    includeSections:$("printSections").checked,
+    includeConditions:$("printConditions").checked,
+    usePoascoExampleImages:$("printPoascoPhotos").checked,
+    paymentTerms:$("printPaymentTerms").value.trim()||null,
+    bankReference:$("printBankReference").value.trim()||null,
+    firstPageNumber:Number($("printFirstPage").value)
+  };
+  if(!Number.isInteger(d.printSettings.firstPageNumber)||
+     d.printSettings.firstPageNumber<1||d.printSettings.firstPageNumber>9999)
+    throw Error("Il numero iniziale delle pagine deve essere compreso tra 1 e 9999.");
   d.options.vatRate=number($("vat").value);
   if(d.options.vatRate!=null && (d.options.vatRate<0||d.options.vatRate>100))
     throw Error("L'IVA deve essere compresa tra 0 e 100");
@@ -1871,6 +1903,11 @@ $("save").onclick=()=>guard(save);
 $("revision").onclick=()=>guard(async()=>{await save();await request("/api/quotes/"+quote.id+
   "/revisions",json("POST",{companyId,reason:"Revisione manuale"}));await openQuote(quote.id)});
 $("previewPrices").onclick=()=>guard(pricePreview);
+$("printSaveSetup").onclick=()=>guard(async()=>{
+  if(!quote)throw Error("Seleziona un preventivo da configurare.");
+  await save();
+  status("Impostazioni di stampa salvate sul preventivo.");
+});
 $("pdf").onclick=()=>guard(async()=>{await save();await downloadPdf()});
 $("revisions").onclick=e=>{const b=e.target.closest("[data-historic]");if(b)guard(()=>downloadPdf(Number(b.dataset.historic)))};
 showTool("line");
