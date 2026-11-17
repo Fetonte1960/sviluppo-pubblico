@@ -638,6 +638,9 @@ async function saveRecipient(){
 }
 function renderGeneralQuote(){
   const exists=Boolean(quote);
+  // Never leave another issuer's print metadata visible after switching company.
+  if(!exists)$("printedArchiveList").innerHTML=
+    '<p class="hint">Apri un preventivo per vedere le stampe.</p>';
   $("openedQuote").textContent=exists
     ? quote.reference+" — "+quote.status
     : "Nessun preventivo aperto. Creane uno oppure selezionalo dall'archivio.";
