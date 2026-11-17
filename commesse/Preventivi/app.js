@@ -1,7 +1,7 @@
 "use strict";
 // Demo only. GitHub Pages hosts this static frontend; the authorized API URL is configured explicitly.
 // No Neon credentials, company identity tokens or internal secrets in the frontend.
-const APP_VERSION="1.8.0";
+const APP_VERSION="1.8.1";
 const $ = id => document.getElementById(id);
 const escapeHtml = s => String(s ?? "").replace(/[&<>"']/g, c =>
   ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -190,24 +190,52 @@ const value = n => n == null ? "" : n;
 const number = s => s === "" || s == null ? null : Number(s);
 function status(s, fail=false){ $("status").textContent=s; $("status").style.color=fail?"#b91c1c":"#176c57"; }
 async function request(url, opts={}){
-  status("Richiesta API in corso (possibile cold start Render)...");
-  const ctrl=new AbortController(); const timeout=setTimeout(()=>ctrl.abort(),90000);
-  try{
-    checkApiOrigin();
-    if(!localDemo&&!accessToken)throw Error("Accedi a FastPharma Access prima di utilizzare Preventivi.");
-    const headers={"Content-Type":"application/json","X-Preventivi-Demo-Session":demoSession,...(opts.headers||{})};
-    if(accessToken)headers.Authorization="Bearer "+accessToken;
-    const response=await fetch(apiBase + url,{...opts,cache:"no-store",signal:ctrl.signal,headers});
-    if(response.status===401 && !localDemo){
-      accessToken="";showAccess(true);$("accessLogin").disabled=false;
-      accessFeedback("Sessione Preventivi scaduta. Accedi nuovamente.",true);
-      throw Error("Sessione Preventivi scaduta.");
-    }
-    if(!response.ok){let t=await response.text();try{t=JSON.parse(t).detail||t}catch{} throw Error(response.status+" "+t);}
-    status("API collegata · "+(accessMeta?.storage==="postgres"?
-       "archivio PostgreSQL Neon":"modalità DEMO RAM"));
-    return ["application/pdf","image/png"].some(t=>response.headers.get("content-type")?.includes(t)) ? await response.blob() : await response.json();
-  }finally{clearTimeout(timeout)}
+  checkApiOrigin();
+  if(!localDemo&&!accessToken)
+    throw Error("Accedi a FastPharma Access prima di utilizzare Preventivi.");
+  const headers={"Content-Type":"application/json","X-Preventivi-Demo-Session":demoSession,...(opts.headers||{})};
+  if(accessToken)headers.Authorization="Bearer "+accessToken;
+  const method=String(opts.method||"GET").toUpperCase();
+  const readOnly=method==="GET";
+  const attempts=readOnly?4:1;
+  const transient=new Set([408,425,429,502,503,504]);
+  for(let attempt=1;attempt<=attempts;attempt++){
+    status(readOnly&&attempt>1?
+      "Risveglio di Render: tentativo "+attempt+" di "+attempts+"…":
+      "Richiesta API in corso (possibile cold start Render)...");
+    const ctrl=new AbortController(),timeout=setTimeout(()=>ctrl.abort(),35000);
+    try{
+      const response=await fetch(apiBase+url,{
+        ...opts,cache:"no-store",signal:ctrl.signal,headers
+      });
+      if(response.status===401&&!localDemo){
+        accessToken="";showAccess(true);$("accessLogin").disabled=false;
+        accessFeedback("Sessione Preventivi scaduta. Accedi nuovamente.",true);
+        throw Error("Sessione Preventivi scaduta.");
+      }
+      if(readOnly&&transient.has(response.status)&&attempt<attempts){
+        await new Promise(done=>setTimeout(done,1000*attempt));
+        continue;
+      }
+      if(!response.ok){
+        let message=await response.text();
+        try{message=JSON.parse(message).detail||message}catch{}
+        throw Error(response.status+" "+message);
+      }
+      status("API collegata · "+(accessMeta?.storage==="postgres"?
+        "archivio PostgreSQL Neon":"modalità DEMO RAM"));
+      return ["application/pdf","image/png"].some(t=>response.headers.get("content-type")?.includes(t))
+        ? await response.blob():await response.json();
+    }catch(error){
+      if(readOnly&&attempt<attempts&&
+          (error?.name==="AbortError"||error?.name==="TypeError")){
+        await new Promise(done=>setTimeout(done,1000*attempt));
+        continue;
+      }
+      throw error;
+    }finally{clearTimeout(timeout)}
+  }
+  throw Error("Servizio Render non disponibile dopo più tentativi.");
 }
 const json=(method,body)=>({method,body:JSON.stringify(body)});
 async function guard(fn){try{await fn()}catch(e){status(e.message,true);alert("Operazione non completata: "+e.message)}}
