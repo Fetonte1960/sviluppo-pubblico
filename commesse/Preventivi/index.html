@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="it">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Preventivi V1.9.0 — FastPharma Access TEST</title><link rel="stylesheet" href="styles.css?v=1.9.0"></head>
+<title>Preventivi V1.9.1 — FastPharma Access TEST</title><link rel="stylesheet" href="styles.css?v=1.9.1"></head>
 <body>
 <header class="compact-header" hidden>
-  <strong class="brand-version">Preventivi — <span id="appVersion">V1.9.0</span> <small>TEST</small></strong>
+  <strong class="brand-version">Preventivi — <span id="appVersion">V1.9.1</span> <small>TEST</small></strong>
   <span id="currentQuoteHeader">Preventivo in elaborazione: nessuno</span>
   <span class="header-actions">
     <button type="button" id="infoButton" class="button-secondary">Informazioni</button>
@@ -13,7 +13,7 @@
 </header>
 <dialog id="infoDialog" class="app-dialog info-dialog">
  <div class="dialog-title"><h2>Preventivi — informazioni</h2><button type="button" id="closeInfo" class="button-secondary">Chiudi</button></div>
- <p><b>Versione: <span id="infoVersion">V1.9.0</span></b></p>
+ <p><b>Versione: <span id="infoVersion">V1.9.1</span></b></p>
  <p id="storageDescription" class="hint">Frontend GitHub Pages, backend .NET su Render. Modalità archivio in verifica.</p>
  <p id="status" aria-live="polite">Connessione non inizializzata</p>
  <details class="connection-settings"><summary>Connessione demo (avanzate)</summary>
@@ -100,6 +100,36 @@
           <label>Condizioni commerciali<textarea id="conditions" placeholder="Condizioni concordate"></textarea></label>
           <div id="financialFields" class="grid4"></div>
           <label>IVA % (vuota = non configurata)<input id="vat" type="number" step=".01" min="0" max="100"></label>
+        </details>
+        <details id="printSetupDetails">
+          <summary>Impostazioni di stampa del preventivo</summary>
+          <p class="hint">Il profilo FastPharma riproduce la sola parte commerciale: copertina, capitoli, gruppi, totale e modalità di pagamento. Le clausole del contratto rimangono in un documento separato.</p>
+          <div class="print-setup-grid">
+            <label>Modello di stampa
+              <select id="printProfile"><option value="Standard">Standard (precedente)</option>
+                <option value="FastPharma2026">FastPharma — commerciale 2026</option></select>
+            </label>
+            <label>Numero della prima pagina<input id="printFirstPage" type="number" min="1" max="9999" value="1"></label>
+            <label>Titolo della copertina<input id="printCoverTitle" maxlength="180" placeholder="Preventivo per Lavori Edili"></label>
+            <label>Destinatario commerciale sulla copertina<input id="printCoverRecipient" maxlength="200" placeholder="Es. Farmacia dott. Mulas"></label>
+            <label>Indirizzo sulla copertina<textarea id="printCoverAddress" rows="2" maxlength="320" placeholder="Via, civico e città"></textarea></label>
+            <label class="print-setup-wide">Modalità di pagamento (una riga per scadenza)
+              <textarea id="printPaymentTerms" rows="5" maxlength="3000" placeholder="30% oltre IVA ..."></textarea>
+            </label>
+            <label class="print-setup-wide">Riferimenti per l'acconto
+              <textarea id="printBankReference" rows="3" maxlength="1200"></textarea>
+            </label>
+          </div>
+          <div class="print-setup-switches">
+            <label><input id="printCover" type="checkbox" checked> Copertina separata</label>
+            <label><input id="printShowCodes" type="checkbox"> Mostra codici delle voci</label>
+            <label><input id="printShowQty" type="checkbox"> Mostra quantità in evidenza</label>
+            <label><input id="printSections" type="checkbox"> Includi sezioni esterne</label>
+            <label><input id="printConditions" type="checkbox"> Includi condizioni estese</label>
+            <label><input id="printPoascoPhotos" type="checkbox"> Includi le due immagini originali degli arredi Poasco</label>
+          </div>
+          <p class="hint">Le fotografie, se associate agli allegati del preventivo, vengono collocate presso la relativa voce. Le impostazioni non modificano prezzi, quantità o struttura.</p>
+          <button type="button" id="printSaveSetup">Salva impostazioni di stampa</button>
         </details>
         <details>
           <summary>Revisioni e PDF storici</summary>
@@ -433,5 +463,5 @@
     </div>
   </section>
 </main>
-<script src="app.js?v=1.9.0"></script>
+<script src="app.js?v=1.9.1"></script>
 </body></html>
