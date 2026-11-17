@@ -320,7 +320,7 @@ async function confirm(){
    return {
     title:String(chapter.title||"").trim(),
     order:Number.isInteger(chapter.order)?chapter.order:index,
-    notes:typeof chapter.notes==="string"?chapter.notes.slice(0,3000):"",
+    notes:typeof chapter.notes==="string"?chapter.notes:"",
     lines:chapter.lines.map(line=>{
      const quantity=line.quantity==null?null:Number(line.quantity);
      const saleUnitPrice=line.saleUnitPrice==null?null:Number(line.saleUnitPrice);
@@ -328,11 +328,11 @@ async function confirm(){
         (saleUnitPrice!==null&&!Number.isFinite(saleUnitPrice)))
       throw Error("Quantità/prezzo non validi nel preventivo.");
      return {
-      code:String(line.code||"").slice(0,120),
-      description:String(line.description||"").trim().slice(0,1800),
-      unit:String(line.unit||"").slice(0,60),
+      code:String(line.code||""),
+      description:String(line.description||"").trim(),
+      unit:String(line.unit||""),
       quantity,saleUnitPrice,
-      notes:typeof line.notes==="string"?line.notes.slice(0,1500):"",
+      notes:typeof line.notes==="string"?line.notes:"",
       verify:!!line.verify
      };
     })
@@ -340,7 +340,7 @@ async function confirm(){
   });
   const snapshot={
    version:"commesse-quote-v1",id:String(detail.id),reference,subject,
-   issuerName:String(detail.draft?.issuer?.name||"").slice(0,250),
+   issuerName:String(detail.draft?.issuer?.name||""),
    recipientName:recipient,
    recipientOrganizationId:detail.recipientOrganizationId||null,
    taxable,partial:!!totals.partial,status:String(detail.status||"BOZZA"),
