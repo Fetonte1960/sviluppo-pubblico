@@ -303,3 +303,18 @@
 .chapter-totals-table input{font-size:.84rem;padding:7px}
 .chapter-totals-table tr:nth-child(even){background:#f9fbfd}
 .chapter-totals-table button{white-space:nowrap}
+
+/* V1.9.0: true Chapter -> Group -> Line hierarchy */
+.body-quote-table tr.body-chapter-row td{background:#d5e6f5;font-weight:650;
+  border-top:2px solid #9fbcd2}
+.body-quote-table tr.body-group-row td{background:#eef3fb;font-weight:600;
+  border-top:1px solid #b6cadc}
+.body-quote-table tr.body-group-row td:first-child{padding-left:26px}
+.body-quote-table tr.body-line-row.group-child td:first-child{padding-left:48px}
+.group-row{display:flex;align-items:center;flex-wrap:wrap;gap:7px;
+  padding:8px;border-bottom:1px solid #d9e3ed}
+.group-row b{flex:1 1 135px}
+.group-row span{flex:1 1 170px}
+.group-row button{font-size:.76rem;padding:5px 8px}
+#toolGroup .actionbar{display:flex;flex-wrap:wrap;gap:7px;margin:9px 0}
+#toolGroup label{display:block;margin:8px 0}
