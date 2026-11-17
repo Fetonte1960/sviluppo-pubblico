@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="it">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Preventivi V1.7.2 — FastPharma Access TEST</title><link rel="stylesheet" href="styles.css?v=1.7.2"></head>
+<title>Preventivi V1.8.0 — FastPharma Access TEST</title><link rel="stylesheet" href="styles.css?v=1.8.0"></head>
 <body>
 <header class="compact-header" hidden>
-  <strong class="brand-version">Preventivi — <span id="appVersion">V1.7.2</span> <small>TEST</small></strong>
+  <strong class="brand-version">Preventivi — <span id="appVersion">V1.8.0</span> <small>TEST</small></strong>
   <span id="currentQuoteHeader">Preventivo in elaborazione: nessuno</span>
   <span class="header-actions">
     <button type="button" id="infoButton" class="button-secondary">Informazioni</button>
@@ -13,8 +13,8 @@
 </header>
 <dialog id="infoDialog" class="app-dialog info-dialog">
  <div class="dialog-title"><h2>Preventivi — informazioni</h2><button type="button" id="closeInfo" class="button-secondary">Chiudi</button></div>
- <p><b>Versione: <span id="infoVersion">V1.7.2</span></b></p>
- <p class="hint">Frontend GitHub Pages, backend .NET su Render Free. DEMO sintetica: quote in memoria non persistenti su Neon.</p>
+ <p><b>Versione: <span id="infoVersion">V1.8.0</span></b></p>
+ <p id="storageDescription" class="hint">Frontend GitHub Pages, backend .NET su Render. Modalità archivio in verifica.</p>
  <p id="status" aria-live="polite">Connessione non inizializzata</p>
  <details class="connection-settings"><summary>Connessione demo (avanzate)</summary>
   <div class="connection-row">
@@ -41,10 +41,10 @@
 <main hidden>
   <nav class="step-tabs" role="tablist" aria-label="Fasi di compilazione preventivo">
     <button id="tabIssuer" class="step-tab active" type="button" role="tab" aria-selected="true" aria-controls="issuerPanel">1 · Generale</button>
-    <button id="tabChapters" class="step-tab" type="button" role="tab" aria-selected="false" aria-controls="chapterPanel">2 · Capitoli</button>
-    <button id="tabBimCad" class="step-tab" type="button" role="tab" aria-selected="false" aria-controls="bimCadPanel">3 · BIM-CAD</button>
-    <button id="tabQuote" class="step-tab" type="button" role="tab" aria-selected="false" aria-controls="quotePanel">4 · Corpo preventivo</button>
-    <button id="tabPrices" class="step-tab" type="button" role="tab" aria-selected="false" aria-controls="pricesPanel">5 · Prezziario</button>
+    <button id="tabChapters" class="step-tab" type="button" role="tab" aria-selected="false" aria-controls="chapterPanel" disabled aria-disabled="true">2 · Capitoli</button>
+    <button id="tabBimCad" class="step-tab" type="button" role="tab" aria-selected="false" aria-controls="bimCadPanel" disabled aria-disabled="true">3 · BIM-CAD</button>
+    <button id="tabQuote" class="step-tab" type="button" role="tab" aria-selected="false" aria-controls="quotePanel" disabled aria-disabled="true">4 · Corpo preventivo</button>
+    <button id="tabPrices" class="step-tab" type="button" role="tab" aria-selected="false" aria-controls="pricesPanel" disabled aria-disabled="true">5 · Prezziario</button>
   </nav>
   <section id="issuerPanel" class="step-panel" role="tabpanel" aria-labelledby="tabIssuer">
     <h2 class="screen-heading">Generale — nuovo preventivo</h2>
@@ -65,6 +65,7 @@
       <div class="archive-heading">
         <h3>Archivio preventivi</h3>
         <span class="hint" id="demoInfo">Caricamento archivio…</span>
+        <button id="closeQuote" type="button" class="button-secondary" disabled>Chiudi preventivo</button>
         <button id="reload" type="button" class="button-secondary">Aggiorna</button>
       </div>
       <div class="quote-grid-wrap">
@@ -407,5 +408,5 @@
     </div>
   </section>
 </main>
-<script src="app.js?v=1.7.2"></script>
+<script src="app.js?v=1.8.0"></script>
 </body></html>
