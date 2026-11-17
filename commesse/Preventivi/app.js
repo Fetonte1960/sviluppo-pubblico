@@ -1,13 +1,129 @@
 "use strict";
 // Demo only. GitHub Pages hosts this static frontend; the authorized API URL is configured explicitly.
 // No Neon credentials, company identity tokens or internal secrets in the frontend.
-const APP_VERSION="1.7.1";
+const APP_VERSION="1.7.2";
 const $ = id => document.getElementById(id);
 const escapeHtml = s => String(s ?? "").replace(/[&<>"']/g, c =>
   ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 // Public API origin is not a secret. Quote calculations and internal costs remain on Render.
 const defaultApiBase = "https://preventivi-demo-api.onrender.com";
-let apiBase = localStorage.getItem("preventivi-demo-api") || defaultApiBase;
+// Ignora configurazioni legacy di API arbitrarie su Pages: non inviare bearer fuori dominio TEST.
+let apiBase = location.hostname==="fetonte1960.github.io"
+ ? defaultApiBase : (localStorage.getItem("preventivi-demo-api") || defaultApiBase);
+// In ambiente Pages i bearer possono raggiungere soltanto il backend TEST autorizzato.
+function checkApiOrigin(){
+ if(location.hostname==="fetonte1960.github.io" && apiBase!==defaultApiBase)
+   throw Error("Per sicurezza FastPharma Access consente solo il backend Preventivi TEST.");
+}
+const accessClientId="fastpharma-preventivi";
+const accessTransactionKey="fastpharma.preventivi.pkce.v1";
+const accessRedirect=location.origin+location.pathname;
+let accessToken="",accessMeta=null,localDemo=false;
+function accessFeedback(message,error=false){
+ const label=$("accessStatus");label.textContent=message;
+ label.style.color=error?"#a12727":"#36596a";
+}
+function showAccess(enabled){
+ $("accessGate").hidden=!enabled;
+ document.querySelector("main").hidden=enabled;
+ document.querySelector("header.compact-header").hidden=enabled;
+}
+const urlSafe=bytes=>btoa(Array.from(bytes,b=>String.fromCharCode(b)).join(""))
+ .replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+async function loadAccessMetadata(){
+ if(accessMeta)return accessMeta;
+ checkApiOrigin();
+ for(let attempt=0;attempt<3;attempt++){
+  if(attempt)await new Promise(resolve=>setTimeout(resolve,3000));
+  try{
+   const res=await fetch(apiBase+"/api/meta",{cache:"no-store",signal:AbortSignal.timeout(25000)});
+   if(!res.ok)throw Error("HTTP "+res.status);
+   const info=await res.json();
+   if(info.authentication==="demo-local" && location.hostname!=="fetonte1960.github.io"){
+    localDemo=true;accessMeta=info;return info;
+   }
+   if(info.authentication!=="openid-connect"||info.oidcClientId!==accessClientId||
+      typeof info.oidcAuthorization!=="string"||!info.oidcAuthorization.startsWith("https://")||
+      typeof info.oidcToken!=="string"||!info.oidcToken.startsWith("https://")||
+      new URL(info.oidcAuthorization).origin!==new URL(info.oidcToken).origin)
+     throw Error("Il servizio Preventivi non è configurato per FastPharma Access.");
+   accessMeta=info;return info;
+  }catch(e){if(attempt===2)throw e;}
+ }
+ throw Error("Provider FastPharma Access non disponibile.");
+}
+async function beginAccessLogin(){
+ const button=$("accessLogin");button.disabled=true;
+ accessFeedback("Collegamento al servizio di autenticazione FastPharma…");
+ try{
+  const info=await loadAccessMetadata();
+  if(localDemo){showAccess(false);await connect();return;}
+  const verifier=urlSafe(crypto.getRandomValues(new Uint8Array(32)));
+  const state=urlSafe(crypto.getRandomValues(new Uint8Array(32)));
+  const nonce=urlSafe(crypto.getRandomValues(new Uint8Array(32)));
+  const hash=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(verifier));
+  sessionStorage.setItem(accessTransactionKey,JSON.stringify({
+   verifier,state,redirect:accessRedirect,at:Date.now(),
+   picker:selectForCommesse?commesseNonce:null
+  }));
+  const uri=new URL(info.oidcAuthorization);
+  for(const [key,value] of Object.entries({
+   client_id:accessClientId,redirect_uri:accessRedirect,
+   response_type:"code",response_mode:"query",scope:"openid profile preventivi",
+   state,nonce,code_challenge:urlSafe(new Uint8Array(hash)),code_challenge_method:"S256"
+  }))uri.searchParams.set(key,value);
+  location.assign(uri.href);
+ }catch(e){
+  accessFeedback("Autenticazione non avviata: "+e.message,true);button.disabled=false;
+ }
+}
+async function completeAccessLogin(){
+ const params=new URLSearchParams(location.search);
+ const code=params.get("code"),error=params.get("error");
+ if(!code&&!error)return false;
+ const raw=sessionStorage.getItem(accessTransactionKey);
+ sessionStorage.removeItem(accessTransactionKey);
+ let t;try{t=JSON.parse(raw||"null");}catch{t=null;}
+ const returned=t?.picker && t.picker===commesseNonce
+   ? "?picker=commesse&nonce="+commesseNonce : "";
+ history.replaceState(null,"",location.pathname+returned+location.hash);
+ if(error)throw Error("FastPharma Access: "+error);
+ if(!t||t.state!==params.get("state")||t.redirect!==accessRedirect||
+    typeof t.verifier!=="string"||!Number.isFinite(t.at)||
+    Date.now()-t.at>10*60*1000)
+   throw Error("Risposta FastPharma Access non corrispondente o scaduta.");
+ const info=await loadAccessMetadata();
+ const body=new URLSearchParams({
+  grant_type:"authorization_code",client_id:accessClientId,
+  code,redirect_uri:accessRedirect,code_verifier:t.verifier
+ });
+ const res=await fetch(info.oidcToken,{
+  method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},
+  body,credentials:"omit",cache:"no-store"
+ });
+ const result=await res.json().catch(()=>({}));
+ if(!res.ok||typeof result.access_token!=="string")
+   throw Error("Token FastPharma Access non ricevuto ("+(result.error||res.status)+").");
+ accessToken=result.access_token;
+ await request("/api/auth/check");
+ showAccess(false);
+ accessFeedback("Sessione FastPharma Access attiva.");
+ await connect();
+ return true;
+}
+async function startAccess(){
+ showAccess(true);
+ $("accessLogin").onclick=()=>{void beginAccessLogin();};
+ try{
+  if(await completeAccessLogin())return;
+  await beginAccessLogin();
+ }catch(e){
+  accessToken="";
+  showAccess(true);
+  accessFeedback("Accesso non riuscito: "+e.message,true);
+  $("accessLogin").disabled=false;
+ }
+}
 // Public demo sessions are independent; this ID is not an authentication credential.
 let demoSession = localStorage.getItem("preventivi-demo-session");
 if(!demoSession || !/^[0-9a-f-]{36}$/i.test(demoSession)){
@@ -19,11 +135,24 @@ let companyId = "", quote = null, catalog = [], prices = [], batches = [], allQu
 /* Selettore opzionale per Gestione Commesse: restituisce solo snapshot COMMERCIALE.
    Nessuna chiave, costo interno o credenziale viene trasferito. */
 const importParams=new URLSearchParams(location.search);
-const commesseNonce=importParams.get('nonce')||'';
-const selectForCommesse=importParams.get('picker')==='commesse' &&
- /^[a-f0-9]{32}$/.test(commesseNonce) &&
+const commesseReturnKey="fastpharma.preventivi.commesse-picker.v1";
+const requestedNonce=importParams.get("nonce")||"";
+const fromCommesse=importParams.get("picker")==="commesse" &&
+ /^[a-f0-9]{32}$/.test(requestedNonce) &&
  /^https:\/\/fetonte1960\.github\.io\/sviluppo-pubblico\/commesse\/Fastpharma-Commesse\//.test(document.referrer) &&
  Boolean(window.opener);
+if(fromCommesse)sessionStorage.setItem(commesseReturnKey,JSON.stringify({
+ nonce:requestedNonce,at:Date.now()
+}));
+let rememberedPicker;
+try{rememberedPicker=JSON.parse(sessionStorage.getItem(commesseReturnKey)||"null");}
+catch{rememberedPicker=null;}
+const resumingPicker=(importParams.has("code")||importParams.has("error")) &&
+ rememberedPicker && /^[a-f0-9]{32}$/.test(rememberedPicker.nonce||"") &&
+ Date.now()-rememberedPicker.at<10*60*1000 && Boolean(window.opener);
+const commesseNonce=fromCommesse?requestedNonce:
+ resumingPicker?rememberedPicker.nonce:"";
+const selectForCommesse=Boolean(fromCommesse||resumingPicker);
 async function chooseForCommesse(id){
  if(!selectForCommesse||!window.opener||window.opener.closed)return;
  const q=await request('/api/quotes/'+encodeURIComponent(id)+'?companyId='+encodeURIComponent(companyId));
@@ -60,7 +189,16 @@ async function request(url, opts={}){
   status("Richiesta API in corso (possibile cold start Render)...");
   const ctrl=new AbortController(); const timeout=setTimeout(()=>ctrl.abort(),90000);
   try{
-    const response=await fetch(apiBase + url,{...opts,signal:ctrl.signal,headers:{"Content-Type":"application/json","X-Preventivi-Demo-Session":demoSession,...(opts.headers||{})}});
+    checkApiOrigin();
+    if(!localDemo&&!accessToken)throw Error("Accedi a FastPharma Access prima di utilizzare Preventivi.");
+    const headers={"Content-Type":"application/json","X-Preventivi-Demo-Session":demoSession,...(opts.headers||{})};
+    if(accessToken)headers.Authorization="Bearer "+accessToken;
+    const response=await fetch(apiBase + url,{...opts,cache:"no-store",signal:ctrl.signal,headers});
+    if(response.status===401 && !localDemo){
+      accessToken="";showAccess(true);$("accessLogin").disabled=false;
+      accessFeedback("Sessione Preventivi scaduta. Accedi nuovamente.",true);
+      throw Error("Sessione Preventivi scaduta.");
+    }
     if(!response.ok){let t=await response.text();try{t=JSON.parse(t).detail||t}catch{} throw Error(response.status+" "+t);}
     status("API collegata · modalità DEMO");
     return ["application/pdf","image/png"].some(t=>response.headers.get("content-type")?.includes(t)) ? await response.blob() : await response.json();
@@ -73,6 +211,7 @@ async function connect(){
   const parsed=new URL(apiBase);
   if(parsed.protocol!=="https:" && !["localhost","127.0.0.1"].includes(parsed.hostname))
     throw Error("Il servizio API deve utilizzare HTTPS.");
+  checkApiOrigin();
   localStorage.setItem("preventivi-demo-api",apiBase);
   if(!apiBase && location.hostname.toLowerCase().endsWith(".github.io"))
     throw Error("Inserire l'indirizzo API demo autorizzata: GitHub Pages ospita solo il frontend statico.");
@@ -84,6 +223,57 @@ async function connect(){
 
 // Secure browser bridge: the CRM popup owns its credential; Preventivi never reads it.
 const CRM_PAGE="https://fetonte1960.github.io/sviluppo-pubblico/commesse/Contatti-fastpharma/";
+let organizationPopup=null,organizationNonce="";
+function newOrganizationNonce(){
+ const bytes=crypto.getRandomValues(new Uint8Array(16));
+ return Array.from(bytes,b=>b.toString(16).padStart(2,"0")).join("");
+}
+function accessPickerOrigin(){
+ return accessMeta?.oidcIssuer?new URL(accessMeta.oidcIssuer).origin:"";
+}
+function loadFromContacts(){
+ const origin=accessPickerOrigin();
+ if(!accessToken || !origin){
+  status("Accedi a FastPharma Access prima di selezionare il destinatario.",true);
+  return;
+ }
+ organizationNonce=newOrganizationNonce();
+ const url=new URL("/organization-picker",origin);
+ url.searchParams.set("client","preventivi");
+ url.searchParams.set("nonce",organizationNonce);
+ organizationPopup=window.open(url.href,"fastpharma-preventivi-organizations",
+  "width=1100,height=760,resizable=yes,scrollbars=yes");
+ if(!organizationPopup){
+  organizationNonce="";
+  status("Il browser ha bloccato il selettore. Abilita i popup per Preventivi.",true);
+ }else{
+  organizationPopup.focus();
+  $("crmLinkStatus").textContent="Seleziona un'Organizzazione in FastPharma Access; non è necessario aprire il CRM.";
+ }
+}
+window.addEventListener("message",event=>{
+ const origin=accessPickerOrigin();
+ if(!origin || event.origin!==origin || event.source!==organizationPopup ||
+    !organizationNonce)return;
+ const data=event.data;
+ if(data?.nonce!==organizationNonce)return;
+ if(data.type==="fastpharma.organization-picker.ready"){
+  organizationPopup.postMessage({
+   type:"fastpharma.organization-picker.ack",nonce:organizationNonce
+  },origin);
+  return;
+ }
+ if(data.type!=="fastpharma.organization-selected"||
+    !crmUuid.test(data.id||"")||typeof data.name!=="string"||
+    !data.name.trim()||data.name.length>250)return;
+ selectedCrmOrganization={id:data.id,name:data.name.trim()};
+ crmOrganizations.set(data.id,selectedCrmOrganization);
+ renderCrmOrganizations();
+ $("crmLinkStatus").textContent="Destinatario collegato da FastPharma Access: "+
+   selectedCrmOrganization.name+". ID Organizzazione associato al nuovo preventivo.";
+ organizationNonce="";
+ organizationPopup=null;
+});
 let crmPopup=null,crmNonce="",crmOrganizations=new Map();
 let selectedCrmOrganization=null,pendingCrmNote=null;
 const crmUuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -94,15 +284,13 @@ function renderCrmOrganizations(){
     entries.map(o=>'<option value="'+escapeHtml(o.id)+'">'+escapeHtml(o.name)+'</option>').join("");
   select.value=selectedCrmOrganization?.id||"";
   $("crmLinkStatus").textContent=entries.length
-    ? "Organizzazioni del CRM lette con accesso autorizzato. Seleziona un destinatario; la finestra Contatti serve anche per annotare la nuova bozza."
-    : "Apri Contatti FastPharma, accedi e seleziona un'Organizzazione. Nessuna credenziale viene trasferita.";
+    ? "Destinatario selezionato con FastPharma Access. L'UUID viene collegato al preventivo."
+    : "Usa «Carica da Contatti» per cercare un'Organizzazione con FastPharma Access.";
 }
-function openContactsPicker(){
+// Il CRM completo rimane accessibile per le attività/note storiche.
+function openContactsLegacy(){
   if(crmPopup&&!crmPopup.closed){crmPopup.focus();return;}
   crmNonce=crypto.randomUUID().replace(/-/g,"");
-  crmOrganizations=new Map();
-  selectedCrmOrganization=null;
-  renderCrmOrganizations();
   crmPopup=window.open(CRM_PAGE+"?picker=preventivi&nonce="+crmNonce,
     "fastpharma-contatti-preventivi","width=1180,height=760,scrollbars=yes,resizable=yes");
   if(!crmPopup){
@@ -1093,19 +1281,20 @@ $("infoButton").onclick=()=>$("infoDialog").showModal();
 $("closeInfo").onclick=()=>$("infoDialog").close();
 $("manageIssuer").onclick=()=>$("issuerDialog").showModal();
 $("closeIssuer").onclick=()=>$("issuerDialog").close();
-$("openContacts").onclick=openContactsPicker;
-$("crmOrganization").onchange=()=>{
- const id=$("crmOrganization").value;
- if(id)requestCrmSelection(id);else selectedCrmOrganization=null;
-};
+$("openContacts").onclick=openContactsLegacy;
+$("loadFromContacts").onclick=loadFromContacts;
 $("exitButton").onclick=()=>{
  if(!confirm("Terminare la sessione dimostrativa Preventivi?"))return;
  localStorage.removeItem("preventivi-demo-session");
  demoSession=crypto.randomUUID(); // Old in-memory session is abandoned, never deleted in CRM.
  quote=null;updateHeaderQuote();
  if(crmPopup&&!crmPopup.closed)crmPopup.close();
- $("exitOverlay").hidden=false;
- document.querySelector("main").hidden=true;
+ if(organizationPopup&&!organizationPopup.closed)organizationPopup.close();
+ accessToken="";
+ sessionStorage.removeItem(accessTransactionKey);
+ showAccess(true);
+ $("accessLogin").disabled=false;
+ accessFeedback("Sessione Preventivi terminata. FastPharma Access rimane autenticato.");
 };
 $("reenter").onclick=()=>location.reload();
 $("apiBase").value=apiBase;
@@ -1173,9 +1362,7 @@ $("newQuote").onclick=()=>guard(async()=>{
     throw Error("Salva o annulla le modifiche dell'emittente.");
   if(!companyId)throw Error("Seleziona un emittente in Gestione emittenti.");
   if(!selectedCrmOrganization||$("crmOrganization").value!==selectedCrmOrganization.id)
-    throw Error("Seleziona un'Organizzazione autenticata tramite Apri Contatti.");
-  if(!crmPopup||crmPopup.closed)
-    throw Error("La finestra Contatti deve restare aperta per registrare la nota.");
+    throw Error("Seleziona un'Organizzazione tramite «Carica da Contatti».");
   const subject=$("newSubject").value.trim();
   if(!subject)throw Error("Inserire l'oggetto del nuovo preventivo.");
   $("newQuote").disabled=true;
@@ -1186,13 +1373,20 @@ $("newQuote").onclick=()=>guard(async()=>{
     quote=created;await refresh();await openQuote(created.id);
     $("newSubject").value="";
     showStep("chapters");
-    try {
-      await recordCrmNote(created);
-      status("Preventivo "+created.reference+" creato; nota registrata in Contatti.");
-    } catch(noteError){
-      status("Preventivo creato, ma "+noteError.message,true);
-      $("crmLinkStatus").textContent="ATTENZIONE: preventivo "+created.reference+
-        " creato, nota CRM non confermata. Verificare lo storico Attività in Contatti.";
+    // Il nuovo selettore SSO non può creare note CRM: non trasferiamo cookie
+    // né credenziali. Se il CRM legacy è già aperto, manteniamo il flusso
+    // storico; altrimenti segnaliamo che la nota va registrata manualmente.
+    if(crmPopup && !crmPopup.closed){
+      try {
+        await recordCrmNote(created);
+        status("Preventivo "+created.reference+" creato; nota registrata in Contatti.");
+      }catch(noteError){
+        status("Preventivo creato, ma "+noteError.message,true);
+        $("crmLinkStatus").textContent="Preventivo creato; nota CRM non confermata. Verifica lo storico Attività in Contatti.";
+      }
+    }else{
+      status("Preventivo "+created.reference+" creato. Nessuna nota CRM automatica.");
+      $("crmLinkStatus").textContent="Preventivo collegato all'Organizzazione. Per annotare l'attività apri Contatti.";
     }
   }finally{$("newQuote").disabled=false;}
 });
@@ -1334,5 +1528,4 @@ $("import").onclick=()=>guard(async()=>{
 });
 const onGitHubPages=location.hostname.toLowerCase().endsWith(".github.io");
 $("resetDemo").hidden=onGitHubPages; // Reset is available only for private localhost testing.
-if(apiBase || !onGitHubPages) guard(connect);
-else status("Frontend pubblico caricato · API demo non configurata.");
+void startAccess();
