@@ -1,7 +1,7 @@
 "use strict";
 // Demo only. GitHub Pages hosts this static frontend; the authorized API URL is configured explicitly.
 // No Neon credentials, company identity tokens or internal secrets in the frontend.
-const APP_VERSION="1.9.1";
+const APP_VERSION="1.9.2";
 const $ = id => document.getElementById(id);
 const escapeHtml = s => String(s ?? "").replace(/[&<>"']/g, c =>
   ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -393,6 +393,18 @@ function syncQuoteTabs(){
     tab.setAttribute("aria-disabled",String(!hasQuote));
   }
   $("closeQuote").disabled=!hasQuote;
+  // Quote-specific actions are unavailable until a quotation is opened.
+  for(const id of ["save","revision","previewPrices","pdf","printSaveSetup","goQuote",
+                   "issuerApplyToQuote"]){
+    $(id).disabled=!hasQuote;
+    $(id).setAttribute("aria-disabled",String(!hasQuote));
+  }
+  $("issuerApplyToQuote").disabled=!hasQuote||
+    !issuerSelected()?.details?.print;
+  document.querySelectorAll(
+    "#commercialDetails input,#commercialDetails select,#commercialDetails textarea,"+
+    "#printSetupDetails input,#printSetupDetails select,#printSetupDetails textarea"
+  ).forEach(field=>{field.disabled=!hasQuote;});
   if(!hasQuote && $("issuerPanel").hidden)showStep("general",true);
 }
 function updateHeaderQuote(){
@@ -404,10 +416,28 @@ function updateHeaderQuote(){
     : "Preventivo in elaborazione: nessuno";
 }
 
-const issuerFields = ["issuerName","issuerAddress","issuerTaxId","issuerContact"];
+const issuerFields = ["issuerName","issuerAddress","issuerTaxId","issuerContact",
+  "issuerPrintAddress","issuerPrintContact"];
+let issuerLogoData={logoJpegBase64:null,logoWidthPx:null,logoHeightPx:null};
+function updateIssuerLogoPreview(){
+  const base64=issuerLogoData.logoJpegBase64;
+  const preview=$("issuerLogoPreview");
+  preview.hidden=!base64;
+  preview.removeAttribute("src");
+  if(base64)preview.src="data:image/jpeg;base64,"+base64;
+  $("issuerLogoStatus").textContent=base64?
+    "Logo JPEG: "+issuerLogoData.logoWidthPx+" × "+
+    issuerLogoData.logoHeightPx+" px":"Nessun logo associato.";
+  $("issuerLogoClear").disabled=!base64;
+}
 function readIssuer(){
   return {name:$("issuerName").value.trim(),address:$("issuerAddress").value.trim(),
-    taxId:$("issuerTaxId").value.trim(),contact:$("issuerContact").value.trim()};
+    taxId:$("issuerTaxId").value.trim(),contact:$("issuerContact").value.trim(),
+    print:{
+      footerAddress:$("issuerPrintAddress").value.trim(),
+      footerContact:$("issuerPrintContact").value.trim(),
+      ...issuerLogoData
+    }};
 }
 function issuerIsDirty(){
   return JSON.stringify(readIssuer()) !== issuerFormBaseline;
@@ -430,6 +460,15 @@ function renderIssuerForm(){
   $("issuerAddress").value=d.address||"";
   $("issuerTaxId").value=d.taxId||"";
   $("issuerContact").value=d.contact||"";
+  $("issuerPrintAddress").value=d.print?.footerAddress||"";
+  $("issuerPrintContact").value=d.print?.footerContact||"";
+  issuerLogoData={
+    logoJpegBase64:d.print?.logoJpegBase64||null,
+    logoWidthPx:d.print?.logoWidthPx||null,
+    logoHeightPx:d.print?.logoHeightPx||null
+  };
+  $("issuerLogoFile").value="";
+  updateIssuerLogoPreview();
   issuerFormBaseline=JSON.stringify(readIssuer());
   $("issuerMode").textContent="Dati dell'emittente selezionato";
   $("issuerSave").textContent="Salva modifiche emittente";
@@ -446,6 +485,9 @@ async function loadCompanies(preferred=companyId){
 function beginNewIssuer(){
   creatingIssuer=true;
   for(const field of issuerFields)$(field).value="";
+  issuerLogoData={logoJpegBase64:null,logoWidthPx:null,logoHeightPx:null};
+  $("issuerLogoFile").value="";
+  updateIssuerLogoPreview();
   issuerFormBaseline=JSON.stringify(readIssuer());
   $("issuerMode").textContent="Nuovo emittente";
   $("issuerSave").textContent="Crea emittente";
@@ -457,12 +499,15 @@ async function saveIssuer(){
   if(!details.name||!details.address)
     throw Error("Ragione sociale e indirizzo dell'emittente sono obbligatori");
   const created=creatingIssuer;
+  const quoteToReopen=!created&&quote?.companyId===companyId?quote.id:null;
   const company=await request(created?"/api/demo/companies":
     "/api/demo/companies/"+companyId,json(created?"POST":"PUT",details));
   quote=null;
   await loadCompanies(company.id);
   await refresh();
-  status(created?"Emittente creato nella demo.":"Anagrafica emittente aggiornata.");
+  if(quoteToReopen)await openQuote(quoteToReopen);
+  status(created?"Emittente creato.":"Emittente aggiornato su Neon. "+
+    "Per il preventivo aperto usa «Aggiorna intestazione dal profilo emittente».");
 }
 
 const recipientFields=["recipientName","recipientAddress","recipientTaxId","recipientContact"];
@@ -1580,6 +1625,50 @@ $("issuerCards").onclick=e=>{const b=e.target.closest("[data-issuer]");if(b)guar
 $("issuerNew").onclick=beginNewIssuer;
 $("issuerCancel").onclick=renderIssuerForm;
 $("issuerForm").onsubmit=e=>{e.preventDefault();guard(saveIssuer)};
+$("issuerLogoFile").onchange=()=>guard(async()=>{
+  const file=$("issuerLogoFile").files?.[0];
+  if(!file)return;
+  if(file.type!=="image/jpeg" || file.size>180000 || file.size<60)
+    throw Error("Seleziona un logo JPEG valido, massimo 180 KB.");
+  const data=await new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onerror=()=>reject(Error("Impossibile leggere il logo."));
+    reader.onload=()=>resolve(reader.result);
+    reader.readAsDataURL(file);
+  });
+  const image=new Image();
+  await new Promise((resolve,reject)=>{
+    image.onload=resolve;
+    image.onerror=()=>reject(Error("Immagine JPEG non valida."));
+    image.src=data;
+  });
+  if(image.naturalWidth>3000||image.naturalHeight>3000 ||
+     !image.naturalWidth||!image.naturalHeight)
+    throw Error("Dimensioni logo non valide (massimo 3000 px).");
+  issuerLogoData={
+    logoJpegBase64:String(data).split(",")[1],
+    logoWidthPx:image.naturalWidth,
+    logoHeightPx:image.naturalHeight
+  };
+  updateIssuerLogoPreview();
+});
+$("issuerLogoClear").onclick=()=>{
+  issuerLogoData={logoJpegBase64:null,logoWidthPx:null,logoHeightPx:null};
+  $("issuerLogoFile").value="";
+  updateIssuerLogoPreview();
+};
+$("issuerApplyToQuote").onclick=()=>guard(async()=>{
+  if(!quote)throw Error("Seleziona un preventivo.");
+  if(creatingIssuer||issuerIsDirty())
+    throw Error("Salva prima le modifiche all'anagrafica emittente.");
+  const id=quote.id;
+  await save();
+  await request("/api/quotes/"+id+"/issuer-print-from-master?companyId="+companyId,
+    {method:"PUT"});
+  await openQuote(id);
+  status("Logo e piè di pagina acquisiti dall'emittente nel preventivo aperto. "+
+    "Le revisioni storiche non sono state modificate.");
+});
 $("recipientSelect").onchange=()=>guard(()=>chooseRecipient($("recipientSelect").value));
 $("recipientImport").onclick=()=>guard(openCrmImport);
 $("crmImportKind").onchange=()=>guard(loadCrmCandidates);
