@@ -1,4 +1,4 @@
-<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gestione Commesse V4.4.0 · FastPharma TEST</title>
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gestione Commesse V4.5.0 · FastPharma TEST</title>
 <style>body{font:15px system-ui,sans-serif;background:#f2f6f8;color:#203648;margin:0}header{background:#163849;color:white;padding:22px max(20px,calc((100% - 1100px)/2))}main{max-width:1100px;margin:26px auto;padding:0 16px}a{color:#116b74}header a{color:#c8e8df;margin-right:20px}section{background:white;padding:22px;border:1px solid #e1e8ed;border-radius:12px;margin:15px 0}h1{margin:0 0 6px}h2{font-size:19px}.muted{color:#687b87}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}.metric{padding:14px;background:#edf5f7;border-radius:9px}.metric b{display:block;font-size:20px}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid #e5edf0;padding:9px;text-align:left}label{display:block;margin:9px 0;font-size:13px;font-weight:600}input,select,textarea{display:block;width:100%;max-width:500px;padding:9px;margin-top:5px;box-sizing:border-box}button{background:#087d78;color:white;border:0;border-radius:7px;padding:10px 14px;cursor:pointer}.warn{padding:12px;background:#fff0d9;border-left:4px solid #d58e14}.bad{color:#aa2834}.good{color:#168057}.test{font-weight:bold;background:#ffe8ad;color:#5b3b00;padding:5px 10px;border-radius:6px}.inline{display:inline}.inline button{font-size:12px;padding:5px 8px}@media(max-width:700px){table{display:block;overflow-x:auto}}
 /* Solo cornice della specifica offline, l'interfaccia V4 conserva lo stile originale. */
 .demo-ribbon{background:#f8edd6;color:#6b4900;padding:10px 20px;text-align:center;font:600 13px system-ui,sans-serif;border-bottom:1px solid #e6d5ab}
@@ -206,6 +206,26 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 #page .document-source-panel table{width:100%;font-size:.82rem}
 #page .document-source-panel td,#page .document-source-panel th{vertical-align:top}
 #page .document-source-panel .document-draft-note{color:#6a6470;font-size:.82rem}
+
+/* Contratto V4.5.0 — editor dati contrattuali e allegato Preventivi */
+#page #contract-status{font-size:.85rem;color:#315d73}
+#page #contract-status.error{color:#ab3232;font-weight:650}
+#page .contract-archive{display:grid;grid-template-columns:minmax(145px,1fr) minmax(160px,3fr);
+ border:1px solid #d6e4eb;border-radius:8px;overflow:hidden;margin:10px 0;background:#f8fbfc}
+#page .contract-archive dt,#page .contract-archive dd{font-size:.82rem;overflow-wrap:anywhere;
+ margin:0;padding:8px 12px;border-bottom:1px solid #e4edf4}
+#page .contract-archive dt{font-weight:600;color:#426078;background:#edf4f8}
+#page .contract-fields{display:grid;grid-template-columns:repeat(3,minmax(175px,1fr));
+ gap:13px 15px;margin:12px 0}
+#page .contract-fields label{font-size:.8rem;font-weight:600;color:#34526a;margin:0}
+#page .contract-fields input,#page .contract-fields textarea{margin:5px 0 0;width:100%;
+ min-width:0;padding:8px;border:1px solid #c9d7e2;border-radius:6px;box-sizing:border-box}
+#page .contract-missing{color:#8e5423;font-weight:600;font-size:.82rem}
+#page .contract-actions{display:flex;gap:9px;flex-wrap:wrap}
+#page .contract-actions button{min-height:39px}
+@media(max-width:930px){#page .contract-fields{grid-template-columns:repeat(2,minmax(180px,1fr))}}
+@media(max-width:550px){#page .contract-fields{grid-template-columns:1fr}
+ #page .contract-archive{grid-template-columns:1fr}}
 </style></head><body>
 
 <div id="commesse-auth">
@@ -218,7 +238,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 </div>
 <div id="commesse-app" hidden>
 <header class="compact-header">
-  <strong class="brand-version">Gestione Commesse — <span id="commesse-version">V4.4.0</span> <small>TEST</small></strong>
+  <strong class="brand-version">Gestione Commesse — <span id="commesse-version">V4.5.0</span> <small>TEST</small></strong>
   <span id="currentProjectHeader">Commessa in elaborazione: nessuna</span>
   <span class="header-actions">
     <button type="button" id="help">Informazioni</button>
@@ -243,7 +263,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 <script>
 (function(){
 'use strict';
-const UI_VERSION='4.4.0';
+const UI_VERSION='4.5.0';
 const pages=JSON.parse(document.getElementById('screens').textContent);
 // Archivio originale ricevuto: non convertirne le proposte in requisiti approvati.
 const originalClientAnalysis=JSON.parse(document.getElementById('client-analysis-original').textContent);
@@ -478,71 +498,192 @@ function selectCommessa(id,caption=''){
  }
 }
 
+const contractFields=[
+ ["luogo_lavori","Indirizzo dell'immobile / cantiere","text"],
+ ["titolo_disponibilita","Titolo di disponibilità (es. affittuaria)","text"],
+ ["destinazione_uso","Destinazione d'uso","text"],
+ ["rappresentante_appaltatore","Legale rappresentante appaltatore","text"],
+ ["qualifica_rappresentante","Qualifica rappresentante appaltatore","text"],
+ ["registro_imprese","Numero Registro Imprese","text"],
+ ["camera_registro","Camera di Commercio di iscrizione","text"],
+ ["rappresentante_committente","Rappresentante del committente (facoltativo)","text"],
+ ["data_inizio","Inizio lavori / dicitura concordata","text"],
+ ["durata_giorni","Durata lavori (giorni)","number"],
+ ["termini_pagamento","Termini di pagamento","textarea"],
+ ["condizioni_leasing","Condizioni eventuale leasing","textarea"],
+ ["iban","IBAN appaltatore","text"],
+ ["banca","Banca / filiale","text"],
+ ["luogo_stipula","Luogo della stipula","text"],
+ ["data_stipula","Data della stipula","date"],
+ ["camera_conciliazione","Camera di Commercio per conciliazione","text"],
+ ["foro_competente","Foro competente","text"]
+];
+let contractState=null;
 function syncDocumentActions(){
  const selected=Number.isSafeInteger(currentProjectId)&&currentProjectId>0;
  for(const button of view.querySelectorAll('[data-pdf-document]')){
   button.disabled=!selected;
   button.title=selected
-   ?'Apri la mappatura delle fonti del contratto PDF (generazione in progettazione)'
+   ?'Prepara e stampa il contratto con il PDF originale del preventivo archiviato'
    :'Seleziona prima una commessa nella griglia Generale';
  }
  const panel=view.querySelector('#contract-sources');
- if(panel){
-  if(!selected)panel.hidden=true;
-  else{
-   const context=panel.querySelector('[data-contract-commessa]');
-   if(context)context.textContent=currentProjectCaption||('ID '+currentProjectId);
-  }
+ if(panel&&(!selected||panel.dataset.projectId!==String(currentProjectId))){
+  panel.hidden=true;panel.dataset.projectId=String(currentProjectId);
+  contractState=null;
  }
+}
+function contractStatus(message,error=false){
+ const status=view.querySelector('#contract-status');
+ if(status){status.textContent=message;status.classList.toggle('error',error);}
+}
+async function readContractSource(){
+ const panel=view.querySelector('#contract-sources');
+ if(!panel||!currentProjectId)return;
+ const id=currentProjectId;
+ const form=panel.querySelector('form');
+ contractStatus('Lettura dei dati da Commesse, Contatti e dalla stampa Neon di Preventivi…');
+ form.hidden=true;
+ try{
+  const response=await apiCall('/api/commesse/'+id+'/contratto');
+  const body=await response.json().catch(()=>({}));
+  if(currentProjectId!==id||!panel.isConnected)return;
+  if(!response.ok)throw Error(body.error||body.title||'Dati contratto non disponibili (HTTP '+response.status+').');
+  contractState=body;
+  const summary=panel.querySelector('#contract-archive');
+  summary.replaceChildren();
+  const basics=[
+   ['Commessa',body.commessa],['Preventivo',body.preventivo],
+   ['Stampa acquisita',body.stampa?.filename],['UUID stampa',body.stampa?.id],
+   ['SHA-256',body.stampa?.sha256],['Committente Contatti',body.committente?.name],
+   ['P. IVA committente',body.committente?.vat],
+   ['Sede committente',[
+     body.committente?.address,body.committente?.postalCode,
+     body.committente?.city,body.committente?.province].filter(Boolean).join(' ')],
+   ['Appaltatore',body.emittente?.name],['P. IVA appaltatore',body.emittente?.taxId],
+   ['Sede appaltatore',body.emittente?.address],
+   ['Importo imponibile',euro(body.importo)]
+  ];
+  for(const [label,value] of basics){
+   const term=document.createElement('dt');term.textContent=label;
+   const cell=document.createElement('dd');cell.textContent=value||'DA COMPLETARE';
+   summary.append(term,cell);
+  }
+  for(const [name,,type] of contractFields){
+   const input=form.querySelector('[name="'+name+'"]');
+   if(input)input.value=String(body.configurazione?.[name]||'');
+  }
+  const missing=Array.isArray(body.mancanti)?body.mancanti:[];
+  const warning=panel.querySelector('#contract-missing');
+  warning.textContent=missing.length
+    ?'Campi da completare per la stampa senza segnalazione BOZZA: '+missing.join(', ')
+    :'I campi obbligatori risultano compilati. Verifica comunque il contenuto legale prima della stipula.';
+  const finalBtn=panel.querySelector('#contract-final');
+  finalBtn.disabled=missing.length>0||body.stampa?.tipo==='draft';
+  finalBtn.title=body.stampa?.tipo==='draft'
+   ?'Il preventivo allegato è una bozza; il contratto non può essere emesso come definitivo.'
+   :missing.length?'Completa i campi mancanti prima della stampa definitiva':'Stampa contratto';
+  form.hidden=false;
+  contractStatus('Dati caricati. L’allegato sarà esattamente la stampa salvata in Neon, non una nuova stampa.');
+ }catch(error){
+  contractState=null;
+  contractStatus('Impossibile predisporre il contratto: '+error.message,true);
+ }
+}
+async function saveContractConfig(event){
+ event.preventDefault();
+ const panel=view.querySelector('#contract-sources');
+ const form=event.currentTarget;
+ if(!panel||!currentProjectId||!contractState)return;
+ const id=currentProjectId,button=panel.querySelector('#contract-save');
+ const fields=Object.fromEntries(new FormData(form));
+ button.disabled=true;contractStatus('Salvataggio dei parametri della commessa in Neon TEST…');
+ try{
+  const response=await apiCall('/api/commesse/'+id+'/contratto',{
+   method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(fields)
+  });
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok||!result.saved)throw Error(result.error||result.title||'Salvataggio non confermato.');
+  if(id===currentProjectId)await readContractSource();
+ }catch(error){
+  contractStatus('Salvataggio non confermato: '+error.message,true);
+ }finally{if(button.isConnected)button.disabled=false;}
+}
+async function downloadContractPdf(draft){
+ const panel=view.querySelector('#contract-sources');
+ if(!panel||!currentProjectId||!contractState)return;
+ const id=currentProjectId,button=panel.querySelector(draft?'#contract-draft':'#contract-final');
+ button.disabled=true;
+ contractStatus('Composizione PDF: contratto più pagine originali dell’allegato preventivo…');
+ try{
+  const response=await apiCall('/api/commesse/'+id+'/contratto/pdf?bozza='+(draft?'true':'false'));
+  if(!response.ok){
+   const details=await response.json().catch(()=>({}));
+   throw Error(details.error||details.title||'Errore PDF HTTP '+response.status);
+  }
+  const blob=await response.blob();
+  if(blob.type&&!blob.type.includes('pdf'))throw Error('Il server non ha restituito un PDF.');
+  const url=URL.createObjectURL(blob);
+  const filename='Contratto-'+String(contractState.commessa||id).replace(/[^a-zA-Z0-9-]/g,'')+
+    (draft?'-BOZZA':'')+'.pdf';
+  const link=document.createElement('a');
+  link.href=url;link.download=filename;document.body.append(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),30000);
+  contractStatus('PDF pronto. La stampa originale del preventivo è stata allegata alle pagine del contratto.');
+ }catch(error){
+  contractStatus('PDF non disponibile: '+error.message,true);
+ }finally{if(button.isConnected)button.disabled=false;}
 }
 function buildDocumentActions(){
  const section=document.createElement('section');section.className='document-actions';
  const heading=document.createElement('h2');heading.textContent='Documenti PDF';
  const buttons=document.createElement('div');buttons.className='document-buttons';
- // Aggiungere qui i futuri artefatti quando le relative specifiche saranno approvate.
- const definitions=[{id:'contratto',label:'Contratto'}];
- for(const definition of definitions){
-  const button=document.createElement('button');button.type='button';
-  button.dataset.pdfDocument=definition.id;button.textContent=definition.label;
-  button.disabled=true;
-  button.addEventListener('click',()=>{
-   if(!currentProjectId)return;
-   if(definition.id==='contratto'){
-    const panel=section.querySelector('#contract-sources');
-    panel.hidden=!panel.hidden;
-    syncDocumentActions();
-   }
-  });
-  buttons.append(button);
- }
+ const button=document.createElement('button');
+ button.type='button';button.dataset.pdfDocument='contratto';button.textContent='Contratto';
+ button.disabled=true;
+ button.onclick=async()=>{
+  if(!currentProjectId)return;
+  const panel=section.querySelector('#contract-sources');
+  panel.hidden=!panel.hidden;
+  if(!panel.hidden)await readContractSource();
+ };
+ buttons.append(button);
  const hint=document.createElement('p');hint.className='document-hint';
- hint.textContent='Contratto: stiamo definendo le fonti dei dati. Il comando apre la scheda di analisi; il PDF non viene ancora generato.';
+ hint.textContent='Stampa contratto A4 con la copia originale della stampa Preventivi archiviata in Neon.';
  const panel=document.createElement('div');panel.id='contract-sources';
  panel.className='document-source-panel';panel.hidden=true;
- const h=document.createElement('h3');h.textContent='Contratto — Passo 1: anagrafica delle parti';
- const selected=document.createElement('p');
- const bold=document.createElement('strong');bold.textContent='Commessa: ';
- const context=document.createElement('span');context.dataset.contractCommessa='1';
- selected.append(bold,context);
- const table=document.createElement('table');
- const hr=document.createElement('tr');
- for(const label of ['Dato del contratto','Fonte da integrare','Verifica da fare']){
-  const th=document.createElement('th');th.textContent=label;hr.append(th);
+ const title=document.createElement('h3');title.textContent='Preparazione Contratto · modello Poasco v1';
+ const status=document.createElement('p');status.id='contract-status';status.setAttribute('role','status');
+ const list=document.createElement('dl');list.id='contract-archive';list.className='contract-archive';
+ const info=document.createElement('p');info.className='document-draft-note';
+ info.textContent='I dati della stampa e delle anagrafiche provengono dagli archivi e non sono modificabili qui. I campi seguenti appartengono esclusivamente alla commessa.';
+ const form=document.createElement('form');form.id='contract-form';form.hidden=true;
+ form.addEventListener('submit',saveContractConfig);
+ const grid=document.createElement('div');grid.className='contract-fields';
+ for(const [name,label,type] of contractFields){
+  const field=document.createElement('label');field.textContent=label;
+  let input;
+  if(type==='textarea'){input=document.createElement('textarea');input.rows=3;}
+  else{input=document.createElement('input');input.type=type;}
+  input.name=name;input.maxLength=type==='textarea'?1800:300;
+  if(name==='durata_giorni'){input.min='1';input.max='3650';input.step='1';}
+  field.append(input);grid.append(field);
  }
- table.append(hr);
- const rows=[
-  ['Committente · ragione sociale e P.IVA','Organizzazione Contatti FastPharma','La selezione oggi trasmette solo UUID e nome. Serve lettura anagrafica autorizzata.'],
-  ['Appaltatore · sede, P.IVA e rappresentante','Configurazione aziendale FastPharma','Definire e confermare la scheda unica dell’emittente.'],
-  ['Immobile · indirizzo e disponibilità','Dati specifici della commessa','Non confondere sede del cliente e luogo dei lavori; non presumere affitto o proprietà.']
- ];
- for(const row of rows){
-  const tr=document.createElement('tr');
-  for(const text of row){const td=document.createElement('td');td.textContent=text;tr.append(td);}
-  table.append(tr);
- }
- const foot=document.createElement('p');foot.className='document-draft-note';
- foot.textContent='Documento di riferimento: CONTRATTO POASCO.pdf, pagina 1. Il modello non è ancora un contratto pronto da emettere.';
- panel.append(h,selected,table,foot);
+ const missing=document.createElement('p');missing.id='contract-missing';
+ missing.className='contract-missing';
+ const actions=document.createElement('div');actions.className='contract-actions';
+ const save=document.createElement('button');save.id='contract-save';
+ save.type='submit';save.textContent='Salva dati contratto';
+ const draft=document.createElement('button');draft.type='button';draft.id='contract-draft';
+ draft.textContent='Stampa bozza PDF';draft.onclick=()=>downloadContractPdf(true);
+ const final=document.createElement('button');final.type='button';final.id='contract-final';
+ final.textContent='Stampa contratto PDF';final.onclick=()=>downloadContractPdf(false);
+ final.disabled=true;
+ actions.append(save,draft,final);
+ const caution=document.createElement('p');caution.className='document-draft-note';
+ caution.textContent='La bozza indica visibilmente eventuali dati mancanti e non equivale a un contratto firmato. Stampa definitiva disattivata se il preventivo allegato è ancora una bozza.';
+ form.append(grid,missing,actions,caution);
+ panel.append(title,status,list,info,form);
  section.append(heading,buttons,hint,panel);
  return section;
 }
