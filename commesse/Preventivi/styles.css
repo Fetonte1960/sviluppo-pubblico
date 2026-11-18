@@ -349,3 +349,11 @@
 .printed-archive-row>div{flex:1 1 290px;min-width:0;overflow-wrap:anywhere}
 .printed-archive-row button{flex:0 0 auto;font-size:.79rem}
 #printedArchiveDetails{margin-top:10px}
+
+/* V1.9.6: protect all quotations from accidental deletion; preserve disabled
+   appearance even under the archive table's more specific hover rule. */
+#quoteList button[data-delete-quote]:disabled,
+#quoteList button[data-delete-quote]:disabled:hover{
+ background:#e7e9ed;color:#747e8b;cursor:not-allowed;opacity:.8;
+ border:1px solid #d1d8e0;
+}
