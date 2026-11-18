@@ -1,7 +1,7 @@
 "use strict";
 // Demo only. GitHub Pages hosts this static frontend; the authorized API URL is configured explicitly.
 // No Neon credentials, company identity tokens or internal secrets in the frontend.
-const APP_VERSION="1.9.4";
+const APP_VERSION="1.9.5";
 const $ = id => document.getElementById(id);
 const escapeHtml = s => String(s ?? "").replace(/[&<>"']/g, c =>
   ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
