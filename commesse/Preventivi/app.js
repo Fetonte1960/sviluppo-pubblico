@@ -1556,7 +1556,8 @@ async function downloadPdf(revision){
   // Never retry POST automatically. The UUID makes a deliberate later retry
   // idempotent even if the original response was lost on Render cold start.
   const doc=await request("/api/quotes/"+quote.id+"/prints",
-    json("POST",{companyId,requestId:requestedId,revision:revision??null}));
+    json("POST",{companyId,requestId:requestedId,revision:revision??null,
+      issue:revision==null}));
   if(doc.requestId!==requestedId || doc.quoteId!==quote.id ||
      doc.companyId!==companyId)
     throw Error("Conferma della stampa non coerente con il preventivo.");
@@ -1564,6 +1565,13 @@ async function downloadPdf(revision){
   status("Stampa salvata su Neon con ID "+doc.id+"; download in corso.");
   await refreshPrintedArchive();
   await downloadStoredPdf(doc.id,doc.fileName);
+  if(revision==null){
+    const id=quote.id;
+    await refresh();
+    await openQuote(id);
+    status("Preventivo emesso e stampato con riferimento "+quote.reference+
+      " · documento "+doc.id);
+  }
 }
 
 async function pricePreview(){
