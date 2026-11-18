@@ -1,4 +1,4 @@
-<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gestione Commesse V4.5.0 · FastPharma TEST</title>
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gestione Commesse V4.5.1 · FastPharma TEST</title>
 <style>body{font:15px system-ui,sans-serif;background:#f2f6f8;color:#203648;margin:0}header{background:#163849;color:white;padding:22px max(20px,calc((100% - 1100px)/2))}main{max-width:1100px;margin:26px auto;padding:0 16px}a{color:#116b74}header a{color:#c8e8df;margin-right:20px}section{background:white;padding:22px;border:1px solid #e1e8ed;border-radius:12px;margin:15px 0}h1{margin:0 0 6px}h2{font-size:19px}.muted{color:#687b87}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}.metric{padding:14px;background:#edf5f7;border-radius:9px}.metric b{display:block;font-size:20px}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid #e5edf0;padding:9px;text-align:left}label{display:block;margin:9px 0;font-size:13px;font-weight:600}input,select,textarea{display:block;width:100%;max-width:500px;padding:9px;margin-top:5px;box-sizing:border-box}button{background:#087d78;color:white;border:0;border-radius:7px;padding:10px 14px;cursor:pointer}.warn{padding:12px;background:#fff0d9;border-left:4px solid #d58e14}.bad{color:#aa2834}.good{color:#168057}.test{font-weight:bold;background:#ffe8ad;color:#5b3b00;padding:5px 10px;border-radius:6px}.inline{display:inline}.inline button{font-size:12px;padding:5px 8px}@media(max-width:700px){table{display:block;overflow-x:auto}}
 /* Solo cornice della specifica offline, l'interfaccia V4 conserva lo stile originale. */
 .demo-ribbon{background:#f8edd6;color:#6b4900;padding:10px 20px;text-align:center;font:600 13px system-ui,sans-serif;border-bottom:1px solid #e6d5ab}
@@ -238,7 +238,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 </div>
 <div id="commesse-app" hidden>
 <header class="compact-header">
-  <strong class="brand-version">Gestione Commesse — <span id="commesse-version">V4.5.0</span> <small>TEST</small></strong>
+  <strong class="brand-version">Gestione Commesse — <span id="commesse-version">V4.5.1</span> <small>TEST</small></strong>
   <span id="currentProjectHeader">Commessa in elaborazione: nessuna</span>
   <span class="header-actions">
     <button type="button" id="help">Informazioni</button>
@@ -263,7 +263,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 <script>
 (function(){
 'use strict';
-const UI_VERSION='4.5.0';
+const UI_VERSION='4.5.1';
 const pages=JSON.parse(document.getElementById('screens').textContent);
 // Archivio originale ricevuto: non convertirne le proposte in requisiti approvati.
 const originalClientAnalysis=JSON.parse(document.getElementById('client-analysis-original').textContent);
@@ -554,6 +554,8 @@ async function readContractSource(){
   summary.replaceChildren();
   const basics=[
    ['Commessa',body.commessa],['Preventivo',body.preventivo],
+   ['Stato preventivo',body.stampa?.tipo==='issued'?'EMESSO (non equivale ad accettato)':body.stampa?.tipo||'Da verificare'],
+   ['Stato contratto',body.stato==='pronto-per-firma'?'PRONTO PER LA FIRMA (non sottoscritto)':'BOZZA'],
    ['Stampa acquisita',body.stampa?.filename],['UUID stampa',body.stampa?.id],
    ['SHA-256',body.stampa?.sha256],['Committente Contatti',body.committente?.name],
    ['P. IVA committente',body.committente?.vat],
@@ -576,13 +578,14 @@ async function readContractSource(){
   const missing=Array.isArray(body.mancanti)?body.mancanti:[];
   const warning=panel.querySelector('#contract-missing');
   warning.textContent=missing.length
-    ?'Campi da completare per la stampa senza segnalazione BOZZA: '+missing.join(', ')
-    :'I campi obbligatori risultano compilati. Verifica comunque il contenuto legale prima della stipula.';
+    ?'Campi obbligatori da completare: '+missing.join(', ')
+    :'Dati obbligatori completi. La data di stipula può restare vuota e verrà compilata al momento della firma.';
   const finalBtn=panel.querySelector('#contract-final');
-  finalBtn.disabled=missing.length>0||body.stampa?.tipo==='draft';
-  finalBtn.title=body.stampa?.tipo==='draft'
-   ?'Il preventivo allegato è una bozza; il contratto non può essere emesso come definitivo.'
-   :missing.length?'Completa i campi mancanti prima della stampa definitiva':'Stampa contratto';
+  finalBtn.disabled=missing.length>0||body.stampa?.tipo!=='issued';
+  finalBtn.title=body.stampa?.tipo!=='issued'
+   ?'Per stampare senza dicitura BOZZA occorre allegare una revisione del preventivo effettivamente EMESSO.'
+   :missing.length?'Completa i campi obbligatori prima della stampa per firma'
+   :'Contratto pronto per la firma: non significa documento sottoscritto.';
   form.hidden=false;
   contractStatus('Dati caricati. L’allegato sarà esattamente la stampa salvata in Neon, non una nuova stampa.');
  }catch(error){
@@ -625,7 +628,7 @@ async function downloadContractPdf(draft){
   if(blob.type&&!blob.type.includes('pdf'))throw Error('Il server non ha restituito un PDF.');
   const url=URL.createObjectURL(blob);
   const filename='Contratto-'+String(contractState.commessa||id).replace(/[^a-zA-Z0-9-]/g,'')+
-    (draft?'-BOZZA':'')+'.pdf';
+    (draft?'-BOZZA':'-PRONTO-FIRMA')+'.pdf';
   const link=document.createElement('a');
   link.href=url;link.download=filename;document.body.append(link);link.click();link.remove();
   setTimeout(()=>URL.revokeObjectURL(url),30000);
@@ -677,11 +680,11 @@ function buildDocumentActions(){
  const draft=document.createElement('button');draft.type='button';draft.id='contract-draft';
  draft.textContent='Stampa bozza PDF';draft.onclick=()=>downloadContractPdf(true);
  const final=document.createElement('button');final.type='button';final.id='contract-final';
- final.textContent='Stampa contratto PDF';final.onclick=()=>downloadContractPdf(false);
+ final.textContent='Stampa per firma PDF';final.onclick=()=>downloadContractPdf(false);
  final.disabled=true;
  actions.append(save,draft,final);
  const caution=document.createElement('p');caution.className='document-draft-note';
- caution.textContent='La bozza indica visibilmente eventuali dati mancanti e non equivale a un contratto firmato. Stampa definitiva disattivata se il preventivo allegato è ancora una bozza.';
+ caution.textContent='Stampa per firma: il contratto non è ancora sottoscritto. La data può rimanere in bianco. Solo una stampa emessa di Preventivi consente di rimuovere la dicitura BOZZA.';
  form.append(grid,missing,actions,caution);
  panel.append(title,status,list,info,form);
  section.append(heading,buttons,hint,panel);
