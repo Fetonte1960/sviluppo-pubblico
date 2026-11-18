@@ -1,7 +1,7 @@
 "use strict";
 // Demo only. GitHub Pages hosts this static frontend; the authorized API URL is configured explicitly.
 // No Neon credentials, company identity tokens or internal secrets in the frontend.
-const APP_VERSION="1.9.5";
+const APP_VERSION="1.9.6";
 const $ = id => document.getElementById(id);
 const escapeHtml = s => String(s ?? "").replace(/[&<>"']/g, c =>
   ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -1050,7 +1050,8 @@ async function refresh(){
     '<td>'+escapeHtml(q.subject)+'</td><td>'+escapeHtml(q.status)+'</td>'+
     '<td>'+escapeHtml(q.revisions)+'</td>'+
     '<td><button type="button" data-open="'+escapeHtml(q.id)+'">Apri</button>'+
-    '<button type="button" class="button-danger" data-delete-quote="'+escapeHtml(q.id)+'">Cancella</button>'+
+    '<button type="button" class="button-danger" data-delete-quote="'+escapeHtml(q.id)+
+    '" disabled aria-disabled="true" title="Cancellazione preventivi disattivata per sicurezza">Cancella (disattivato)</button>'+
     (selectForCommesse?'<button type="button" data-pick-commesse="'+escapeHtml(q.id)+'">Usa in Commesse</button>':'')+
     '</td></tr>').join("")||
     '<tr><td colspan="7" class="empty">Nessun preventivo disponibile per questo emittente.</td></tr>';
@@ -1475,20 +1476,6 @@ function closeCurrentQuote(){
   clearOpenedQuote();
   status("Preventivo chiuso. Selezionane uno dalla scheda Generale.");
 }
-async function deleteQuoteFromArchive(id){
-  const choice=allQuotes.find(item=>item.id===id);
-  if(!choice)throw Error("Preventivo non presente nell'archivio aggiornato.");
-  const message="Cancellare definitivamente il preventivo "+choice.reference+
-    " — "+choice.subject+"?\nEmittente: "+choice.issuerName+"\n"+
-    "Saranno rimossi anche tutte le revisioni, gli allegati e i progetti BIM-CAD associati. "+
-    "Questa operazione non può essere annullata.";
-  if(!confirm(message))return;
-  await request("/api/quotes/"+encodeURIComponent(choice.id)+
-    "?companyId="+encodeURIComponent(choice.companyId),{method:"DELETE"});
-  if(quote?.id===choice.id)clearOpenedQuote();
-  await refresh();
-  status("Preventivo "+choice.reference+" cancellato dall'archivio DEMO.");
-}
 async function openQuote(id){
   const previousId=quote?.id;
   quote=await request("/api/quotes/"+id+"?companyId="+companyId);
@@ -1840,8 +1827,6 @@ $("newQuote").onclick=()=>guard(async()=>{
   }finally{$("newQuote").disabled=false;}
 });
 $("quoteList").onclick=e=>{
- const removing=e.target.closest("[data-delete-quote]");
- if(removing){guard(()=>deleteQuoteFromArchive(removing.dataset.deleteQuote));return;}
  const selected=e.target.closest("[data-pick-commesse]");
  if(selected){guard(()=>chooseForCommesse(selected.dataset.pickCommesse));return;}
  const b=e.target.closest("[data-open]");if(b)guard(async()=>{
