@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="referrer" content="no-referrer">
+  <meta name="description" content="Menu generale FastPharma: accesso ai gestionali Contatti, Preventivi e Commesse.">
+  <title>FastPharma · Menu generale</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#1a3449;background:#edf3f8}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh}
+    a{color:inherit}
+    a:focus-visible{outline:3px solid #ecad3d;outline-offset:4px}
+    .top{background:linear-gradient(120deg,#15384c 0%,#1b5a73 100%);color:#fff}
+    .top-inner{max-width:1170px;margin:auto;padding:31px 28px 52px}
+    .brand{display:flex;align-items:center;gap:14px;font-weight:750;letter-spacing:.02em;font-size:1.25rem}
+    .mark{width:44px;height:44px;border-radius:12px;background:#ffffff23;display:grid;place-items:center;border:1px solid #ffffff50;font-size:1.65rem}
+    .brand small{display:block;font-size:.74rem;font-weight:500;color:#b9dae9;letter-spacing:.11em;text-transform:uppercase;margin-top:2px}
+    .top h1{font-size:clamp(1.7rem,3.3vw,2.6rem);line-height:1.15;margin:39px 0 12px;letter-spacing:-.035em}
+    .lead{max-width:640px;margin:0;color:#d8e9f2;line-height:1.65}
+    main{max-width:1170px;margin:-22px auto 0;padding:0 28px 42px;position:relative}
+    .intro{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin:30px 0 16px}
+    .intro h2{font-size:1.2rem;margin:0}
+    .intro p{margin:5px 0 0;font-size:.9rem;color:#52697d}
+    .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+    .card{display:flex;flex-direction:column;gap:14px;min-height:260px;padding:25px;border:1px solid #d5e1ed;border-radius:14px;background:white;text-decoration:none;box-shadow:0 8px 28px #193b5610;transition:transform .15s,border-color .15s,box-shadow .15s}
+    .card:hover{transform:translateY(-3px);border-color:#79b2d0;box-shadow:0 12px 30px #193b5620}
+    .card .symbol{display:grid;place-items:center;width:52px;height:52px;border-radius:12px;background:#e6f2fa;color:#17618d}
+    .card h3{font-size:1.2rem;margin:0}
+    .card p{color:#52697d;margin:0;line-height:1.55;flex:1}
+    .open{display:inline-flex;align-items:center;gap:9px;font-size:.92rem;font-weight:700;color:#17659b}
+    .open:after{content:"↗";font-size:1.1rem}
+    .session{margin-top:26px;background:#f9fcfe;border:1px solid #cfdfeb;border-radius:13px;padding:21px 24px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+    .session h2{font-size:1.08rem;margin:0 0 7px}
+    .session p{margin:0;line-height:1.6;color:#496475;max-width:690px;font-size:.92rem}
+    .access{background:#175d88;color:#fff;text-decoration:none;border-radius:8px;padding:12px 17px;font-weight:700;white-space:nowrap;box-shadow:0 3px 8px #123c5924}
+    .access:hover{background:#0f4a70}
+    .note{font-size:.83rem;color:#647689;line-height:1.55;margin:15px 1px 0}
+    footer{max-width:1170px;padding:5px 28px 30px;margin:auto;color:#6c8191;font-size:.81rem}
+    @media(max-width:850px){.grid{grid-template-columns:1fr}.card{min-height:170px}.top-inner{padding-bottom:44px}.session{align-items:stretch}.access{text-align:center}}
+    @media(max-width:480px){main{padding:0 16px 34px}.top-inner{padding:22px 16px 40px}.card{padding:20px}footer{padding:0 16px 26px}}
+    @media(prefers-reduced-motion:reduce){.card{transition:none}.card:hover{transform:none}}
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="top-inner">
+      <div class="brand"><span class="mark" aria-hidden="true">F</span>
+        <div>FastPharma<small>Portale gestionali · Ambiente TEST</small></div>
+      </div>
+      <h1>Menu generale FastPharma</h1>
+      <p class="lead">Un unico punto di ingresso per le applicazioni aziendali. Scegli il gestionale da aprire: il menu rimarrà disponibile in questa scheda.</p>
+    </div>
+  </header>
+
+  <main>
+    <section aria-labelledby="app-title">
+      <div class="intro"><div><h2 id="app-title">Gestionali disponibili</h2>
+        <p>Tre applicazioni autonome, con i propri dati e permessi.</p></div></div>
+      <div class="grid">
+        <a class="card" href="https://fetonte1960.github.io/sviluppo-pubblico/commesse/Contatti-fastpharma/" target="_blank" rel="noopener noreferrer" aria-label="Apri Contatti in una nuova scheda">
+          <span class="symbol" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="9" r="2"/><path d="M8 17v-1a4 4 0 0 1 8 0v1M8 3v18"/></svg></span>
+          <h3>Contatti</h3>
+          <p>Organizzazioni, persone, attività, trattative e promemoria del CRM aziendale.</p>
+          <span class="open">Apri Contatti</span>
+        </a>
+        <a class="card" href="https://fetonte1960.github.io/sviluppo-pubblico/commesse/Preventivi/" target="_blank" rel="noopener noreferrer" aria-label="Apri Preventivi in una nuova scheda">
+          <span class="symbol" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8l4 4v14H4V3z"/><path d="M16 3v5h4M8 12h8M8 16h8M8 8h3"/></svg></span>
+          <h3>Preventivi</h3>
+          <p>Preparazione delle offerte, capitoli, voci, emissioni e stampe commerciali.</p>
+          <span class="open">Apri Preventivi</span>
+        </a>
+        <a class="card" href="https://fetonte1960.github.io/sviluppo-pubblico/commesse/Fastpharma-Commesse/" target="_blank" rel="noopener noreferrer" aria-label="Apri Commesse in una nuova scheda">
+          <span class="symbol" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 3h6v4H9zM9 12h6M9 16h6"/></svg></span>
+          <h3>Commesse</h3>
+          <p>Gestione delle commesse, fornitori, fatture, pagamenti e contratti.</p>
+          <span class="open">Apri Commesse</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="session" aria-labelledby="access-title">
+      <div>
+        <h2 id="access-title">Accesso centrale FastPharma</h2>
+        <p>Preventivi e Commesse utilizzano già FastPharma Access: dopo la prima autenticazione, possono riutilizzare la sessione centrale finché valida. Contatti conserva, per ora, la propria schermata di accesso.</p>
+      </div>
+      <a class="access" href="https://contatti-fastpharma-api.onrender.com/fastpharma-access" target="_blank" rel="noopener noreferrer">Apri FastPharma Access ↗</a>
+    </section>
+    <p class="note">Il portale non richiede né memorizza password. Ogni applicazione continua a verificare autonomamente le autorizzazioni sul proprio server. Il logout di un singolo gestionale non equivale necessariamente alla chiusura della sessione centrale.</p>
+  </main>
+  <footer>FastPharma · Portale generale V1.0 · GitHub Pages · Nessun servizio server dedicato</footer>
+</body>
+</html>
