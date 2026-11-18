@@ -1,4 +1,4 @@
-<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gestione Commesse V4.6.0 · FastPharma TEST</title>
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gestione Commesse V4.6.1 · FastPharma TEST</title>
 <style>body{font:15px system-ui,sans-serif;background:#f2f6f8;color:#203648;margin:0}header{background:#163849;color:white;padding:22px max(20px,calc((100% - 1100px)/2))}main{max-width:1100px;margin:26px auto;padding:0 16px}a{color:#116b74}header a{color:#c8e8df;margin-right:20px}section{background:white;padding:22px;border:1px solid #e1e8ed;border-radius:12px;margin:15px 0}h1{margin:0 0 6px}h2{font-size:19px}.muted{color:#687b87}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}.metric{padding:14px;background:#edf5f7;border-radius:9px}.metric b{display:block;font-size:20px}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid #e5edf0;padding:9px;text-align:left}label{display:block;margin:9px 0;font-size:13px;font-weight:600}input,select,textarea{display:block;width:100%;max-width:500px;padding:9px;margin-top:5px;box-sizing:border-box}button{background:#087d78;color:white;border:0;border-radius:7px;padding:10px 14px;cursor:pointer}.warn{padding:12px;background:#fff0d9;border-left:4px solid #d58e14}.bad{color:#aa2834}.good{color:#168057}.test{font-weight:bold;background:#ffe8ad;color:#5b3b00;padding:5px 10px;border-radius:6px}.inline{display:inline}.inline button{font-size:12px;padding:5px 8px}@media(max-width:700px){table{display:block;overflow-x:auto}}
 /* Solo cornice della specifica offline, l'interfaccia V4 conserva lo stile originale. */
 .demo-ribbon{background:#f8edd6;color:#6b4900;padding:10px 20px;text-align:center;font:600 13px system-ui,sans-serif;border-bottom:1px solid #e6d5ab}
@@ -42,7 +42,7 @@ input[name="farmacia_id"][readonly]{background:#edf3f4;color:#395466}
 /* Cancellazione TEST: comando distinto dalle azioni e riconoscibile. */
 .delete-record-button{background:#fff0ef;color:#a72b23;border:1px solid #e3aaa7;border-radius:6px;font-weight:700;padding:7px 10px;font-size:12px;cursor:pointer}
 .delete-record-button:hover{background:#f9d5d1}
-.delete-record-button:disabled{opacity:.5;cursor:wait}
+.delete-record-button:disabled{opacity:.5;cursor:not-allowed;background:#e4e8ed;color:#7a8793;border-color:#ced5df}
 .delete-collection-panel{margin:14px 0;padding:12px;border:1px solid #d5e2e7;border-radius:8px}
 .delete-collection-panel h3{margin-top:0}
 
@@ -238,7 +238,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 </div>
 <div id="commesse-app" hidden>
 <header class="compact-header">
-  <strong class="brand-version">Gestione Commesse — <span id="commesse-version">V4.6.0</span> <small>TEST</small></strong>
+  <strong class="brand-version">Gestione Commesse — <span id="commesse-version">V4.6.1</span> <small>TEST</small></strong>
   <span id="currentProjectHeader">Commessa in elaborazione: nessuna</span>
   <span class="header-actions">
     <button type="button" id="help">Informazioni</button>
@@ -265,7 +265,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 <script>
 (function(){
 'use strict';
-const UI_VERSION='4.6.0';
+const UI_VERSION='4.6.1';
 const pages=JSON.parse(document.getElementById('screens').textContent);
 // Archivio originale ricevuto: non convertirne le proposte in requisiti approvati.
 const originalClientAnalysis=JSON.parse(document.getElementById('client-analysis-original').textContent);
@@ -998,8 +998,13 @@ function renderRows(table,rows,deleteKind='',recordIds=[]){
     button.type='button';button.className='delete-record-button';
     button.textContent='Elimina';button.dataset.action='delete';
     button.dataset.kind=deleteKind;button.dataset.id=String(id);
+    if(deleteKind==='commessa'){
+     button.disabled=true;
+     button.title='Cancellazione delle commesse disabilitata per sicurezza';
+     button.setAttribute('aria-label','Elimina commessa non disponibile');
+    }
     button.dataset.label=row.slice(0,2).map(c=>typeof c==='object'?valueText(c.label):valueText(c)).join(' · ').slice(0,170);
-    button.title='Cancella questo elemento dall’archivio TEST dopo conferma';
+    if(deleteKind!=='commessa')button.title='Cancella questo elemento dall’archivio TEST dopo conferma';
     td.appendChild(button);
    }
    tr.appendChild(td);
@@ -1444,6 +1449,10 @@ document.getElementById('page').addEventListener('click',async e=>{
  try{
   if(action==='delete'){
    const kind=button.dataset.kind||'',id=Number(button.dataset.id);
+   // Difesa supplementare: la UI non puo' inviare DELETE per una commessa.
+   if(kind==='commessa'){
+    alertDemo('Cancellazione commesse disabilitata per evitare eliminazioni accidentali.');return;
+   }
    if(!/^[a-z-]{3,30}$/.test(kind)||!Number.isSafeInteger(id)||id<=0)
     throw Error('Identificativo dell’elemento non valido.');
    const label=button.dataset.label||('ID '+id);
