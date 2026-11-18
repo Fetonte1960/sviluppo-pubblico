@@ -1,4 +1,4 @@
-<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gestione Commesse V4.5.2 · FastPharma TEST</title>
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gestione Commesse V4.6.0 · FastPharma TEST</title>
 <style>body{font:15px system-ui,sans-serif;background:#f2f6f8;color:#203648;margin:0}header{background:#163849;color:white;padding:22px max(20px,calc((100% - 1100px)/2))}main{max-width:1100px;margin:26px auto;padding:0 16px}a{color:#116b74}header a{color:#c8e8df;margin-right:20px}section{background:white;padding:22px;border:1px solid #e1e8ed;border-radius:12px;margin:15px 0}h1{margin:0 0 6px}h2{font-size:19px}.muted{color:#687b87}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}.metric{padding:14px;background:#edf5f7;border-radius:9px}.metric b{display:block;font-size:20px}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid #e5edf0;padding:9px;text-align:left}label{display:block;margin:9px 0;font-size:13px;font-weight:600}input,select,textarea{display:block;width:100%;max-width:500px;padding:9px;margin-top:5px;box-sizing:border-box}button{background:#087d78;color:white;border:0;border-radius:7px;padding:10px 14px;cursor:pointer}.warn{padding:12px;background:#fff0d9;border-left:4px solid #d58e14}.bad{color:#aa2834}.good{color:#168057}.test{font-weight:bold;background:#ffe8ad;color:#5b3b00;padding:5px 10px;border-radius:6px}.inline{display:inline}.inline button{font-size:12px;padding:5px 8px}@media(max-width:700px){table{display:block;overflow-x:auto}}
 /* Solo cornice della specifica offline, l'interfaccia V4 conserva lo stile originale. */
 .demo-ribbon{background:#f8edd6;color:#6b4900;padding:10px 20px;text-align:center;font:600 13px system-ui,sans-serif;border-bottom:1px solid #e6d5ab}
@@ -65,8 +65,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 .header-actions button{padding:7px 12px;background:#fff;color:#17394b}
 .header-actions button:hover{background:#d9e9f2}
 .commesse-workspace{max-width:1850px;margin:auto;padding:0 14px 25px}
-.step-tabs{display:flex;gap:8px;align-items:stretch;margin:14px 0 12px;border-bottom:2px solid #ced9e6}
-.step-tab{background:#e1e8f2;color:#324960;border-radius:7px 7px 0 0;padding:12px 22px;font-size:.96rem}
+.step-tabs{display:flex;gap:8px;align-items:stretch;flex-wrap:wrap;margin:14px 0 12px;border-bottom:2px solid #ced9e6}
+.step-tab{background:#e1e8f2;color:#324960;border-radius:7px 7px 0 0;padding:12px 16px;font-size:.94rem}
 .step-tab.active{background:#fff;color:#164875;border-bottom:3px solid #1773a6;box-shadow:0 -1px 3px #152e4514}
 .step-tab:disabled{background:#d9dce2;color:#8a97a4;border-bottom:0;opacity:1}
 #page>main{max-width:none;margin:0;padding:0}
@@ -168,7 +168,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
  #page .commesse-create-main-row,#page .commesse-extra-fields{grid-template-columns:1fr}
 }
 
-/* Commesse V4.3.0: Generale → Dati commessa → Preventivo */
+/* Commesse V4.6.0: cinque tab, sezioni V4 conservate e riallocate */
 #page .create-row-section{display:flex;align-items:center;gap:15px;flex-wrap:wrap}
 #page .create-row-section h2{margin:0;font-size:.99rem}
 #page #newCommessaFromQuote{padding:12px 18px;font-size:.94rem}
@@ -238,7 +238,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 </div>
 <div id="commesse-app" hidden>
 <header class="compact-header">
-  <strong class="brand-version">Gestione Commesse — <span id="commesse-version">V4.5.2</span> <small>TEST</small></strong>
+  <strong class="brand-version">Gestione Commesse — <span id="commesse-version">V4.6.0</span> <small>TEST</small></strong>
   <span id="currentProjectHeader">Commessa in elaborazione: nessuna</span>
   <span class="header-actions">
     <button type="button" id="help">Informazioni</button>
@@ -250,6 +250,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
     <button id="tab-general" class="step-tab active" role="tab" type="button" aria-selected="true" aria-controls="page">1 · Generale</button>
     <button id="tab-details" class="step-tab" role="tab" type="button" aria-selected="false" aria-controls="page" disabled>2 · Dati commessa</button>
     <button id="tab-quote" class="step-tab" role="tab" type="button" aria-selected="false" aria-controls="page" disabled>3 · Preventivo</button>
+    <button id="tab-suppliers" class="step-tab" role="tab" type="button" aria-selected="false" aria-controls="page" disabled>4 · Fornitori</button>
+    <button id="tab-invoices" class="step-tab" role="tab" type="button" aria-selected="false" aria-controls="page" disabled>5 · Fatture e pagamenti</button>
   </nav>
   <nav id="demo-navigation" class="demo-navigation" aria-label="Navigazione interna ai dati della commessa" hidden>
     <button id="demo-back" type="button">← Indietro</button><span id="demo-current"></span>
@@ -263,7 +265,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 <script>
 (function(){
 'use strict';
-const UI_VERSION='4.5.2';
+const UI_VERSION='4.6.0';
 const pages=JSON.parse(document.getElementById('screens').textContent);
 // Archivio originale ricevuto: non convertirne le proposte in requisiti approvati.
 const originalClientAnalysis=JSON.parse(document.getElementById('client-analysis-original').textContent);
@@ -271,11 +273,11 @@ const view=document.getElementById('page'),toast=document.getElementById('toast'
 const navigation=document.getElementById('demo-navigation');
 const backButton=document.getElementById('demo-back');
 const currentLabel=document.getElementById('demo-current');
-const parentPage={commesse:null,fornitori:'commessa',commessa:'commesse',fattura:'commessa',preventivo:'commesse'};
-const pageLabel={commesse:'Commesse',fornitori:'Fornitori',commessa:'Dati commessa',fattura:'Dettaglio fattura',preventivo:'Preventivo'};
+const parentPage={commesse:null,commessa:'commesse',preventivo:'commesse',fornitori:'commesse',fatture:'commesse',fattura:'fatture'};
+const pageLabel={commesse:'Commesse',commessa:'Dati commessa',preventivo:'Preventivo',fornitori:'Fornitori',fatture:'Fatture e pagamenti',fattura:'Dettaglio fattura'};
 let toastTimeout;
 function alertDemo(message){toast.textContent=message;toast.style.display='block';clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>toast.style.display='none',4500)}
-function routeFor(href){if(href==='/')return 'commesse';if(href.startsWith('/fornitori'))return 'fornitori';if(href.startsWith('/fattura-attiva'))return 'fattura';if(href.startsWith('/commessa'))return 'commessa';return null}
+function routeFor(href){if(href==='/')return 'commesse';if(href.startsWith('/fornitori'))return 'fornitori';if(href.startsWith('/fatture'))return 'fatture';if(href.startsWith('/fattura-attiva'))return 'fattura';if(href.startsWith('/commessa'))return 'commessa';return null}
 
 /* Archivio Neon TEST: accesso in lettura a dati sintetici, senza login e senza scrittura. */
 const testApi=location.hostname==='fetonte1960.github.io'
@@ -468,13 +470,17 @@ let currentInvoiceId=1;
 
 function syncCommessaTabs(page='commesse'){
  const selected=Number.isSafeInteger(currentProjectId)&&currentProjectId>0;
- const general=document.getElementById('tab-general'),
-   details=document.getElementById('tab-details'),
-   quote=document.getElementById('tab-quote');
- details.disabled=!selected;quote.disabled=!selected;
- const active=selected&&page==='preventivo'?'tab-quote':
-  selected&&page!=='commesse'?'tab-details':'tab-general';
- for(const tab of [general,details,quote]){
+ const tabs={
+  commesse:document.getElementById('tab-general'),
+  commessa:document.getElementById('tab-details'),
+  preventivo:document.getElementById('tab-quote'),
+  fornitori:document.getElementById('tab-suppliers'),
+  fatture:document.getElementById('tab-invoices')
+ };
+ for(const [key,tab] of Object.entries(tabs))if(key!=='commesse')tab.disabled=!selected;
+ const current=page==='fattura'?'fatture':page;
+ const active=(selected&&tabs[current]?tabs[current]:tabs.commesse).id;
+ for(const tab of Object.values(tabs)){
   const on=tab.id===active;tab.classList.toggle('active',on);
   tab.setAttribute('aria-selected',String(on));tab.tabIndex=on?0:-1;
  }
@@ -769,23 +775,58 @@ function makeIdentityForm(){
  section.append(h,explanatory,form);return section;
 }
 
+function prepareDataTab(page){
+ // Rimappatura del solo DOM: schema dati, API e HTML originale del cliente immutati.
+ const main=view.querySelector('main');
+ const sections=[...main.querySelectorAll(':scope > section')];
+ const grids=[...main.querySelectorAll('table')];
+ if(sections.length!==9||grids.length!==13)
+  throw Error('Struttura V4 originale differente: impossibile rimappare le griglie.');
+ grids.forEach((table,index)=>table.dataset.grid=String(index));
+ const offersTitle=[...main.children].find(node=>node.matches('h2')&&
+  node.textContent.includes('Confronto preventivi fornitori e affidamenti'));
+ const recon=sections[4],children=[...recon.children];
+ const invoiceStart=children.findIndex(node=>node.matches('h3')&&
+  node.textContent.includes('Registra fattura collegata ad affidamento'));
+ if(!offersTitle||invoiceStart<0)throw Error('Riferimenti offerte/fatture V4 non trovati.');
+ const invoiceSection=document.createElement('section');
+ const invoiceHeading=document.createElement('h2');
+ invoiceHeading.textContent='Fatture passive, riconciliazioni e pagamenti';
+ invoiceSection.append(invoiceHeading);
+ for(const node of children.slice(invoiceStart))invoiceSection.append(node);
+ recon.querySelector('h2').textContent='Affidamenti e stati di avanzamento (SAL)';
+ const reconNote=recon.querySelector('p.warn');
+ if(reconNote)reconNote.textContent='I SAL misurano l’avanzamento, non sono costi o pagamenti aggiuntivi. Le fatture e i pagamenti collegati si gestiscono nella scheda 5.';
+ const supplierHost=document.createElement('div');
+ supplierHost.innerHTML=pages.fornitori;
+ const supplierSections=[...supplierHost.querySelector('main').querySelectorAll(':scope > section')];
+ if(supplierSections.length!==2)throw Error('Anagrafica fornitori originale incompleta.');
+ supplierSections[0].querySelector('table').dataset.grid='suppliers';
+ const supplierHeading=supplierSections[0].querySelector('h2');
+ if(supplierHeading)supplierHeading.textContent='Anagrafica fornitori condivisa';
+ const groups={
+  commessa:[sections[0],sections[1],sections[3],sections[7],sections[8]],
+  fornitori:[...supplierSections,offersTitle,sections[2],recon],
+  fatture:[invoiceSection,sections[5],sections[6]]
+ };
+ const title=document.createElement('h1');
+ main.replaceChildren(title,...groups[page]);
+ main.className='commessa-data-screen commessa-data-'+page;
+}
 function decorateData(page){
- if(page==='commesse')return;
  const main=view.querySelector('main');if(!main)return;
  const bar=document.createElement('div');bar.className='details-toolbar';
- for(const [label,target] of [['Dettaglio commessa','commessa'],['Fornitori','fornitori']]){
-  const button=document.createElement('button');button.type='button';button.textContent=label;
-  button.setAttribute('aria-current',page===target?'page':'false');
-  button.onclick=()=>goTo(target);bar.append(button);
+ if(page==='commessa'){
+  const jump=document.createElement('button');jump.type='button';
+  jump.textContent='Analisi del committente';
+  jump.onclick=()=>{const d=view.querySelector('#analysis-received-details');
+   if(d){d.open=true;d.scrollIntoView({behavior:'smooth',block:'start'});}};
+  bar.append(jump);
  }
- const jump=document.createElement('button');jump.type='button';
- jump.textContent='Analisi del committente';
- jump.onclick=()=>{const d=view.querySelector('#analysis-received-details');
-  if(d){d.open=true;d.scrollIntoView({behavior:'smooth',block:'start'});}};
- bar.append(jump);
  const context=document.createElement('span');context.className='details-context';
  context.textContent='Commessa: '+(currentProjectCaption||currentProjectId);bar.append(context);
  view.prepend(bar);
+ if(page!=='commessa')return;
  const panel=document.createElement('section');panel.className='client-analysis';
  panel.id='client-analysis-section';
  const details=document.createElement('details');details.id='analysis-received-details';
@@ -800,9 +841,8 @@ function decorateData(page){
  iframe.setAttribute('referrerpolicy','no-referrer');iframe.setAttribute('loading','lazy');
  iframe.srcdoc=originalClientAnalysis;
  details.append(summary,note,iframe);panel.append(details);main.prepend(panel);
- if(page==='commessa')main.prepend(makeIdentityForm());
+ main.prepend(makeIdentityForm());
 }
-
 
 function fmtSnapshotNumber(value,money=false){
  if(value==null||value==='')return '—';
@@ -976,7 +1016,7 @@ function setSelect(select,items,optional=false){
 }
 function maybeCreateVoiceSelect(form){
  const hidden=form?.querySelector('input[name="voce_id"][type="hidden"]');
- if(!hidden)return form.querySelector('select[name="voce_id"]');
+ if(!hidden)return form?.querySelector('select[name="voce_id"]')||null;
  hidden.removeAttribute('name');
  const select=document.createElement('select');select.name='voce_id';select.required=true;
  hidden.parentElement.append(select);return select;
@@ -1055,12 +1095,7 @@ async function loadTestData(page){
      if(selected)currentProjectCaption=selected.codice+' — '+selected.titolo;
    }
    syncCommessaTabs('commesse');
-  }else if(page==='fornitori'){
-   const data=await readList('/api/fornitori');
-   if(requestSerial!==renderSerial)return;
-   renderRows(main.querySelector('table'),data.map(x=>[x.nome,x.categoria,x.email||'']),
-    'fornitore',data.map(x=>x.id));
-  }else if(page==='commessa'){
+  }else if(page==='commessa'||page==='fornitori'||page==='fatture'){
    const base='/api/commesse/'+currentProjectId;
    const [identificativi,quadroRows]=await Promise.all([readList(base),readList(base+'/quadro')]);
    const identity=identificativi[0],quadro=quadroRows[0];
@@ -1091,13 +1126,17 @@ async function loadTestData(page){
    const [voci,offerte,varianti,sal,passive,active,attivita,docs,
       fornitori,affidamenti,pagamenti,costi,incassi,files]=items;
    const header=main.querySelector('h1');
-   if(header)header.textContent=quadro.codice+' — '+quadro.titolo;
+   if(header)header.textContent=(page==='fornitori'?'Fornitori — ':page==='fatture'?'Fatture e pagamenti — ':'')+quadro.codice+' — '+quadro.titolo;
    const metrics=main.querySelectorAll('.metric b');
    const figures=[quadro.ricaviPrevisti,quadro.budgetCosti,quadro.costiAffidati,
     quadro.costiRegistrati,quadro.pagamentiRegistrati,quadro.costoFinaleStimato,
     number(quadro.ricaviPrevisti)-number(quadro.costoFinaleStimato)];
    metrics.forEach((m,i)=>{if(i<figures.length)m.textContent=euro(figures[i]);});
-   const tables=[...main.querySelectorAll('table')];
+   const tables=Array.from({length:13},(_,i)=>main.querySelector('table[data-grid="'+i+'"]'));
+    if(page==='fornitori')
+     renderRows(main.querySelector('table[data-grid="suppliers"]'),
+      fornitori.map(x=>[x.nome,x.categoria,x.email||'']),
+      'fornitore',fornitori.map(x=>x.id));
    renderRows(tables[0],voci.map(x=>[x.codice,x.descrizione,x.categoria,euro(x.budget)]),'voce',voci.map(x=>x.id));
    renderRows(tables[1],offerte.map(x=>[
      x.fornitore,euro(x.prezzo),euro(x.scostamento),x.stato,x.esclusioni,
@@ -1144,7 +1183,7 @@ async function loadTestData(page){
    if(confirm)confirm.querySelector('[name="fattura_id"]').value=String(currentInvoiceId);
    const title=main.querySelector('h1');
    if(title)title.textContent='Dettaglio fattura TEST #'+currentInvoiceId;
-   const back=main.querySelector('a[href^="/commessa"]');if(back)back.href='/commessa?id='+currentProjectId;
+   const back=main.querySelector('a[href^="/commessa"]');if(back)back.href='/fatture';
    const total=lines.reduce((acc,x)=>acc+number(x.imponibile),0);
    const vat=lines.reduce((acc,x)=>acc+number(x.iva),0);
    const caption=[...main.querySelectorAll('p b')].find(x=>x.textContent.includes('Imponibile:'));
@@ -1342,19 +1381,23 @@ window.addEventListener('message',async event=>{
 });
 
 function show(page,scrollTop=true){
- if(page!=='preventivo'&&!pages[page])page='commesse';
+ if(page!=='preventivo'&&page!=='fatture'&&!pages[page])page='commesse';
  if(page!=='commesse'&&(!Number.isSafeInteger(currentProjectId)||currentProjectId<=0)){
   page='commesse';alertDemo('Seleziona prima una commessa nella scheda Generale.');
  }
  if(page==='preventivo')buildQuoteTab();
  else {
-  view.innerHTML=pages[page];
-  if(page==='commesse')decorateGeneral();else decorateData(page);
+  view.innerHTML=['commessa','fornitori','fatture'].includes(page)?pages.commessa:pages[page];
+  if(page==='commesse')decorateGeneral();
+  else{
+   if(['commessa','fornitori','fatture'].includes(page))prepareDataTab(page);
+   decorateData(page);
+  }
  }
  view.querySelectorAll('a[href^="/file"]').forEach(a=>{a.dataset.demoFile='1';a.href='#';});
  view.querySelectorAll('input[type="date"]').forEach(i=>{if(i.value)i.value='2026-11-14'});
  const parent=parentPage[page];
- navigation.hidden=page==='commesse'||page==='commessa'||page==='preventivo';
+ navigation.hidden=page!=='fattura';
  backButton.textContent=parent==='commessa'?'← Torna alla commessa':'← Torna alle commesse';
  currentLabel.textContent=pageLabel[page];
  syncCommessaTabs(page);
@@ -1363,7 +1406,7 @@ function show(page,scrollTop=true){
  loadTestData(page);
 }
 function goTo(page){
- if(page!=='preventivo'&&!pages[page])page='commesse';
+ if(page!=='preventivo'&&page!=='fatture'&&!pages[page])page='commesse';
  if(page!=='commesse'&&!currentProjectId){show('commesse');return;}
  if(location.hash.slice(1)===page)show(page);else location.hash=page;
 }
@@ -1426,7 +1469,7 @@ document.getElementById('page').addEventListener('click',async e=>{
    });
    const data=await resp.json();
    alertDemo('Affidamento TEST registrato con ID '+data.id);
-   show('commessa',false);
+   show('fornitori',false);
   }else if(action==='download'){
    const response=await apiCall('/api/v4/file/'+encodeURIComponent(button.dataset.id));
    const blob=await response.blob();
@@ -1487,10 +1530,12 @@ document.addEventListener('submit',async e=>{
 });
 document.getElementById('tab-general').onclick=()=>goTo('commesse');
 document.getElementById('tab-details').onclick=()=>{if(currentProjectId)goTo('commessa');};
- document.getElementById('tab-quote').onclick=()=>{if(currentProjectId)goTo('preventivo');};
+document.getElementById('tab-quote').onclick=()=>{if(currentProjectId)goTo('preventivo');};
+document.getElementById('tab-suppliers').onclick=()=>{if(currentProjectId)goTo('fornitori');};
+document.getElementById('tab-invoices').onclick=()=>{if(currentProjectId)goTo('fatture');};
 document.getElementById('commesse-version').textContent='V'+UI_VERSION;
 syncCommessaTabs('commesse');
-document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse V4.3.0 TEST: una commessa nasce soltanto dal preventivo. Dati identificativi modificabili, preventivo consultabile in sola lettura per capitoli. Analisi originali del committente preservate in Dati commessa.');
+document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse V4.6.0 TEST: Generale, Dati commessa, Preventivo di sola lettura, Fornitori, Fatture e pagamenti. Analisi originali del committente preservate in Dati commessa.');
 backButton.addEventListener('click',()=>goTo(parentPage[location.hash.slice(1)]||'commesse'));
 window.addEventListener('hashchange',()=>{if(authToken)show(location.hash.slice(1));});
 // Avvio chiuso: nessuna vista gestionale prima di login().
