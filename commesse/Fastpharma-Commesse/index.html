@@ -1,4 +1,4 @@
-<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gestione Commesse V4.6.1 · FastPharma TEST</title>
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gestione Commesse V4.7.0 · FastPharma TEST</title>
 <style>body{font:15px system-ui,sans-serif;background:#f2f6f8;color:#203648;margin:0}header{background:#163849;color:white;padding:22px max(20px,calc((100% - 1100px)/2))}main{max-width:1100px;margin:26px auto;padding:0 16px}a{color:#116b74}header a{color:#c8e8df;margin-right:20px}section{background:white;padding:22px;border:1px solid #e1e8ed;border-radius:12px;margin:15px 0}h1{margin:0 0 6px}h2{font-size:19px}.muted{color:#687b87}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}.metric{padding:14px;background:#edf5f7;border-radius:9px}.metric b{display:block;font-size:20px}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid #e5edf0;padding:9px;text-align:left}label{display:block;margin:9px 0;font-size:13px;font-weight:600}input,select,textarea{display:block;width:100%;max-width:500px;padding:9px;margin-top:5px;box-sizing:border-box}button{background:#087d78;color:white;border:0;border-radius:7px;padding:10px 14px;cursor:pointer}.warn{padding:12px;background:#fff0d9;border-left:4px solid #d58e14}.bad{color:#aa2834}.good{color:#168057}.test{font-weight:bold;background:#ffe8ad;color:#5b3b00;padding:5px 10px;border-radius:6px}.inline{display:inline}.inline button{font-size:12px;padding:5px 8px}@media(max-width:700px){table{display:block;overflow-x:auto}}
 /* Solo cornice della specifica offline, l'interfaccia V4 conserva lo stile originale. */
 .demo-ribbon{background:#f8edd6;color:#6b4900;padding:10px 20px;text-align:center;font:600 13px system-ui,sans-serif;border-bottom:1px solid #e6d5ab}
@@ -127,6 +127,21 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
  #page .general-screen .create-row-section form{grid-template-columns:1fr}
 }
 
+
+/* Fornitori V4.7: tre viste documentali sola lettura e archivio analisi Scaramozzino. */
+.supplier-subtabs{display:flex;flex-wrap:wrap;align-items:stretch;gap:7px;margin:12px 0 14px;border-bottom:2px solid #bfd1e0}
+.supplier-subtab{padding:10px 15px;border-radius:6px 6px 0 0;background:#e0eaf4;color:#264e6a;font-size:.88rem}
+.supplier-subtab[aria-selected="true"]{background:#fff;color:#114b74;border-bottom:3px solid #1773a6}
+.supplier-subtab[aria-selected="false"]:hover{background:#cee1f0}
+.supplier-pane[hidden]{display:none!important}
+.supplier-pane>section{margin:0 0 13px!important}
+.supplier-data-grid{overflow-x:auto}
+.supplier-data-grid table{min-width:1050px}
+.supplier-readonly-note{line-height:1.6;color:#4b6172;font-size:.86rem}
+.supplier-crm-pending{color:#956626;font-style:italic}
+.supplier-legacy-pane>h2{margin:14px 0}
+@media(max-width:720px){.supplier-subtab{flex:1 1 42%;padding:10px 6px;font-size:.8rem}}
+
 /* Gestione Commesse V4.2.0: prima riga coerente con Preventivi. */
 #page .general-screen .create-row-section form{display:block}
 #page .commesse-create-main-row{
@@ -238,7 +253,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 </div>
 <div id="commesse-app" hidden>
 <header class="compact-header">
-  <strong class="brand-version">Gestione Commesse — <span id="commesse-version">V4.6.1</span> <small>TEST</small></strong>
+  <strong class="brand-version">Gestione Commesse — <span id="commesse-version">V4.7.0</span> <small>TEST</small></strong>
   <span id="currentProjectHeader">Commessa in elaborazione: nessuna</span>
   <span class="header-actions">
     <button type="button" id="help">Informazioni</button>
@@ -265,7 +280,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 <script>
 (function(){
 'use strict';
-const UI_VERSION='4.6.1';
+const UI_VERSION='4.7.0';
 const pages=JSON.parse(document.getElementById('screens').textContent);
 // Archivio originale ricevuto: non convertirne le proposte in requisiti approvati.
 const originalClientAnalysis=JSON.parse(document.getElementById('client-analysis-original').textContent);
@@ -775,6 +790,91 @@ function makeIdentityForm(){
  section.append(h,explanatory,form);return section;
 }
 
+let activeSupplierSubtab='preventivi';
+const supplierReadOnlyTables=[
+ {id:'preventivi',label:'Preventivi',title:'Preventivi dei fornitori',
+  note:'Offerte associate alle voci della commessa. Lettura dai record commesse.offerte; nessuna nuova registrazione.',
+  headers:['ID offerta','Fornitore','ID contatto (Contatti)','Codice voce','Lavorazione','Data offerta','Importo offerto','Scostamento budget','Tempi (giorni)','Stato','Importo affidato','Esclusioni']},
+ {id:'fatture',label:'Fatture',title:'Fatture dei fornitori',
+  note:'Fatture passive della commessa: importi e pagamenti già registrati. L’IVA non specificata resta da verificare.',
+  headers:['ID fattura','Fornitore','ID contatto (Contatti)','Riferimento','Descrizione','Data documento','Imponibile','IVA','Totale documento','Pagato','Residuo documento']},
+ {id:'pagamenti',label:'Pagamenti',title:'Pagamenti ai fornitori',
+  note:'Movimenti effettivamente registrati, collegati alla fattura e quindi alla commessa. Nessuna modifica consentita da questa griglia.',
+  headers:['ID pagamento','Fornitore','ID contatto (Contatti)','Fattura','Riferimento pagamento','Data pagamento','Importo']}
+];
+function setSupplierSubtab(id){
+ activeSupplierSubtab=id;
+ for(const btn of view.querySelectorAll('.supplier-subtab')){
+  const selected=btn.dataset.supplierSubtab===id;
+  btn.setAttribute('aria-selected',String(selected));
+  btn.tabIndex=selected?0:-1;
+ }
+ for(const pane of view.querySelectorAll('.supplier-pane'))pane.hidden=pane.dataset.supplierPane!==id;
+}
+function makeSupplierSubtabs(legacyNodes){
+ const container=document.createElement('div');
+ const nav=document.createElement('nav');
+ nav.className='supplier-subtabs';nav.setAttribute('role','tablist');
+ nav.setAttribute('aria-label','Sottoschede Fornitori');
+ const panes=[];
+ for(const spec of [...supplierReadOnlyTables,{id:'analisi',label:'Analisi Scaramozzino'}]){
+  const button=document.createElement('button');button.type='button';
+  button.className='supplier-subtab';
+  button.id='supplier-tab-'+spec.id;
+  button.dataset.supplierSubtab=spec.id;button.textContent=spec.label;
+  button.setAttribute('role','tab');button.setAttribute('aria-controls','supplier-pane-'+spec.id);
+  button.addEventListener('click',()=>setSupplierSubtab(spec.id));
+  nav.append(button);
+  const pane=document.createElement('div');
+  pane.className='supplier-pane'+(spec.id==='analisi'?' supplier-legacy-pane':'');
+  pane.id='supplier-pane-'+spec.id;pane.dataset.supplierPane=spec.id;
+  pane.setAttribute('role','tabpanel');
+  pane.setAttribute('aria-labelledby',button.id);
+  if(spec.id==='analisi'){
+   const note=document.createElement('p');note.className='supplier-readonly-note';
+   note.textContent='Area di analisi storica Scaramozzino: tutte le sezioni e le funzioni precedenti sono mantenute senza modifiche.';
+   pane.append(note,...legacyNodes);
+  }else{
+   const section=document.createElement('section');
+   const h=document.createElement('h2');h.textContent=spec.title;
+   const note=document.createElement('p');note.className='supplier-readonly-note';note.textContent=spec.note;
+   const contactNote=document.createElement('p');contactNote.className='supplier-readonly-note';
+   contactNote.textContent='Identificativo fornitore: UUID dell’archivio Contatti FastPharma, non ID numerico della vecchia anagrafica. I collegamenti storici non ancora presenti sono indicati come «Da associare».';
+   const wrap=document.createElement('div');wrap.className='supplier-data-grid';
+   const table=document.createElement('table');
+   table.dataset.supplierReadonly=spec.id;table.setAttribute('aria-label',spec.title);
+   const header=document.createElement('tr');
+   for(const label of spec.headers){const th=document.createElement('th');th.scope='col';th.textContent=label;header.append(th);}
+   table.append(header);wrap.append(table);
+   section.append(h,note,contactNote,wrap);pane.append(section);
+  }
+  panes.push(pane);
+ }
+ container.append(nav,...panes);
+ return container;
+}
+function renderSupplierReadOnlyGrids(offerte,passive,pagamenti){
+ const crmContact=x=>x?.fornitoreContattoId||'Da associare';
+ const shown=x=>x==null||x===''?'—':x;
+ const date=x=>x?String(x).slice(0,10):'—';
+ const readOnly=id=>view.querySelector('table[data-supplier-readonly="'+id+'"]');
+ renderRows(readOnly('preventivi'),offerte.map(x=>[
+  x.id,shown(x.fornitore),crmContact(x),shown(x.codiceVoce),shown(x.lavorazione),
+  date(x.creataIl),euro(x.prezzo),euro(x.scostamento),shown(x.tempiGiorni),
+  shown(x.stato),x.affidato==null?'—':euro(x.affidato),shown(x.esclusioni)
+ ]));
+ renderRows(readOnly('fatture'),passive.map(x=>[
+  x.id,shown(x.fornitore),crmContact(x),shown(x.riferimento),shown(x.descrizione),
+  date(x.dataDocumento),euro(x.imponibile),x.iva==null?'Da verificare':euro(x.iva),
+  x.iva==null?'Da verificare':euro(number(x.imponibile)+number(x.iva)),
+  euro(x.pagato),x.iva==null?'Da verificare':euro(Math.max(0,number(x.imponibile)+number(x.iva)-number(x.pagato)))
+ ]));
+ renderRows(readOnly('pagamenti'),pagamenti.map(x=>[
+  x.id,shown(x.fornitore),crmContact(x),shown(x.fatturaRiferimento||x.fatturaId),
+  shown(x.riferimento),date(x.dataPagamento),euro(x.importo)
+ ]));
+}
+
 function prepareDataTab(page){
  // Rimappatura del solo DOM: schema dati, API e HTML originale del cliente immutati.
  const main=view.querySelector('main');
@@ -802,16 +902,23 @@ function prepareDataTab(page){
  const supplierSections=[...supplierHost.querySelector('main').querySelectorAll(':scope > section')];
  if(supplierSections.length!==2)throw Error('Anagrafica fornitori originale incompleta.');
  supplierSections[0].querySelector('table').dataset.grid='suppliers';
+ const legacySupplierHeader=supplierSections[0].querySelector('table tr');
+ if(legacySupplierHeader){
+  const crmTh=document.createElement('th');
+  crmTh.textContent='ID Contatti (UUID)';crmTh.scope='col';
+  legacySupplierHeader.append(crmTh);
+ }
  const supplierHeading=supplierSections[0].querySelector('h2');
  if(supplierHeading)supplierHeading.textContent='Anagrafica fornitori condivisa';
  const groups={
   commessa:[sections[0],sections[1],sections[3],sections[7],sections[8]],
-  fornitori:[...supplierSections,offersTitle,sections[2],recon],
+  fornitori:[makeSupplierSubtabs([...supplierSections,offersTitle,sections[2],recon])],
   fatture:[invoiceSection,sections[5],sections[6]]
  };
  const title=document.createElement('h1');
  main.replaceChildren(title,...groups[page]);
  main.className='commessa-data-screen commessa-data-'+page;
+ if(page==='fornitori')setSupplierSubtab(activeSupplierSubtab);
 }
 function decorateData(page){
  const main=view.querySelector('main');if(!main)return;
@@ -1138,10 +1245,12 @@ async function loadTestData(page){
     number(quadro.ricaviPrevisti)-number(quadro.costoFinaleStimato)];
    metrics.forEach((m,i)=>{if(i<figures.length)m.textContent=euro(figures[i]);});
    const tables=Array.from({length:13},(_,i)=>main.querySelector('table[data-grid="'+i+'"]'));
-    if(page==='fornitori')
+    if(page==='fornitori'){
      renderRows(main.querySelector('table[data-grid="suppliers"]'),
-      fornitori.map(x=>[x.nome,x.categoria,x.email||'']),
+      fornitori.map(x=>[x.nome,x.categoria,x.email||'',x.fornitoreContattoId||'Da associare']),
       'fornitore',fornitori.map(x=>x.id));
+     renderSupplierReadOnlyGrids(offerte,passive,pagamenti);
+   }
    renderRows(tables[0],voci.map(x=>[x.codice,x.descrizione,x.categoria,euro(x.budget)]),'voce',voci.map(x=>x.id));
    renderRows(tables[1],offerte.map(x=>[
      x.fornitore,euro(x.prezzo),euro(x.scostamento),x.stato,x.esclusioni,
@@ -1544,7 +1653,7 @@ document.getElementById('tab-suppliers').onclick=()=>{if(currentProjectId)goTo('
 document.getElementById('tab-invoices').onclick=()=>{if(currentProjectId)goTo('fatture');};
 document.getElementById('commesse-version').textContent='V'+UI_VERSION;
 syncCommessaTabs('commesse');
-document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse V4.6.0 TEST: Generale, Dati commessa, Preventivo di sola lettura, Fornitori, Fatture e pagamenti. Analisi originali del committente preservate in Dati commessa.');
+document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse V4.7.0 TEST: Fornitori contiene Preventivi, Fatture, Pagamenti (tre griglie di sola lettura) e Analisi Scaramozzino (archivio storico completo). Identificativi CRM dei fornitori da collegare in Contatti quando non disponibili.');
 backButton.addEventListener('click',()=>goTo(parentPage[location.hash.slice(1)]||'commesse'));
 window.addEventListener('hashchange',()=>{if(authToken)show(location.hash.slice(1));});
 // Avvio chiuso: nessuna vista gestionale prima di login().
