@@ -33,12 +33,12 @@
       <p class="eyebrow">Area riservata</p>
       <h1>Accesso gestionale</h1>
       <p>Autenticati per consultare farmacie, documenti e dati amministrativi.</p>
-      <div id="admin-oidc-panel" hidden>
+      <div id="admin-oidc-panel">
         <p>Accedi con l'identificazione centrale FastPharma. Se la sessione è già attiva, la password non viene richiesta nuovamente.</p>
         <button type="button" class="primary-action" id="admin-oidc-button">Accedi con FastPharma Access</button>
         <p id="admin-oidc-status" role="status" aria-live="polite"></p>
       </div>
-      <form id="admin-login-form" method="post" action="javascript:void(0)" onsubmit="return false" autocomplete="on" style="display:grid;gap:12px">
+      <form id="admin-login-form" method="post" action="javascript:void(0)" onsubmit="return false" autocomplete="on" hidden style="display:none;gap:12px">
         <input type="text" name="username" autocomplete="username" value="amministratore" readonly hidden>
         <label>Password
           <input id="admin-password" name="password" type="password" autocomplete="current-password" required autofocus style="width:100%">
