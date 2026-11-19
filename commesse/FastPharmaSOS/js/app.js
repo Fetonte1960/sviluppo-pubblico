@@ -1,8 +1,8 @@
-import { initializeSosActivityForms } from "./sos-activities.js?v=1.1.13";
-import { initializeArchiveWorkspace, initializeDocumentEditor } from "./archive.js?v=1.1.10";
-import { initializeImageManager } from "./images.js?v=1.1.10";
-import { initializeCompanyManager } from "./companies.js?v=1.1.10";
-import { askAssistant, confirmEngineCandidate, getAiHealth, getCommesse, getDbHealth, getHealth, getAuthConfig, checkAdminAccess, loginAdmin, setAdminToken } from "./api.js?v=1.1.14";
+import { initializeSosActivityForms } from "./sos-activities.js?v=1.1.15";
+import { initializeArchiveWorkspace, initializeDocumentEditor } from "./archive.js?v=1.1.15";
+import { initializeImageManager } from "./images.js?v=1.1.15";
+import { initializeCompanyManager } from "./companies.js?v=1.1.15";
+import { askAssistant, confirmEngineCandidate, getAiHealth, getCommesse, getDbHealth, getHealth, getAuthConfig, checkAdminAccess, loginAdmin, setAdminToken } from "./api.js?v=1.1.15";
 
 const $ = id => document.getElementById(id);
 const apiStatus = $("api-status");
