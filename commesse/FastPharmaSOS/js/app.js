@@ -538,11 +538,13 @@ async function bootstrapAdminAuthentication() {
       if (cfg.authentication !== "legacy-admin-key")
         throw Error("Modalità di autenticazione SOS sconosciuta.");
       loginForm.hidden = false;
+      loginForm.style.display = "grid";
       oidcPanel.hidden = true;
       return; // compatibilità locale; sul cloud il backend usa OIDC
     }
     oidcConfig = requireOidcConfig(cfg);
     loginForm.hidden = true;
+    loginForm.style.display = "none";
     oidcPanel.hidden = false;
     oidcStatus.textContent = "Verifica dell'identificazione centrale…";
     const params = new URLSearchParams(location.search);
@@ -554,6 +556,7 @@ async function bootstrapAdminAuthentication() {
   } catch(error) {
     setAdminToken("");
     loginForm.hidden = true;
+    loginForm.style.display = "none";
     oidcPanel.hidden = false;
     oidcButton.disabled = false;
     oidcStatus.textContent = "Identificazione SOS non riuscita: " + (error.message || "Errore di rete");
