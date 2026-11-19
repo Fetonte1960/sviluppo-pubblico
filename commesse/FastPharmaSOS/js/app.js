@@ -2,7 +2,7 @@ import { initializeSosActivityForms } from "./sos-activities.js?v=1.1.13";
 import { initializeArchiveWorkspace, initializeDocumentEditor } from "./archive.js?v=1.1.10";
 import { initializeImageManager } from "./images.js?v=1.1.10";
 import { initializeCompanyManager } from "./companies.js?v=1.1.10";
-import { askAssistant, confirmEngineCandidate, getAiHealth, getCommesse, getDbHealth, getHealth, loginAdmin, setAdminToken } from "./api.js?v=1.1.10";
+import { askAssistant, confirmEngineCandidate, getAiHealth, getCommesse, getDbHealth, getHealth, getAuthConfig, checkAdminAccess, loginAdmin, setAdminToken } from "./api.js?v=1.1.14";
 
 const $ = id => document.getElementById(id);
 const apiStatus = $("api-status");
@@ -443,6 +443,135 @@ const loginForm = $("admin-login-form");
 const loginButton = $("admin-login-button");
 const loginStatus = $("admin-login-status");
 let initialized = false;
+const oidcPanel = $("admin-oidc-panel");
+const oidcButton = $("admin-oidc-button");
+const oidcStatus = $("admin-oidc-status");
+const oidcTransactionKey = "fastpharmasos.oidc.pkce.v1";
+const oidcRedirectUri = new URL("./", window.location.href).href;
+let oidcConfig = null;
+
+// SOS usa un access token proprio in RAM, senza password del provider nel browser.
+function randomBase64Url(size) {
+  const bytes = crypto.getRandomValues(new Uint8Array(size));
+  return btoa(String.fromCharCode(...bytes)).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/g, "");
+}
+async function codeChallenge(verifier) {
+  const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
+  return btoa(String.fromCharCode(...new Uint8Array(hash)))
+    .replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/g, "");
+}
+function requireOidcConfig(config) {
+  if (config?.authentication !== "openid-connect" ||
+      config.oidcClientId !== "fastpharma-sos" ||
+      ![config.oidcAuthorization, config.oidcToken, config.oidcIssuer]
+        .every(u => typeof u === "string" && u.startsWith("https://")))
+    throw Error("Configurazione FastPharma Access per SOS non valida.");
+  return config;
+}
+async function beginOidcLogin() {
+  oidcButton.disabled = true;
+  oidcStatus.textContent = "Apertura dell'accesso centrale FastPharma…";
+  try {
+    const cfg = requireOidcConfig(oidcConfig || await getAuthConfig());
+    oidcConfig = cfg;
+    const verifier = randomBase64Url(32);
+    const state = randomBase64Url(24);
+    const nonce = randomBase64Url(24);
+    sessionStorage.setItem(oidcTransactionKey,
+      JSON.stringify({ verifier, state, redirect: oidcRedirectUri, at: Date.now() }));
+    const authUrl = new URL(cfg.oidcAuthorization);
+    authUrl.searchParams.set("client_id", cfg.oidcClientId);
+    authUrl.searchParams.set("response_type", "code");
+    authUrl.searchParams.set("redirect_uri", oidcRedirectUri);
+    authUrl.searchParams.set("scope", "openid profile sos");
+    authUrl.searchParams.set("state", state);
+    authUrl.searchParams.set("nonce", nonce);
+    authUrl.searchParams.set("code_challenge", await codeChallenge(verifier));
+    authUrl.searchParams.set("code_challenge_method", "S256");
+    window.location.assign(authUrl.toString());
+  } catch(error) {
+    oidcStatus.textContent = "Accesso centrale non disponibile: " + (error.message || "Errore di rete");
+    oidcButton.disabled = false;
+  }
+}
+async function completeOidcLogin(config) {
+  const params = new URLSearchParams(location.search);
+  const code = params.get("code"), state = params.get("state"), remoteError = params.get("error");
+  if (!code && !remoteError) return false;
+  // Il codice monouso non deve rimanere nell'URL o nella cronologia.
+  history.replaceState(null, "", location.pathname + location.hash);
+  const raw = sessionStorage.getItem(oidcTransactionKey);
+  sessionStorage.removeItem(oidcTransactionKey);
+  if (remoteError) throw Error("FastPharma Access: " + remoteError);
+  if (!raw) throw Error("Sessione PKCE SOS mancante. Ripeti l'accesso.");
+  let saved;
+  try { saved = JSON.parse(raw); }
+  catch { throw Error("Sessione PKCE SOS non valida."); }
+  if (!saved?.verifier || saved.redirect !== oidcRedirectUri ||
+      saved.state !== state || Date.now() - saved.at > 600000)
+    throw Error("Transazione FastPharma Access SOS scaduta o non corrispondente.");
+  const form = new URLSearchParams({
+    grant_type: "authorization_code", client_id: config.oidcClientId,
+    code, redirect_uri: oidcRedirectUri, code_verifier: saved.verifier
+  });
+  const response = await fetch(config.oidcToken, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: form, credentials: "omit", cache: "no-store"
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || typeof payload.access_token !== "string")
+    throw Error("FastPharma Access non ha rilasciato il token SOS (" +
+      (payload.error || "HTTP " + response.status) + ").");
+  setAdminToken(payload.access_token);
+  // Il backend SOS convalida localmente firma, issuer, audience, scadenza e scope.
+  await checkAdminAccess();
+  oidcStatus.textContent = "Accesso SOS autorizzato.";
+  openAuthenticatedApplication();
+  return true;
+}
+oidcButton.addEventListener("click", () => { void beginOidcLogin(); });
+async function bootstrapAdminAuthentication() {
+  try {
+    const cfg = await getAuthConfig();
+    if (cfg.authentication !== "openid-connect") {
+      if (cfg.authentication !== "legacy-admin-key")
+        throw Error("Modalità di autenticazione SOS sconosciuta.");
+      loginForm.hidden = false;
+      oidcPanel.hidden = true;
+      return; // compatibilità locale; sul cloud il backend usa OIDC
+    }
+    oidcConfig = requireOidcConfig(cfg);
+    loginForm.hidden = true;
+    oidcPanel.hidden = false;
+    oidcStatus.textContent = "Verifica dell'identificazione centrale…";
+    const params = new URLSearchParams(location.search);
+    if (params.has("code") || params.has("error")) {
+      await completeOidcLogin(cfg);
+    } else {
+      await beginOidcLogin();
+    }
+  } catch(error) {
+    setAdminToken("");
+    loginForm.hidden = true;
+    oidcPanel.hidden = false;
+    oidcButton.disabled = false;
+    oidcStatus.textContent = "Identificazione SOS non riuscita: " + (error.message || "Errore di rete");
+  }
+}
+function openAuthenticatedApplication() {
+  loginView.hidden = true;
+  application.hidden = false;
+  try { initializeAuthenticatedApplication(); }
+  catch(error) {
+    console.error("Errore inizializzazione gestionale:", error);
+    const message = document.createElement("p");
+    message.setAttribute("role", "alert");
+    message.textContent = "Accesso riuscito, ma una sezione del gestionale non è stata avviata. Ricarica e riprova.";
+    application.prepend(message);
+  }
+}
+void bootstrapAdminAuthentication();
 
 function initializeAuthenticatedApplication() {
   if (initialized) return;
@@ -466,20 +595,8 @@ loginForm.addEventListener("submit", async event => {
     const result = await loginAdmin(password);
     if (!result?.token) throw new Error("Token di accesso assente");
     setAdminToken(result.token);
-    // Separiamo la riuscita del login dall'avvio dei moduli, così eventuali errori
-    // di inizializzazione non vengono scambiati per una password errata.
-    loginView.hidden = true;
-    application.hidden = false;
     passwordField.value = "";
-    try {
-      initializeAuthenticatedApplication();
-    } catch (initializationError) {
-      console.error("Errore inizializzazione gestionale:", initializationError);
-      const message = document.createElement("p");
-      message.setAttribute("role", "alert");
-      message.textContent = "Accesso riuscito, ma non è stato possibile avviare una sezione del gestionale. Ricarica la pagina e riprova.";
-      application.prepend(message);
-    }
+    openAuthenticatedApplication();
   } catch (error) {
     setAdminToken("");
     // Non cancellare la password se l'accesso fallisce.
