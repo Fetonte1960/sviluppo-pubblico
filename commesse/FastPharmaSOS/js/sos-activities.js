@@ -1,4 +1,4 @@
-import { getMonitoring, saveMonitoring, getFeedback, saveFeedbackReview } from "./api.js?v=1.1.10";
+import { getMonitoring, saveMonitoring, getFeedback, saveFeedbackReview } from "./api.js?v=1.1.15";
 
 const el = id => document.getElementById(id);
 const store = {
