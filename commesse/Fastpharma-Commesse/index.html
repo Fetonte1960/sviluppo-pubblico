@@ -1,4 +1,4 @@
-<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gestione Commesse V4.8.0 · FastPharma TEST</title>
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gestione Commesse V4.9.0 · FastPharma TEST</title>
 <style>body{font:15px system-ui,sans-serif;background:#f2f6f8;color:#203648;margin:0}header{background:#163849;color:white;padding:22px max(20px,calc((100% - 1100px)/2))}main{max-width:1100px;margin:26px auto;padding:0 16px}a{color:#116b74}header a{color:#c8e8df;margin-right:20px}section{background:white;padding:22px;border:1px solid #e1e8ed;border-radius:12px;margin:15px 0}h1{margin:0 0 6px}h2{font-size:19px}.muted{color:#687b87}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}.metric{padding:14px;background:#edf5f7;border-radius:9px}.metric b{display:block;font-size:20px}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid #e5edf0;padding:9px;text-align:left}label{display:block;margin:9px 0;font-size:13px;font-weight:600}input,select,textarea{display:block;width:100%;max-width:500px;padding:9px;margin-top:5px;box-sizing:border-box}button{background:#087d78;color:white;border:0;border-radius:7px;padding:10px 14px;cursor:pointer}.warn{padding:12px;background:#fff0d9;border-left:4px solid #d58e14}.bad{color:#aa2834}.good{color:#168057}.test{font-weight:bold;background:#ffe8ad;color:#5b3b00;padding:5px 10px;border-radius:6px}.inline{display:inline}.inline button{font-size:12px;padding:5px 8px}@media(max-width:700px){table{display:block;overflow-x:auto}}
 /* Solo cornice della specifica offline, l'interfaccia V4 conserva lo stile originale. */
 .demo-ribbon{background:#f8edd6;color:#6b4900;padding:10px 20px;text-align:center;font:600 13px system-ui,sans-serif;border-bottom:1px solid #e6d5ab}
@@ -128,6 +128,33 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 }
 
 
+
+
+/* 4A · Anagrafica fornitori autonoma, indipendente da commessa e Contatti. */
+#page .registry-screen>section{margin:12px 0}
+.registry-toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+.registry-toolbar label{flex:1 1 240px;margin:0}
+.registry-toolbar input{width:100%;min-height:39px}
+.registry-toolbar button{min-height:39px}
+.registry-table-scroll{max-width:100%;overflow-x:auto}
+.registry-table{min-width:1040px}
+.registry-action{background:#e0eaf5;color:#174968;padding:7px 10px;font-size:.8rem}
+.registry-edit-grid{display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:8px 14px}
+.registry-edit-grid label{margin:0;font-size:.8rem}
+.registry-edit-grid input,.registry-edit-grid select,.registry-edit-grid textarea{width:100%;max-width:none}
+.registry-field-wide{grid-column:span 2}
+.registry-field-all{grid-column:1/-1}
+.registry-buttons{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.registry-buttons .danger{background:#fff0ef;color:#a72b23;border:1px solid #e3aaa7}
+.registry-note{color:#486477;font-size:.84rem;line-height:1.5}
+.registry-error{color:#ae2837;font-weight:600}
+.registry-docs{overflow-x:auto}
+.registry-docs table{min-width:950px}
+.registry-state-expired{color:#a72b23;font-weight:700}
+.registry-state-valid{color:#18754d;font-weight:600}
+.registry-state-missing{color:#996828}
+@media(max-width:900px){.registry-edit-grid{grid-template-columns:repeat(2,minmax(160px,1fr))}}
+@media(max-width:560px){.registry-edit-grid{grid-template-columns:1fr}.registry-field-wide{grid-column:1}}
 
 /* V4.8: incassi dal committente, con analisi distinta dalle fatture passive fornitori. */
 .finance-subtabs{display:flex;flex-wrap:wrap;gap:7px;align-items:stretch;margin:12px 0 14px;border-bottom:2px solid #bfd1e0}
@@ -266,7 +293,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 </div>
 <div id="commesse-app" hidden>
 <header class="compact-header">
-  <strong class="brand-version">Gestione Commesse — <span id="commesse-version">V4.8.0</span> <small>TEST</small></strong>
+  <strong class="brand-version">Gestione Commesse — <span id="commesse-version">V4.9.0</span> <small>TEST</small></strong>
   <span id="currentProjectHeader">Commessa in elaborazione: nessuna</span>
   <span class="header-actions">
     <button type="button" id="help">Informazioni</button>
@@ -279,6 +306,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
     <button id="tab-details" class="step-tab" role="tab" type="button" aria-selected="false" aria-controls="page" disabled>2 · Dati commessa</button>
     <button id="tab-quote" class="step-tab" role="tab" type="button" aria-selected="false" aria-controls="page" disabled>3 · Preventivo</button>
     <button id="tab-suppliers" class="step-tab" role="tab" type="button" aria-selected="false" aria-controls="page" disabled>4 · Fornitori</button>
+    <button id="tab-supplier-registry" class="step-tab" role="tab" type="button" aria-selected="false" aria-controls="page">4A · Anagrafica fornitori</button>
     <button id="tab-invoices" class="step-tab" role="tab" type="button" aria-selected="false" aria-controls="page" disabled>5 · Fatture e pagamenti</button>
   </nav>
   <nav id="demo-navigation" class="demo-navigation" aria-label="Navigazione interna ai dati della commessa" hidden>
@@ -293,7 +321,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 <script>
 (function(){
 'use strict';
-const UI_VERSION='4.8.0';
+const UI_VERSION='4.9.0';
 const pages=JSON.parse(document.getElementById('screens').textContent);
 // Archivio originale ricevuto: non convertirne le proposte in requisiti approvati.
 const originalClientAnalysis=JSON.parse(document.getElementById('client-analysis-original').textContent);
@@ -301,8 +329,8 @@ const view=document.getElementById('page'),toast=document.getElementById('toast'
 const navigation=document.getElementById('demo-navigation');
 const backButton=document.getElementById('demo-back');
 const currentLabel=document.getElementById('demo-current');
-const parentPage={commesse:null,commessa:'commesse',preventivo:'commesse',fornitori:'commesse',fatture:'commesse',fattura:'fatture'};
-const pageLabel={commesse:'Commesse',commessa:'Dati commessa',preventivo:'Preventivo',fornitori:'Fornitori',fatture:'Fatture e pagamenti',fattura:'Dettaglio fattura'};
+const parentPage={commesse:null,commessa:'commesse',preventivo:'commesse',fornitori:'commesse',anagrafica:'commesse',fatture:'commesse',fattura:'fatture'};
+const pageLabel={commesse:'Commesse',commessa:'Dati commessa',preventivo:'Preventivo',fornitori:'Fornitori',anagrafica:'Anagrafica fornitori',fatture:'Fatture e pagamenti',fattura:'Dettaglio fattura'};
 let toastTimeout;
 function alertDemo(message){toast.textContent=message;toast.style.display='block';clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>toast.style.display='none',4500)}
 function routeFor(href){if(href==='/')return 'commesse';if(href.startsWith('/fornitori'))return 'fornitori';if(href.startsWith('/fatture'))return 'fatture';if(href.startsWith('/fattura-attiva'))return 'fattura';if(href.startsWith('/commessa'))return 'commessa';return null}
@@ -463,7 +491,7 @@ async function completeOidcCallback(){
  await apiCall('/api/auth/check');
  document.getElementById('commesse-auth').hidden=true;
  document.getElementById('commesse-app').hidden=false;
- show(pages[location.hash.slice(1)]?location.hash.slice(1):'commesse');
+ show(location.hash.slice(1)==='anagrafica'||pages[location.hash.slice(1)]?location.hash.slice(1):'commesse');
  authFeedback('Sessione FastPharma Access valida. Commesse collegato.');
  return true;
 }
@@ -503,11 +531,13 @@ function syncCommessaTabs(page='commesse'){
   commessa:document.getElementById('tab-details'),
   preventivo:document.getElementById('tab-quote'),
   fornitori:document.getElementById('tab-suppliers'),
+  anagrafica:document.getElementById('tab-supplier-registry'),
   fatture:document.getElementById('tab-invoices')
  };
- for(const [key,tab] of Object.entries(tabs))if(key!=='commesse')tab.disabled=!selected;
+ for(const [key,tab] of Object.entries(tabs))if(key!=='commesse'&&key!=='anagrafica')tab.disabled=!selected;
+ tabs.anagrafica.disabled=false;
  const current=page==='fattura'?'fatture':page;
- const active=(selected&&tabs[current]?tabs[current]:tabs.commesse).id;
+ const active=(tabs[current]&&(selected||current==='anagrafica')?tabs[current]:tabs.commesse).id;
  for(const tab of Object.values(tabs)){
   const on=tab.id===active;tab.classList.toggle('active',on);
   tab.setAttribute('aria-selected',String(on));tab.tabIndex=on?0:-1;
@@ -807,13 +837,13 @@ let activeSupplierSubtab='preventivi';
 const supplierReadOnlyTables=[
  {id:'preventivi',label:'Preventivi',title:'Preventivi dei fornitori',
   note:'Offerte associate alle voci della commessa. Lettura dai record commesse.offerte; nessuna nuova registrazione.',
-  headers:['ID offerta','Fornitore','ID contatto (Contatti)','Codice voce','Lavorazione','Data offerta','Importo offerto','Scostamento budget','Tempi (giorni)','Stato','Importo affidato','Esclusioni']},
+  headers:['ID offerta','Fornitore','ID fornitore FastPharma','Codice voce','Lavorazione','Data offerta','Importo offerto','Scostamento budget','Tempi (giorni)','Stato','Importo affidato','Esclusioni']},
  {id:'fatture',label:'Fatture',title:'Fatture dei fornitori',
   note:'Fatture passive della commessa: importi e pagamenti già registrati. L’IVA non specificata resta da verificare.',
-  headers:['ID fattura','Fornitore','ID contatto (Contatti)','Riferimento','Descrizione','Data documento','Imponibile','IVA','Totale documento','Pagato','Residuo documento']},
+  headers:['ID fattura','Fornitore','ID fornitore FastPharma','Riferimento','Descrizione','Data documento','Imponibile','IVA','Totale documento','Pagato','Residuo documento']},
  {id:'pagamenti',label:'Pagamenti',title:'Pagamenti ai fornitori',
   note:'Movimenti effettivamente registrati, collegati alla fattura e quindi alla commessa. Nessuna modifica consentita da questa griglia.',
-  headers:['ID pagamento','Fornitore','ID contatto (Contatti)','Fattura','Riferimento pagamento','Data pagamento','Importo']}
+  headers:['ID pagamento','Fornitore','ID fornitore FastPharma','Fattura','Riferimento pagamento','Data pagamento','Importo']}
 ];
 function setSupplierSubtab(id){
  activeSupplierSubtab=id;
@@ -852,7 +882,7 @@ function makeSupplierSubtabs(legacyNodes){
    const h=document.createElement('h2');h.textContent=spec.title;
    const note=document.createElement('p');note.className='supplier-readonly-note';note.textContent=spec.note;
    const contactNote=document.createElement('p');contactNote.className='supplier-readonly-note';
-   contactNote.textContent='Identificativo fornitore: UUID dell’archivio Contatti FastPharma, non ID numerico della vecchia anagrafica. I collegamenti storici non ancora presenti sono indicati come «Da associare».';
+   contactNote.textContent='Identificativo fornitore: ID aziendale di Anagrafica fornitori (scheda 4A), indipendente da Contatti FastPharma.';
    const wrap=document.createElement('div');wrap.className='supplier-data-grid';
    const table=document.createElement('table');
    table.dataset.supplierReadonly=spec.id;table.setAttribute('aria-label',spec.title);
@@ -867,23 +897,23 @@ function makeSupplierSubtabs(legacyNodes){
  return container;
 }
 function renderSupplierReadOnlyGrids(offerte,passive,pagamenti){
- const crmContact=x=>x?.fornitoreContattoId||'Da associare';
+ const supplierId=x=>x?.fornitoreId||'—';
  const shown=x=>x==null||x===''?'—':x;
  const date=x=>x?String(x).slice(0,10):'—';
  const readOnly=id=>view.querySelector('table[data-supplier-readonly="'+id+'"]');
  renderRows(readOnly('preventivi'),offerte.map(x=>[
-  x.id,shown(x.fornitore),crmContact(x),shown(x.codiceVoce),shown(x.lavorazione),
+  x.id,shown(x.fornitore),supplierId(x),shown(x.codiceVoce),shown(x.lavorazione),
   date(x.creataIl),euro(x.prezzo),euro(x.scostamento),shown(x.tempiGiorni),
   shown(x.stato),x.affidato==null?'—':euro(x.affidato),shown(x.esclusioni)
  ]));
  renderRows(readOnly('fatture'),passive.map(x=>[
-  x.id,shown(x.fornitore),crmContact(x),shown(x.riferimento),shown(x.descrizione),
+  x.id,shown(x.fornitore),supplierId(x),shown(x.riferimento),shown(x.descrizione),
   date(x.dataDocumento),euro(x.imponibile),x.iva==null?'Da verificare':euro(x.iva),
   x.iva==null?'Da verificare':euro(number(x.imponibile)+number(x.iva)),
   euro(x.pagato),x.iva==null?'Da verificare':euro(Math.max(0,number(x.imponibile)+number(x.iva)-number(x.pagato)))
  ]));
  renderRows(readOnly('pagamenti'),pagamenti.map(x=>[
-  x.id,shown(x.fornitore),crmContact(x),shown(x.fatturaRiferimento||x.fatturaId),
+  x.id,shown(x.fornitore),supplierId(x),shown(x.fatturaRiferimento||x.fatturaId),
   shown(x.riferimento),date(x.dataPagamento),euro(x.importo)
  ]));
 }
@@ -1008,6 +1038,346 @@ function updateFinanceMetrics(main,active,incassi,passive,pagamenti){
  }
 }
 
+
+/* Archivio generale fornitori indipendente dalle singole commesse.
+   Usa un ID BIGINT di commesse.fornitori, non l'UUID di Contatti. */
+let registryRows=[];
+let registrySelectedId=0;
+const registryFields=[
+ ['nome','Ragione sociale / nominativo *','text',250],
+ ['categoria','Categoria','text',80],
+ ['stato','Stato','select',20],
+ ['partitaIva','Partita IVA','text',24],
+ ['codiceFiscale','Codice fiscale','text',24],
+ ['referente','Referente','text',120],
+ ['telefono','Telefono','tel',60],
+ ['email','Email','email',200],
+ ['pec','PEC','email',200],
+ ['indirizzo','Indirizzo','text',280],
+ ['cap','CAP','text',12],
+ ['comune','Comune','text',120],
+ ['provincia','Provincia','text',6],
+ ['paese','Paese','text',80],
+ ['iban','IBAN','text',34],
+ ['banca','Banca','text',150],
+ ['condizioniPagamento','Condizioni di pagamento','textarea',300],
+ ['note','Note amministrative / tecniche','textarea',4000]
+];
+const registryUrl='/api/v4/fornitori/anagrafica';
+const registryDate=x=>x?String(x).slice(0,10):'—';
+const registryDisplay=x=>x==null||x===''?'—':String(x);
+function registryDurc(row){
+ if(!row.ultimaScadenzaDurc)return 'Da verificare';
+ const date=registryDate(row.ultimaScadenzaDurc);
+ const today=new Date().toISOString().slice(0,10);
+ return date<today?'Scaduto il '+date:'Scade il '+date;
+}
+function buildSupplierRegistry(){
+ const main=document.createElement('main');main.className='registry-screen';
+ main.innerHTML=`
+ <h1>4A · Anagrafica generale fornitori</h1>
+ <section>
+  <p class="registry-note">Archivio aziendale autonomo, indipendente da Contatti e dalle singole commesse.
+   Le imprese e i professionisti vengono identificati con l'ID fornitore FastPharma;
+   DURC e certificazioni conservano il proprio storico.</p>
+  <div class="registry-toolbar">
+   <label>Cerca per ragione sociale, categoria, partita IVA o comune
+    <input id="registry-search" type="search" placeholder="Cerca nell'anagrafica…" autocomplete="off"></label>
+   <button id="registry-new" type="button">+ Nuovo fornitore</button>
+   <button id="registry-refresh" type="button" class="registry-action">Aggiorna elenco</button>
+  </div>
+  <p id="registry-status" role="status" class="registry-note">Caricamento anagrafica da Neon TEST…</p>
+  <div class="registry-table-scroll"><table class="registry-table" aria-label="Anagrafica generale fornitori">
+   <thead><tr><th>ID</th><th>Ragione sociale</th><th>Categoria</th><th>Partita IVA</th>
+    <th>Comune</th><th>Telefono</th><th>Stato</th><th>Ultimo DURC</th><th>Documenti</th><th>Apri</th></tr></thead>
+   <tbody id="registry-body"></tbody>
+  </table></div>
+ </section>
+ <section id="registry-detail" hidden>
+  <h2 id="registry-detail-title">Nuovo fornitore</h2>
+  <p id="registry-detail-note" class="registry-note"></p>
+  <form id="registry-form" action="#" method="post" autocomplete="off">
+   <div class="registry-edit-grid" id="registry-fields"></div>
+   <div class="registry-buttons">
+    <button type="submit" id="registry-save">Salva anagrafica</button>
+    <button type="button" id="registry-cancel" class="registry-action">Chiudi</button>
+    <button type="button" id="registry-delete" class="danger" hidden>Elimina fornitore</button>
+   </div>
+  </form>
+  <p id="registry-detail-status" role="status" class="registry-note"></p>
+ </section>
+ <section id="registry-documents" hidden>
+  <h2>Documenti e storico DURC</h2>
+  <p class="registry-note">Ogni nuovo DURC è una registrazione distinta. Le scadenze sono
+   informative e non certificano automaticamente la regolarità contributiva.</p>
+  <div class="registry-docs"><table aria-label="Documenti del fornitore">
+   <thead><tr><th>ID</th><th>Tipo</th><th>Titolo</th><th>Protocollo</th>
+   <th>Rilascio</th><th>Scadenza</th><th>Stato</th><th>File</th><th>Azioni</th></tr></thead>
+   <tbody id="registry-document-rows"></tbody></table></div>
+  <h3>Carica un nuovo documento</h3>
+  <form id="registry-upload-form" action="#" method="post" enctype="multipart/form-data">
+   <div class="registry-edit-grid">
+    <label>Tipo documento<select name="tipo" required>
+     <option>DURC</option><option>Visura camerale</option>
+     <option>Certificazione</option><option>Altro</option></select></label>
+    <label>Titolo *<input name="titolo" required maxlength="180"></label>
+    <label>Protocollo / riferimento<input name="riferimento" maxlength="180"></label>
+    <label>Data rilascio<input type="date" name="dataRilascio"></label>
+    <label>Data scadenza<input type="date" name="dataScadenza"></label>
+    <label>Allegato PDF, JPG o PNG (massimo 8 MB) *
+     <input name="allegato" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" required></label>
+    <label class="registry-field-all">Note documento
+     <textarea name="note" rows="2" maxlength="2000"></textarea></label>
+   </div>
+   <div class="registry-buttons"><button type="submit">Archivia documento</button></div>
+  </form>
+  <p id="registry-document-status" role="status" class="registry-note"></p>
+ </section>`;
+ view.replaceChildren(main);
+ const fields=main.querySelector('#registry-fields');
+ for(const [name,label,type,max] of registryFields){
+  const holder=document.createElement('label');
+  holder.textContent=label;
+  if(name==='note'||name==='condizioniPagamento')holder.className='registry-field-all';
+  let input;
+  if(type==='textarea'){
+   input=document.createElement('textarea');input.rows=name==='note'?4:2;
+  }else if(type==='select'){
+   input=document.createElement('select');
+   for(const val of ['Attivo','Sospeso','Non attivo'])input.add(new Option(val,val));
+  }else{
+   input=document.createElement('input');input.type=type;
+  }
+  input.name=name;input.maxLength=max;
+  if(name==='nome')input.required=true;
+  if(name==='categoria'){
+   input.setAttribute('list','registry-category-list');
+  }
+  holder.append(input);fields.append(holder);
+ }
+ const categories=document.createElement('datalist');categories.id='registry-category-list';
+ for(const name of ['Impresa','Artigiano','Professionista','Materiali','Arredi',
+  'Attrezzature','Altro'])categories.append(new Option(name,name));
+ fields.append(categories);
+ main.querySelector('#registry-search').addEventListener('input',renderSupplierRegistryRows);
+ main.querySelector('#registry-new').addEventListener('click',()=>openSupplierRegistryEditor(null));
+ main.querySelector('#registry-refresh').addEventListener('click',()=>void loadSupplierRegistry(renderSerial));
+ main.querySelector('#registry-cancel').addEventListener('click',()=>{
+  registrySelectedId=0;
+  main.querySelector('#registry-detail').hidden=true;
+  main.querySelector('#registry-documents').hidden=true;
+ });
+ main.querySelector('#registry-form').addEventListener('submit',async event=>{
+  event.preventDefault();event.stopPropagation();
+  await saveSupplierRegistry(event.currentTarget);
+ });
+ main.querySelector('#registry-delete').addEventListener('click',()=>void deleteSupplierRegistry());
+ main.querySelector('#registry-upload-form').addEventListener('submit',async event=>{
+  event.preventDefault();event.stopPropagation();
+  await uploadSupplierRegistryDocument(event.currentTarget);
+ });
+}
+function renderSupplierRegistryRows(){
+ const body=view.querySelector('#registry-body');if(!body)return;
+ const search=(view.querySelector('#registry-search')?.value||'').trim().toLocaleLowerCase('it-IT');
+ const rows=registryRows.filter(r=>
+  [r.nome,r.categoria,r.partitaIva,r.comune,r.email].some(x=>
+   String(x||'').toLocaleLowerCase('it-IT').includes(search)));
+ body.replaceChildren();
+ if(!rows.length){
+  const tr=document.createElement('tr');const td=document.createElement('td');
+  td.colSpan=10;td.textContent=registryRows.length?'Nessun fornitore corrisponde alla ricerca.':'Nessun fornitore registrato.';
+  tr.append(td);body.append(tr);return;
+ }
+ for(const record of rows){
+  const tr=document.createElement('tr');
+  for(const val of [record.id,record.nome,record.categoria,record.partitaIva,
+   record.comune,record.telefono,record.stato,registryDurc(record),record.documentiPresenti]){
+   const td=document.createElement('td');td.textContent=registryDisplay(val);
+   if(String(val).startsWith('Scaduto'))td.className='registry-state-expired';
+   tr.append(td);
+  }
+  const cell=document.createElement('td');
+  const button=document.createElement('button');button.type='button';button.className='registry-action';
+  button.textContent='Apri / modifica';
+  button.addEventListener('click',()=>openSupplierRegistryEditor(record));
+  cell.append(button);tr.append(cell);body.append(tr);
+ }
+}
+function openSupplierRegistryEditor(record){
+ const form=view.querySelector('#registry-form');if(!form)return;
+ form.reset();registrySelectedId=record?Number(record.id):0;
+ for(const [name] of registryFields){
+  const input=form.elements.namedItem(name);
+  if(input)input.value=record?.[name]??(name==='stato'?'Attivo':name==='paese'?'Italia':'');
+ }
+ const detail=view.querySelector('#registry-detail');
+ detail.hidden=false;
+ view.querySelector('#registry-detail-title').textContent=
+  record?'Fornitore #'+record.id+' · '+record.nome:'Nuovo fornitore';
+ view.querySelector('#registry-detail-note').textContent=
+  record?'Identificativo FastPharma indipendente da Contatti. Operazioni collegate: '+
+   record.offerteCollegate+'. Documenti archiviati: '+record.documentiPresenti+'.':
+   'La nuova anagrafica sarà condivisa fra tutte le commesse, senza essere collegata a Contatti.';
+ view.querySelector('#registry-detail-status').textContent='';
+ const remove=view.querySelector('#registry-delete');
+ remove.hidden=!record;
+ if(record){
+  const inUse=Number(record.offerteCollegate)>0||Number(record.documentiPresenti)>0;
+  remove.disabled=inUse;
+  remove.title=inUse?'Anagrafica collegata: imposta Non attivo, oppure verifica i documenti.':'Cancellazione consentita dopo conferma.';
+  view.querySelector('#registry-documents').hidden=false;
+  void loadSupplierRegistryDocuments(registrySelectedId);
+ }else view.querySelector('#registry-documents').hidden=true;
+ detail.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+async function loadSupplierRegistry(serial){
+ const status=view.querySelector('#registry-status');
+ if(!status)return;
+ status.textContent='Caricamento fornitori dal database TEST…';
+ try{
+  const records=await readList(registryUrl);
+  if(serial!==renderSerial||!view.querySelector('#registry-body'))return;
+  registryRows=records;renderSupplierRegistryRows();
+  status.textContent=records.length+' fornitori nell’anagrafica FastPharma, indipendente dalle commesse.';
+  if(registrySelectedId){
+   const current=records.find(x=>Number(x.id)===registrySelectedId);
+   if(current)openSupplierRegistryEditor(current);
+   else{
+    registrySelectedId=0;view.querySelector('#registry-detail').hidden=true;
+    view.querySelector('#registry-documents').hidden=true;
+   }
+  }
+ }catch(error){
+  if(serial!==renderSerial)return;
+  status.textContent='Anagrafica non disponibile: '+error.message;
+  status.classList.add('registry-error');
+ }
+}
+async function saveSupplierRegistry(form){
+ const submit=form.querySelector('[type="submit"]'),message=view.querySelector('#registry-detail-status');
+ if(submit.disabled)return;
+ submit.disabled=true;message.textContent='Registrazione in corso, non ripetere l’operazione…';
+ try{
+  const values=Object.fromEntries(new FormData(form));
+  const id=registrySelectedId,method=id?'PUT':'POST';
+  const response=await apiCall(registryUrl+(id?'/'+id:''),{
+   method,headers:{'Content-Type':'application/json'},body:JSON.stringify(values)
+  });
+  const result=await response.json();
+  if(!response.ok||!result.saved)throw Error(result.error||'Salvataggio non confermato.');
+  registrySelectedId=Number(result.id);
+  alertDemo((id?'Fornitore modificato':'Fornitore creato')+' in Neon TEST · ID '+result.id);
+  await loadSupplierRegistry(renderSerial);
+ }catch(error){message.textContent='Salvataggio non confermato: '+error.message+
+  '. Verifica l’archivio prima di ripetere, per evitare duplicati.';message.className='registry-error';}
+ finally{submit.disabled=false;}
+}
+async function deleteSupplierRegistry(){
+ const record=registryRows.find(x=>Number(x.id)===registrySelectedId);
+ if(!record)return;
+ if(Number(record.offerteCollegate)>0||Number(record.documentiPresenti)>0){
+  alertDemo('Fornitore già utilizzato: imposta lo stato Non attivo.');return;
+ }
+ if(!confirm('Cancellare definitivamente da Neon TEST il fornitore '+record.nome+
+  ' (ID '+record.id+')? La cancellazione non è annullabile.'))return;
+ const button=view.querySelector('#registry-delete');button.disabled=true;
+ try{
+  const response=await apiCall(registryUrl+'/'+record.id,{
+   method:'DELETE',headers:{'X-Confirm-Delete':'true'}
+  });
+  const result=await response.json();
+  if(!response.ok||!result.deleted)throw Error(result.error||'Cancellazione non confermata');
+  registrySelectedId=0;view.querySelector('#registry-detail').hidden=true;
+  view.querySelector('#registry-documents').hidden=true;
+  alertDemo('Fornitore eliminato da Neon TEST.');
+  await loadSupplierRegistry(renderSerial);
+ }catch(error){alertDemo('Cancellazione non effettuata: '+error.message);}
+ finally{button.disabled=false;}
+}
+function documentExpiry(row){
+ const when=registryDate(row.dataScadenza);
+ if(when==='—')return 'Da verificare';
+ return when<new Date().toISOString().slice(0,10)?'Scaduto':'Fino al '+when;
+}
+async function loadSupplierRegistryDocuments(id){
+ const body=view.querySelector('#registry-document-rows'),status=view.querySelector('#registry-document-status');
+ if(!body||!status)return;
+ body.replaceChildren();status.textContent='Lettura documenti…';
+ try{
+  const records=await readList(registryUrl+'/'+id+'/documenti');
+  if(registrySelectedId!==id||!view.querySelector('#registry-document-rows'))return;
+  status.textContent=records.length+' documenti archiviati. Un nuovo DURC non sostituisce i precedenti.';
+  if(!records.length){
+   const tr=document.createElement('tr'),td=document.createElement('td');
+   td.colSpan=9;td.textContent='Nessun documento archiviato per questo fornitore.';
+   tr.append(td);body.append(tr);
+  }
+  for(const documentRow of records){
+   const tr=document.createElement('tr');
+   for(const val of [documentRow.id,documentRow.tipo,documentRow.titolo,
+    registryDisplay(documentRow.riferimento),registryDate(documentRow.dataRilascio),
+    registryDate(documentRow.dataScadenza),documentExpiry(documentRow),
+    documentRow.nomeFile]){
+    const td=document.createElement('td');td.textContent=String(val);
+    if(val==='Scaduto')td.className='registry-state-expired';
+    tr.append(td);
+   }
+   const td=document.createElement('td');
+   const download=document.createElement('button');download.type='button';download.className='registry-action';
+   download.textContent='Scarica';download.onclick=()=>void downloadSupplierRegistryDocument(documentRow);
+   const del=document.createElement('button');del.type='button';del.className='registry-action';
+   del.textContent='Elimina';del.onclick=()=>void deleteSupplierRegistryDocument(documentRow);
+   td.append(download,document.createTextNode(' '),del);tr.append(td);body.append(tr);
+  }
+ }catch(error){status.textContent='Errore lettura documenti: '+error.message;status.className='registry-error';}
+}
+async function uploadSupplierRegistryDocument(form){
+ if(!registrySelectedId)return;
+ const button=form.querySelector('[type="submit"]'),status=view.querySelector('#registry-document-status');
+ if(button.disabled)return;
+ const values=new FormData(form),file=values.get('allegato');
+ if(!(file instanceof File)||!file.size||file.size>8*1024*1024){
+  status.textContent='Seleziona un file PDF/JPG/PNG entro 8 MB.';return;
+ }
+ button.disabled=true;status.textContent='Caricamento in corso…';
+ try{
+  const supplierId=registrySelectedId;
+  const response=await apiCall(registryUrl+'/'+supplierId+'/documenti',{
+   method:'POST',body:values
+  });
+  const data=await response.json();
+  if(!response.ok||!data.saved)throw Error(data.error||'Archiviazione non confermata');
+  form.reset();alertDemo('Documento registrato nel fascicolo fornitore TEST · ID '+data.id);
+  await loadSupplierRegistry(renderSerial);
+ }catch(error){status.textContent='Documento non confermato: '+error.message+
+  '. Controlla lo storico prima di ripetere.';status.className='registry-error';}
+ finally{button.disabled=false;}
+}
+async function downloadSupplierRegistryDocument(record){
+ try{
+  const response=await apiCall('/api/v4/fornitori/documenti/'+record.id+'/file');
+  const blob=await response.blob();
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=record.nomeFile||'documento.pdf';
+  document.body.append(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),10000);
+ }catch(error){alertDemo('Download non riuscito: '+error.message);}
+}
+async function deleteSupplierRegistryDocument(record){
+ if(!confirm('Eliminare definitivamente il documento '+record.nomeFile+
+  ' (ID '+record.id+') dal fascicolo? Questa operazione non è annullabile.'))return;
+ try{
+  const response=await apiCall('/api/v4/fornitori/documenti/'+record.id,{
+   method:'DELETE',headers:{'X-Confirm-Delete':'true'}
+  });
+  const result=await response.json();
+  if(!response.ok||!result.deleted)throw Error(result.error||'Cancellazione non confermata');
+  alertDemo('Documento eliminato dal fascicolo TEST.');
+  await loadSupplierRegistry(renderSerial);
+ }catch(error){alertDemo('Documento non cancellato: '+error.message);}
+}
+
 function prepareDataTab(page){
  // Rimappatura del solo DOM: schema dati, API e HTML originale del cliente immutati.
  const main=view.querySelector('main');
@@ -1038,7 +1408,7 @@ function prepareDataTab(page){
  const legacySupplierHeader=supplierSections[0].querySelector('table tr');
  if(legacySupplierHeader){
   const crmTh=document.createElement('th');
-  crmTh.textContent='ID Contatti (UUID)';crmTh.scope='col';
+  crmTh.textContent='ID fornitore FastPharma';crmTh.scope='col';
   legacySupplierHeader.append(crmTh);
  }
  const supplierHeading=supplierSections[0].querySelector('h2');
@@ -1298,7 +1668,7 @@ function maybeCreateVoiceSelect(form){
 function fillProjectForms(voci,offers,affidamenti,fornitori,passive,active){
  for(const input of view.querySelectorAll('input[name="commessa_id"]'))input.value=String(currentProjectId);
  const voceItems=voci.map(x=>({value:x.id,label:x.codice+' — '+x.descrizione}));
- const supplierItems=fornitori.map(x=>({value:x.id,label:x.nome}));
+ const supplierItems=fornitori.filter(x=>x.stato!=='Non attivo').map(x=>({value:x.id,label:x.nome}));
  const awardItems=affidamenti.map(x=>({value:x.id,label:x.fornitore+' — '+x.descrizione+' ('+euro(x.importo)+')'}));
  const passiveItems=passive.map(x=>({value:x.id,label:x.riferimento+' — '+euro(x.imponibile)+' ('+x.fornitore+')'}));
  const activeItems=active.map(x=>({value:x.id,label:x.numero+' — '+euro(x.imponibile)}));
@@ -1331,6 +1701,7 @@ async function loadTestData(page){
  const requestSerial=++renderSerial;
  const main=view.querySelector('main');if(!main)return;
  if(page==='preventivo'){await readQuoteTab(requestSerial);return;}
+ if(page==='anagrafica'){await loadSupplierRegistry(requestSerial);return;}
  const note=document.createElement('p');note.className='demo-cloud-status';
  note.textContent='Caricamento dati persistenti da Neon TEST…';main.prepend(note);
  try{
@@ -1409,7 +1780,7 @@ async function loadTestData(page){
    const tables=Array.from({length:13},(_,i)=>main.querySelector('table[data-grid="'+i+'"]'));
     if(page==='fornitori'){
      renderRows(main.querySelector('table[data-grid="suppliers"]'),
-      fornitori.map(x=>[x.nome,x.categoria,x.email||'',x.fornitoreContattoId||'Da associare']),
+      fornitori.map(x=>[x.nome,x.categoria,x.email||'',x.id]),
       'fornitore',fornitori.map(x=>x.id));
      renderSupplierReadOnlyGrids(offerte,passive,pagamenti);
    }
@@ -1659,11 +2030,12 @@ window.addEventListener('message',async event=>{
 });
 
 function show(page,scrollTop=true){
- if(page!=='preventivo'&&page!=='fatture'&&!pages[page])page='commesse';
- if(page!=='commesse'&&(!Number.isSafeInteger(currentProjectId)||currentProjectId<=0)){
+ if(page!=='preventivo'&&page!=='fatture'&&page!=='anagrafica'&&!pages[page])page='commesse';
+ if(page!=='commesse'&&page!=='anagrafica'&&(!Number.isSafeInteger(currentProjectId)||currentProjectId<=0)){
   page='commesse';alertDemo('Seleziona prima una commessa nella scheda Generale.');
  }
  if(page==='preventivo')buildQuoteTab();
+ else if(page==='anagrafica')buildSupplierRegistry();
  else {
   view.innerHTML=['commessa','fornitori','fatture'].includes(page)?pages.commessa:pages[page];
   if(page==='commesse')decorateGeneral();
@@ -1684,8 +2056,8 @@ function show(page,scrollTop=true){
  loadTestData(page);
 }
 function goTo(page){
- if(page!=='preventivo'&&page!=='fatture'&&!pages[page])page='commesse';
- if(page!=='commesse'&&!currentProjectId){show('commesse');return;}
+ if(page!=='preventivo'&&page!=='fatture'&&page!=='anagrafica'&&!pages[page])page='commesse';
+ if(page!=='commesse'&&page!=='anagrafica'&&!currentProjectId){show('commesse');return;}
  if(location.hash.slice(1)===page)show(page);else location.hash=page;
 }
 document.addEventListener('click',e=>{
@@ -1814,10 +2186,11 @@ document.getElementById('tab-general').onclick=()=>goTo('commesse');
 document.getElementById('tab-details').onclick=()=>{if(currentProjectId)goTo('commessa');};
 document.getElementById('tab-quote').onclick=()=>{if(currentProjectId)goTo('preventivo');};
 document.getElementById('tab-suppliers').onclick=()=>{if(currentProjectId)goTo('fornitori');};
+ document.getElementById('tab-supplier-registry').onclick=()=>goTo('anagrafica');
 document.getElementById('tab-invoices').onclick=()=>{if(currentProjectId)goTo('fatture');};
 document.getElementById('commesse-version').textContent='V'+UI_VERSION;
 syncCommessaTabs('commesse');
-document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse V4.8.0 TEST: la scheda 4 Fornitori ospita preventivi, fatture e pagamenti ai fornitori con analisi Scaramozzino separata. La scheda 5 ospita fatture emesse, incassi del committente e relativa Analisi Scaramozzino. Le prime griglie sono di sola lettura; i moduli storici sono conservati.');
+document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse V4.9.0 TEST: 4A Anagrafica fornitori è autonoma da Contatti, sempre accessibile, con modifiche e storico DURC.  la scheda 4 Fornitori ospita preventivi, fatture e pagamenti ai fornitori con analisi Scaramozzino separata. La scheda 5 ospita fatture emesse, incassi del committente e relativa Analisi Scaramozzino. Le prime griglie sono di sola lettura; i moduli storici sono conservati.');
 backButton.addEventListener('click',()=>goTo(parentPage[location.hash.slice(1)]||'commesse'));
 window.addEventListener('hashchange',()=>{if(authToken)show(location.hash.slice(1));});
 // Avvio chiuso: nessuna vista gestionale prima di login().
