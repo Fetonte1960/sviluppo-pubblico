@@ -1071,14 +1071,7 @@ const accountingSections=[
  {id:'movimenti',label:'Movimenti'},
  {id:'estratti',label:'Estratti Conto'}
 ];
-const accountAiInstructions='Sei l’assistente AI per FastPharma Commesse, area Contabilità generale. '
- +'Chiama prima il connettore MCP-postgree con Init (solo note CONNECT_ONLY, senza Token 2 o session.attach). '
- +'Segui le istruzioni contabili in https://fetonte1960.github.io/sviluppo-pubblico/commesse/Fastpharma-Commesse/contabilita-ai.md . '
- +'Chiedimi di caricare un estratto conto bancario PDF o foto. Interpreta con prudenza; '
- +'produci una nota strutturata con applicazioneSuggerita GESTIONE_COMMESSE, '
- +'dati.area CONTABILITA e dati.sezione ESTRATTI_CONTO, poi depositala con nota.deposita. '
- +'Non creare movimenti fittizi, non assegnare il codice commessa, non accedere agli archivi gestionali. '
- +'Se una pagina non è leggibile o supera il limite MCP, avvisami prima del deposito.';
+const accountAiInstructions="Contabilità generale FastPharma. Usa il connettore MCP-postgree: prima CommandToMCPPostgree(\"Init\"). Profilo CONNECT_ONLY: solo nota.deposita, nessun Token 2 o session.attach. Il cassetto è UNICO: il catalogo destinazioni di Init NON è un elenco di cassetti e non occorre che includa GESTIONE_COMMESSE. Ometti applicazioneSuggerita; NON usare CONTATTI. Chiedimi di allegare un PDF o fotografie leggibili di un estratto conto. Leggi soltanto dati realmente presenti. Produci una nota con tipo=nota, testoOriginale (descrizione veritiera del documento acquisito), titolo, categoria=documento_contabile, dati={area:\"CONTABILITA\",sezione:\"ESTRATTI_CONTO\",tipoDocumento:\"ESTRATTO_CONTO\",versioneSchema:\"1.0\",banca:\"...\",riferimentoConto:\"identificativo letto\",periodoDa:\"YYYY-MM-DD\",periodoA:\"YYYY-MM-DD\",valuta:\"EUR\",saldoIniziale:\"numero con punto decimale o null\",saldoFinale:\"numero con punto decimale o null\",movimenti:[{dataOperazione:\"YYYY-MM-DD\",dataValuta:\"YYYY-MM-DD o null\",descrizione:\"...\",importo:\"numero con segno; +entrata/-uscita\",riferimentoBancario:\"codice letto o null\"}]}. Date e importi mancanti non vanno inventati. Per il deposito usa CommandToMCPPostgree con comando JSON {\"azione\":\"nota.deposita\",\"nota\":{...}}. Non assegnare codici commessa (il gestionale inserirà \"Da attribuire\"). Non registrare allegati binari o credenziali. Se il JSON dati supera 8000 caratteri o mancano pagine essenziali, non troncare e segnala il problema. Solo dopo una risposta MCP ok=true comunica noteId e stato DA_APPROVARE. Il deposito non equivale a importazione: quella avviene con \"Elabora Cassetto primanota\" in Commesse.";
 let activeAccountingSubtab='emesse';
 let accountingImportResult=null;
 const accountingMoney=x=>{
@@ -1114,7 +1107,7 @@ function accountingFeedback(node){
  summary.textContent=result.error
   ?'Elaborazione non riuscita: '+result.error
   :'Note lette: '+result.letti+' · Nuovi documenti/integrati: '+result.importati+
-   ' · Già presenti: '+result.giaPresenti+' · Da verificare: '+result.daVerificare+
+   ' · Già presenti: '+result.giaPresenti+' · Altre note ignorate: '+(result.ignorate||0)+' · Da verificare: '+result.daVerificare+
    ' · Nuovi movimenti: '+result.movimentiInseriti+'.';
  node.append(summary);
  if(result.message){const p=document.createElement('p');p.textContent=result.message;node.append(p);}
