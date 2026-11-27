@@ -1,4 +1,4 @@
-# Contabilità generale — bootstrap AI universale per la Prima Nota (V1.15)
+# Contabilità generale — bootstrap AI universale per la Prima Nota (V1.16)
 
 ## Importazione diretta fatture fiscali (V4.18.0)
 
@@ -28,9 +28,9 @@ Il JSON schema 1.2 non cambia. Il backend crea il conto anche con data e saldo i
 
 Dopo aver attribuito i movimenti in Contabilità generale, aprire la commessa interessata. In 4 · Fornitori → Pagamenti compaiono le uscite; in 5 · Fatture e pagamenti → Pagamenti compaiono le entrate (incassi). Le due griglie leggono la stessa prima nota, filtrata per codice commessa e segno, con tutte le pagine, importi visualizzati positivi e totale della rispettiva direzione. Nessun movimento Da attribuire è incluso. Se non ci sono movimenti attribuiti, il messaggio lo indica esplicitamente. Rientrando nella scheda si rileggono i dati aggiornati; non si duplicano movimenti e non si deducono collegamenti a specifiche fatture o fornitori. Il saldo bancario e l'Analisi Scaramozzino storica restano distinti.
 
-## Filtro fatture Da attribuire (V4.21.3)
+## Filtro fatture Da attribuire e commesse censite (V4.21.4)
 
-In Fatture Emesse e Fatture ricevute il filtro Commessa offre sempre la voce **Da attribuire**, anche quando nessuna fattura è ancora da attribuire. Selezionarla per vedere soltanto i documenti con codice interno `Da attribuire`; dopo l'assegnazione dell'ultimo documento il filtro resta selezionato e la griglia è vuota. Nessuna modifica agli archivi o alla procedura di attribuzione.
+In Fatture Emesse e Fatture ricevute il filtro Commessa comprende tutte le commesse censite, anche senza fatture, e offre sempre la voce **Da attribuire**, anche quando nessuna fattura è ancora da attribuire. Selezionarla per vedere soltanto i documenti con codice interno `Da attribuire`; dopo l'assegnazione dell'ultimo documento il filtro resta selezionato e la griglia è vuota. Nessuna modifica agli archivi o alla procedura di attribuzione.
 
 ## Ambito e privilegi
 
