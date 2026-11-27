@@ -1,4 +1,8 @@
-# Contabilità generale — bootstrap AI universale per la Prima Nota (V1.4)
+# Contabilità generale — bootstrap AI universale per la Prima Nota (V1.5)
+
+## Importazione diretta fatture fiscali (V4.18.0)
+
+In Contabilità generale, Fatture Emesse e Fatture ricevute hanno ciascuna il pulsante **Importa da cassetto fiscale**. Selezionare uno o più XML FatturaPA non firmati (.xml, massimo 8 MB per file), già scaricati dal portale fiscale. Non è un collegamento diretto all'Agenzia delle Entrate e non usa AI/MCP. Il backend verifica intestazione FastPharma e direzione; conserva XML originale, righe, riepiloghi IVA e pagamenti previsti. Identità univoca: emittente fiscale, tipo documento, anno e numero. Ripetizione identica ignorata; stessa identità con XML diverso segnalata come conflitto senza sovrascrivere. Per ricevute aggiorna/crea il fornitore 4A per identificativo fiscale preservando DURC, categoria e campi aziendali; conflitti anagrafici richiedono verifica. Le fatture sono inizialmente Da attribuire. La griglia consente di scaricare l'XML originale. Fatture generali e fatture storiche delle singole commesse sono archivi distinti: non sommare indiscriminatamente. I dati di pagamento dell'XML non provano un pagamento effettivo. Non sono gestiti .p7m, ZIP, autofatture ambigue o attribuzione automatica. Il flusso OCR/MCP sotto riportato continua a non importare fatture.
 
 ## Ambito e privilegi
 
@@ -18,8 +22,8 @@ Il cassetto MCP è universale e può ricevere note contabili indipendentemente d
 | Sezione | Documento | Importazione deterministica |
 |---|---|---|
 | `ESTRATTI_CONTO` | Estratto conto bancario | Attiva: alimenta la griglia unica **Movimenti** |
-| `FATTURE_EMESSE` | Fattura emessa | Non ancora attiva: nota conservata in attesa di specifica |
-| `FATTURE_RICEVUTE` | Fattura ricevuta | Non ancora attiva: nota conservata in attesa di specifica |
+| `FATTURE_EMESSE` | Fattura emessa | Non attiva dal cassetto MCP; usare import XML fiscale separato |
+| `FATTURE_RICEVUTE` | Fattura ricevuta | Non attiva dal cassetto MCP; usare import XML fiscale separato |
 
 Per una fattura, conservare le informazioni effettivamente lette in `dati.documento` (numero, data, emittente, destinatario, imponibile, IVA, totale, scadenza, riferimenti se presenti). Non inventare campi assenti e non annunciare l'importazione in archivio; il gestionale restituirà `NON_SUPPORTATO` fino all'attivazione del contratto deterministico.
 
