@@ -1,4 +1,4 @@
-# Contabilità generale — bootstrap AI universale per la Prima Nota (V1.1)
+# Contabilità generale — bootstrap AI universale per la Prima Nota (V1.2)
 
 ## Ambito e privilegi
 
@@ -23,7 +23,7 @@ Il cassetto MCP è universale e può ricevere note contabili indipendentemente d
 
 Per una fattura, conservare le informazioni effettivamente lette in `dati.documento` (numero, data, emittente, destinatario, imponibile, IVA, totale, scadenza, riferimenti se presenti). Non inventare campi assenti e non annunciare l'importazione in archivio; il gestionale restituirà `NON_SUPPORTATO` fino all'attivazione del contratto deterministico.
 
-I comandi **Carica con AI** ed **Elabora Cassetto primanota** appartengono a **Contabilità generale** e sono visibili sopra tutte le sottoschede. Il risultato dell'elaborazione è generale; la sottoscheda **Movimenti** mostra esclusivamente una griglia con quattro filtri in prima riga: **Banca, Conto, Commessa ed Entrate/Uscite**, tutti inizialmente su `Tutti`. Le informazioni di origine bancaria restano archiviate per controllo tecnico ma non diventano un tab o pannello operativo separato.
+I comandi **Carica con AI** ed **Elabora Cassetto primanota** appartengono a **Contabilità generale** e sono visibili sopra tutte le sottoschede. Il risultato dell'elaborazione è generale; il sottotab **Movimenti → Movimenti** mostra una griglia con quattro filtri in prima riga: **Banca, Conto, Commessa ed Entrate/Uscite**, tutti inizialmente su `Tutti`. Il sottotab Banche e saldi contiene l’anagrafica dei conti e i saldi calcolati.
 
 ## Prima tipologia: ESTRATTO_CONTO
 
@@ -70,7 +70,7 @@ Regole per i dati:
 - Importi: numeri decimali con **punto**, **segno positivo per entrate**, **negativo per uscite**, nessun simbolo euro.
 - Saldi: `null` se assenti; se dichiarati devono risultare coerenti con la somma dei movimenti del periodo. Non forzare la quadratura inventando importi.
 - `riferimentoBancario`: codice movimento/CRO/TRN se effettivamente presente; `null` altrimenti. Non inventare ID.
-- `riferimentoConto`: deve essere un identificativo stabile ed effettivamente letto. Non inventare IBAN né completare codici mascherati.
+- `banca` e `riferimentoConto`: se uno o entrambi mancano, sono illeggibili o ambigui, chiedi all’utente di indicare i dati mancanti, usando la denominazione della banca e l’identificativo stabile del conto come registrati nell’anagrafica **Banche e saldi**. Attendi la risposta prima di depositare; usa i dati esplicitamente confermati dall’utente. Non inventare IBAN, non completare codici mascherati e non usare segnaposto.
 - Conserva le operazioni anche se sembrano ripetute: **non eliminare duplicati durante l'estrazione**. Il gestionale ha un deduplicatore deterministico che preserva le ricorrenze sullo stesso estratto.
 - Non incorporare nelle note credenziali, PIN, OTP, password, codici di accesso o dati delle carte non necessari.
 - Il PDF o la fotografia non vengono caricati nel cassetto MCP attuale: la nota contiene il risultato estratto, non l'allegato binario.
