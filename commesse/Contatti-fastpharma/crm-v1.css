@@ -219,3 +219,7 @@
 #legacyLogin .access input{max-width:none;width:100%}
 #legacyLogin .chrome-password-actions{display:none!important}
 @media(max-width:560px){.crm-auth-box{padding:20px}#legacyLogin .access form{flex-direction:column;align-items:stretch}}
+
+/* V1.0.24: tre indicatori visibili; Trattative resta disattivato.
+   Il layout compatto preesistente continua a usare due colonne. */
+@media(min-width:1051px){.kpis{grid-template-columns:repeat(3,minmax(140px,1fr))}}
