@@ -110,7 +110,7 @@
   $("listEntryDetails").innerHTML='<div class="fieldgrid">'+Object.entries(details)
    .filter(([,v])=>v!==null&&v!==undefined&&String(v).trim()!=="")
    .map(([k,v])=>'<div class="fieldpair"><span>'+esc(k)+'</span><strong>'+esc(v)+'</strong></div>').join("")+
-   '</div><p class="hint">Dati della Lista esterna: non è ancora un’Organizzazione commerciale FastPharma.</p>';
+   '</div><p class="hint">Dati della Lista esterna: non è ancora presente fra i Contatti/Clienti FastPharma.</p>';
   $("listEntryDialog").showModal();
  }
  async function poll(){
