@@ -1,4 +1,4 @@
-# Contabilità generale — bootstrap AI universale per la Prima Nota (V1.7)
+# Contabilità generale — bootstrap AI universale per la Prima Nota (V1.8)
 
 ## Importazione diretta fatture fiscali (V4.18.0)
 
@@ -11,6 +11,10 @@ Nelle due griglie fiscali cliccare il numero con **Corpo fattura**: il dettaglio
 ## Attribuzione manuale fatture alla commessa (V4.19.0)
 
 In Fatture Emesse e Fatture ricevute è disponibile la stessa procedura dei Movimenti: filtro Commessa (Tutte le commesse, Da attribuire quando presente, codici effettivi), checkbox per riga e checkbox di intestazione per tutte le righe visualizzate. Selezionare le fatture, poi usare Attribuisci alla commessa selezionata (commessa corrente) oppure scegliere una destinazione e usare Attribuisci ad una commessa. I comandi sono disabilitati senza selezione o destinazione valida; confermare l'operazione e verificare il codice aggiornato nella griglia. Si può correggere una precedente attribuzione con la stessa procedura. La transazione modifica esclusivamente codice_commessa dei documenti selezionati nella direzione corretta, non XML, righe, importi, anagrafica, fatture legacy o movimenti. Nessuna attribuzione automatica o ripartizione per righe. L'analisi AI READ_ONLY può spiegare la procedura ma non eseguire l'attribuzione.
+
+## Uniformità grafica con Movimenti (V4.19.1)
+
+Nelle griglie fatture, i due pulsanti di attribuzione e il selettore di destinazione occupano una sola riga, con lo stesso stile di Movimenti. Il filtro Commessa è nella riga sottostante. Selezione e salvataggio invariati.
 
 ## Ambito e privilegi
 
