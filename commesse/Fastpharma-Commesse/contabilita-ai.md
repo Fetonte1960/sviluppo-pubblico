@@ -4,8 +4,8 @@
 
 Questa istruzione specifica integra il bootstrap del connettore **MCP-postgree** per il gestionale **FastPharma Commesse**, scheda **6 · Contabilità generale**. È documentazione di dominio e **non** cambia le autorizzazioni MCP. Usa esclusivamente `CommandToMCPPostgree(comando: string)`.
 
-1. Avvia `CommandToMCPPostgree("Init")` usando la connessione OAuth già attiva (Token 1). Non chiedere Token 2, ticket né `session.attach`.
-2. Se `Init` non autorizza `nota.deposita`, fermati. Non inventare accessi o conferme.
+1. Avvia `CommandToMCPPostgree("Init")` usando la connessione OAuth già attiva (Token 1). Non chiedere Token 2, ticket né `session.attach`. Il cassetto MCP è **uno solo**: non cercare un destinatario `GESTIONE_COMMESSE` in `Init` e non confonderlo con un cassetto dedicato.
+2. Se `Init` non autorizza `nota.deposita`, fermati. Se il catalogo mostra soltanto `CONTATTI`, **non è un blocco** per la Prima Nota: ometti `applicazioneSuggerita`, usa l'intestazione `dati.area`/`dati.sezione` per la classificazione. Non inventare accessi o conferme.
 3. Chiedi all'utente fotografie leggibili oppure il PDF di un **estratto conto bancario**. Interpreta solo ciò che è leggibile; non compilare dati immaginati. Se mancano pagine o l'estratto è incompleto, segnala chiaramente la situazione.
 4. Prepara **un'unica nota strutturata** quando la dimensione lo consente, con l'intestazione indicata sotto; deposita mediante `nota.deposita`. Non utilizzare il gestionale e non cambiare archivi.
 5. L'identificativo di commessa **non deve essere inventato né ricavato automaticamente**: dopo importazione i documenti e i movimenti saranno `Da attribuire`; l'utente li assegnerà manualmente in una fase successiva.
@@ -13,7 +13,7 @@ Questa istruzione specifica integra il bootstrap del connettore **MCP-postgree**
 
 ## Prima tipologia: ESTRATTO_CONTO
 
-Intestazione di dominio obbligatoria: `applicazioneSuggerita=GESTIONE_COMMESSE`, `categoria=documento_contabile`, `dati.area=CONTABILITA`, `dati.sezione=ESTRATTI_CONTO`, `dati.tipoDocumento=ESTRATTO_CONTO`, `dati.versioneSchema=1.0`.
+Intestazione di dominio obbligatoria nel campo `dati`, NON un destinatario/cassetto MCP separato: `categoria=documento_contabile`, `dati.area=CONTABILITA`, `dati.sezione=ESTRATTI_CONTO`, `dati.tipoDocumento=ESTRATTO_CONTO`, `dati.versioneSchema=1.0`.
 
 Usa questo schema. I valori sono illustrativi: **non depositare l'esempio**.
 
@@ -25,7 +25,6 @@ Usa questo schema. I valori sono illustrativi: **non depositare l'esempio**.
     "testoOriginale": "Estratto conto bancario acquisito dal PDF o dalle fotografie indicate dall'utente.",
     "titolo": "Estratto conto bancario — periodo indicato nel documento",
     "categoria": "documento_contabile",
-    "applicazioneSuggerita": "GESTIONE_COMMESSE",
     "dati": {
       "area": "CONTABILITA",
       "sezione": "ESTRATTI_CONTO",
@@ -65,7 +64,7 @@ Regole per i dati:
 
 ## Lettura e importazione nel gestionale
 
-Il pulsante **Elabora Cassetto primanota** è l'autorizzazione esplicita dell'operatore FastPharma autenticato. Il backend acquisisce le note contabili in un archivio autonomo, controlla schema, banca, conto, date, saldi e movimenti, e applica deduplicazione per identificativo nota, documento e singoli movimenti.
+Il pulsante **Elabora Cassetto primanota** è l'autorizzazione esplicita dell'operatore FastPharma autenticato. Il backend **legge tutte le note del cassetto unico visibili all'organizzazione**, ignora quelle non contabili, riconosce quelle contabili dall'intestazione JSON e le acquisisce in un archivio autonomo, controlla schema, banca, conto, date, saldi e movimenti, e applica deduplicazione per identificativo nota, documento e singoli movimenti.
 
 - Un documento già visto non viene caricato nuovamente.
 - Estratti parzialmente sovrapposti aggiungono solo i movimenti nuovi.
