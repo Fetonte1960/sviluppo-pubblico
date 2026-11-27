@@ -350,7 +350,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 <script>
 (function(){
 'use strict';
-const UI_VERSION='4.20.1';
+const UI_VERSION='4.20.2';
 const pages=JSON.parse(document.getElementById('screens').textContent);
 // Archivio originale ricevuto: non convertirne le proposte in requisiti approvati.
 const originalClientAnalysis=JSON.parse(document.getElementById('client-analysis-original').textContent);
@@ -1570,22 +1570,32 @@ function buildGeneralAccounting(){
  const note=document.createElement('p');note.className='accounting-explanation';
  note.textContent='Archivio contabile generale indipendente dalla commessa. Importa fatture XML dal cassetto fiscale nelle rispettive schede; per estratti bancari usa il cassetto MCP. I nuovi documenti sono inizialmente «Da attribuire».';
  const actions=document.createElement('div');actions.className='accounting-actions';
- const ai=document.createElement('button');ai.type='button';ai.textContent='Carica con AI';
- ai.title='Apre ChatGPT con le istruzioni di Contabilità generale, senza Token 2';
- ai.addEventListener('click',async()=>{
-  const tab=window.open('about:blank','_blank');
-  if(!tab){window.alert('Consenti l’apertura della scheda ChatGPT.');return;}
-  tab.opener=null;ai.disabled=true;
-  try{
-   const response=await apiCall('/api/v4/contabilita/banche/bootstrap');
-   const rows=await response.json();
-   if(!Array.isArray(rows)||rows.some(r=>!Number.isSafeInteger(r.idConto)||r.idConto<=0||typeof r.banca!=='string'||typeof r.riferimentoConto!=='string'))throw Error('Anagrafica conti non valida');
-   const accounts=rows.map(r=>({idConto:r.idConto,banca:r.banca,riferimentoConto:r.riferimentoConto}));
-   const bootstrap=accountAiInstructions+'\nCONTI_CENSITI_JSON:\n'+JSON.stringify(accounts);
-   tab.location.replace('https://chatgpt.com/?prompt='+encodeURIComponent(bootstrap));
-  }catch(e){tab.close();window.alert('Impossibile preparare Carica con AI: '+e.message);}
-  finally{ai.disabled=false;}
- });
+ function makeAccountingAiButton(provider){
+  const button=document.createElement('button');button.type='button';
+  const isClaude=provider==='claude',name=isClaude?'Claude':'GPT';
+  button.textContent='Carica con '+name;
+  button.title='Apre '+name+' con il bootstrap contabile FASTPHARMA, senza Token 2';
+  button.addEventListener('click',async()=>{
+   const tab=window.open('about:blank','_blank');
+   if(!tab){window.alert('Consenti l’apertura della scheda '+name+'.');return;}
+   tab.opener=null;button.disabled=true;
+   try{
+    tab.document.title='Preparazione '+name;
+    const message=tab.document.createElement('p');message.textContent='Preparazione delle istruzioni contabili per '+name+'…';tab.document.body.append(message);
+    const response=await apiCall('/api/v4/contabilita/banche/bootstrap');
+    const rows=await response.json();
+    if(!Array.isArray(rows)||rows.some(r=>!Number.isSafeInteger(r.idConto)||r.idConto<=0||typeof r.banca!=='string'||typeof r.riferimentoConto!=='string'))throw Error('Anagrafica conti non valida');
+    const accounts=rows.map(r=>({idConto:r.idConto,banca:r.banca,riferimentoConto:r.riferimentoConto}));
+    const instructions=isClaude?accountAiInstructions.replace('dalle impostazioni Plugin/App','dalle impostazioni Connettori di Claude (connettore personalizzato)'):accountAiInstructions;
+    const bootstrap=instructions+'\nCONTI_CENSITI_JSON:\n'+JSON.stringify(accounts);
+    const target=isClaude?'https://claude.ai/new?q=':'https://chatgpt.com/?prompt=';
+    tab.location.replace(target+encodeURIComponent(bootstrap));
+   }catch(e){tab.close();window.alert('Impossibile preparare Carica con '+name+': '+e.message);}
+   finally{button.disabled=false;}
+  });
+  return button;
+ }
+ const aiGpt=makeAccountingAiButton('gpt'),aiClaude=makeAccountingAiButton('claude');
  const process=document.createElement('button');process.type='button';
  process.textContent='Elabora Cassetto primanota';
  const feedback=document.createElement('section');feedback.className='accounting-result';feedback.hidden=true;
@@ -1607,7 +1617,7 @@ function buildGeneralAccounting(){
    if(activeAccountingSubtab==='movimenti'){if(activeMovementSubtab==='movimenti')void accountingLoadRows(true);else void loadBankAccounts();}
   }
  });
- actions.append(ai,process);
+ actions.append(aiGpt,aiClaude,process);
  const nav=document.createElement('nav');nav.className='accounting-subtabs';
  nav.setAttribute('role','tablist');nav.setAttribute('aria-label','Sottoschede di Contabilità generale');
  main.append(title,note,actions,feedback,nav);
@@ -2791,7 +2801,7 @@ document.getElementById('tab-invoices').onclick=()=>{if(currentProjectId)goTo('f
 document.getElementById('commesse-version').textContent='V'+UI_VERSION;
 syncCommessaTabs('commesse');
 document.getElementById('generalMenu').onclick=()=>{location.assign('menu.html');};
-document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse V4.20.1 TEST: verifica identità MCP FASTPHARMA prima di depositare.  gli estratti possono censire nuovi conti durante Elabora Cassetto primanota.  seleziona fatture e attribuiscile alla commessa corrente o ad altra commessa.  clicca il numero per consultare il corpo fattura completo.  Fatture Emesse e Fatture ricevute importano XML dal cassetto fiscale senza AI; i fornitori sono aggiornati solo per ricevute.  Movimenti include Banche e saldi con anagrafica e saldo calcolato.  i Pagamenti delle schede 4 e 5 leggono i movimenti attribuiti in Contabilità generale.  seleziona i movimenti e attribuiscili alla commessa corrente.  Contabilità generale offre globalmente Carica con AI ed Elabora Cassetto primanota con feedback sopra le sottoschede. Movimenti contiene soltanto una griglia unica: prima riga con filtri Banca (Tutte le banche), Conto (Tutti i conti), Commessa (Tutte le commesse), Entrate/Uscite (Tutti); seguono tutti i movimenti, senza colonna Estratto, dettaglio documento o paginazione visibile. Codice commessa iniziale Da attribuire; nessuna perdita di dati.  4A Anagrafica fornitori è autonoma da Contatti, sempre accessibile, con modifiche e storico DURC.  la scheda 4 Fornitori ospita preventivi, fatture e pagamenti ai fornitori con analisi Scaramozzino separata. La scheda 5 ospita fatture emesse, incassi del committente e relativa Analisi Scaramozzino. Le prime griglie sono di sola lettura; i moduli storici sono conservati.');
+document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse V4.20.2 TEST: Carica con GPT e Carica con Claude usano lo stesso bootstrap contabile.  verifica identità MCP FASTPHARMA prima di depositare.  gli estratti possono censire nuovi conti durante Elabora Cassetto primanota.  seleziona fatture e attribuiscile alla commessa corrente o ad altra commessa.  clicca il numero per consultare il corpo fattura completo.  Fatture Emesse e Fatture ricevute importano XML dal cassetto fiscale senza AI; i fornitori sono aggiornati solo per ricevute.  Movimenti include Banche e saldi con anagrafica e saldo calcolato.  i Pagamenti delle schede 4 e 5 leggono i movimenti attribuiti in Contabilità generale.  seleziona i movimenti e attribuiscili alla commessa corrente.  Contabilità generale offre globalmente Carica con AI ed Elabora Cassetto primanota con feedback sopra le sottoschede. Movimenti contiene soltanto una griglia unica: prima riga con filtri Banca (Tutte le banche), Conto (Tutti i conti), Commessa (Tutte le commesse), Entrate/Uscite (Tutti); seguono tutti i movimenti, senza colonna Estratto, dettaglio documento o paginazione visibile. Codice commessa iniziale Da attribuire; nessuna perdita di dati.  4A Anagrafica fornitori è autonoma da Contatti, sempre accessibile, con modifiche e storico DURC.  la scheda 4 Fornitori ospita preventivi, fatture e pagamenti ai fornitori con analisi Scaramozzino separata. La scheda 5 ospita fatture emesse, incassi del committente e relativa Analisi Scaramozzino. Le prime griglie sono di sola lettura; i moduli storici sono conservati.');
 backButton.addEventListener('click',()=>goTo(parentPage[location.hash.slice(1)]||'commesse'));
 window.addEventListener('hashchange',()=>{if(authToken)show(location.hash.slice(1));});
 // Avvio chiuso: nessuna vista gestionale prima di login().
