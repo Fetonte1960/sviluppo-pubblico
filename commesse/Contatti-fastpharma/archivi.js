@@ -8,6 +8,10 @@
   const $ = selector => document.querySelector(selector);
   const archiveOrigin = window.location.origin;
   let sessionKey = "";
+  let sessionAuthMode = "legacy";
+  const crmHeaders = () => sessionAuthMode === "oidc"
+    ? { "Authorization": "Bearer " + sessionKey }
+    : { "X-Demo-Key": sessionKey };
   let adminKeyFromDesktop = desktop ? String(window.CONTATTI_DESKTOP.importKey || "") : "";
   let authorized = false;
   let busy = false;
@@ -51,7 +55,7 @@
     return value;
   }
   function archiveHeaders(extra = {}) {
-    return { "X-Demo-Key": sessionKey, "X-Import-Key": currentImportKey(), ...extra };
+    return { ...crmHeaders(), "X-Import-Key": currentImportKey(), ...extra };
   }
   async function verifyKey(candidate) {
     if (!candidate) {
@@ -64,7 +68,7 @@
     sessionKey = candidate;
     try {
       const response = await fetch(base + "/api/v1/organizations", {
-        headers: { "X-Demo-Key": sessionKey },
+        headers: crmHeaders(),
         cache: "no-store",
         signal: AbortSignal.timeout(20000)
       });
@@ -105,6 +109,7 @@
       adminKeyFromDesktop = m.importKey;
       $("#adminKeyLabel").hidden = true;
     }
+    if (m.authMode === "oidc" || m.authMode === "legacy") sessionAuthMode = m.authMode;
     if (typeof m.key === "string" && m.key && m.key !== sessionKey) {
       verifyKey(m.key);
     } else if (!m.key && !authorized) {
@@ -144,7 +149,7 @@
     try {
       const response = await fetch(base + "/api/admin/backup/contatti", {
         method: "POST",
-        headers: { "X-Demo-Key": sessionKey },
+        headers: crmHeaders(),
         cache: "no-store",
         signal: AbortSignal.timeout(100000)
       });
@@ -259,6 +264,7 @@
   });
   updateControls();
   if (desktop) verifyKey(window.CONTATTI_DESKTOP.key);
+  else if (standalone && !local) window.location.replace("./");
   else if (standalone) loginBox.hidden = false;
   // Quando la pagina è incorporata attende la chiave dalla sessione CRM: nessuna richiesta duplicata.
 })();
