@@ -1,8 +1,12 @@
-# Contabilità generale — bootstrap AI universale per la Prima Nota (V1.5)
+# Contabilità generale — bootstrap AI universale per la Prima Nota (V1.6)
 
 ## Importazione diretta fatture fiscali (V4.18.0)
 
 In Contabilità generale, Fatture Emesse e Fatture ricevute hanno ciascuna il pulsante **Importa da cassetto fiscale**. Selezionare uno o più XML FatturaPA non firmati (.xml, massimo 8 MB per file), già scaricati dal portale fiscale. Non è un collegamento diretto all'Agenzia delle Entrate e non usa AI/MCP. Il backend verifica intestazione FastPharma e direzione; conserva XML originale, righe, riepiloghi IVA e pagamenti previsti. Identità univoca: emittente fiscale, tipo documento, anno e numero. Ripetizione identica ignorata; stessa identità con XML diverso segnalata come conflitto senza sovrascrivere. Per ricevute aggiorna/crea il fornitore 4A per identificativo fiscale preservando DURC, categoria e campi aziendali; conflitti anagrafici richiedono verifica. Le fatture sono inizialmente Da attribuire. La griglia consente di scaricare l'XML originale. Fatture generali e fatture storiche delle singole commesse sono archivi distinti: non sommare indiscriminatamente. I dati di pagamento dell'XML non provano un pagamento effettivo. Non sono gestiti .p7m, ZIP, autofatture ambigue o attribuzione automatica. Il flusso OCR/MCP sotto riportato continua a non importare fatture.
+
+## Consultazione del corpo fattura (V4.18.1)
+
+Nelle due griglie fiscali cliccare il numero con **Corpo fattura**: il dettaglio in sola lettura mostra tutte le righe con descrizione integrale (incluse righe descrittive a importo zero), quantità, unità, prezzi e aliquota; riepiloghi IVA, totali e pagamenti previsti, riferimenti e altri campi del corpo XML in pannello espandibile. Il corpo corretto viene identificato per numero, data e tipo nel file originale, anche se contiene più fatture. Non occorre reimportare le fatture già acquisite. Scarica XML rimane disponibile; eventuali allegati binari non vengono visualizzati nel pannello. Nessuna modifica all'importatore, al database o ai permessi.
 
 ## Ambito e privilegi
 
