@@ -301,17 +301,13 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 .accounting-feedback-grid th,.accounting-feedback-grid td{padding:10px;border-bottom:1px solid #dae3e7;text-align:left;vertical-align:top}
 .accounting-feedback-grid th{white-space:nowrap;background:#f0f5f7}
 
-.accounting-filters{display:flex;flex-wrap:wrap;align-items:end;gap:10px;margin:14px 0}
-.accounting-filters label{display:flex;flex-direction:column;gap:5px;flex:1 1 240px;font-size:.85rem;font-weight:650;color:#254b68}
-.accounting-filters select{width:100%;min-height:39px;border:1px solid #c9d7e2;border-radius:6px;padding:7px;background:#fff}
-.accounting-filters button{min-height:39px}
-.accounting-source-action{border:0;background:#dceaf6;color:#164b75;border-radius:5px;padding:6px 9px;white-space:nowrap;cursor:pointer}
-.accounting-document-detail{padding:14px;border:1px solid #bfd1df;background:#f8fbfd;border-radius:8px;margin:14px 0}
-.accounting-document-detail[hidden]{display:none!important}
-.accounting-detail-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.accounting-pager{display:flex;align-items:center;justify-content:end;gap:12px;margin-top:12px;font-size:.84rem;color:#4b6172}
-.accounting-movements-table table{min-width:1100px}
+
+.accounting-movements-table table{min-width:960px}
+.accounting-movements-table .accounting-filter-row th{background:#f8fbfd;border-bottom:1px solid #bfd1df;padding:9px 8px;vertical-align:bottom}
+.accounting-filter-label{display:flex;flex-direction:column;gap:5px;min-width:115px;color:#284b67;font-weight:600;font-size:.82rem}
+.accounting-filter-label select{max-width:100%;width:100%;min-height:36px;border:1px solid #c2d2df;border-radius:5px;background:white;color:#173b5b;padding:5px;font-size:.82rem}
 .accounting-movements-table td:nth-child(3),.accounting-movements-table td:nth-child(4){white-space:nowrap;font-variant-numeric:tabular-nums}
+.accounting-result[hidden]{display:none!important}
 </style></head><body>
 
 <div id="commesse-auth">
@@ -353,7 +349,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 <script>
 (function(){
 'use strict';
-const UI_VERSION='4.12.0';
+const UI_VERSION='4.13.0';
 const pages=JSON.parse(document.getElementById('screens').textContent);
 // Archivio originale ricevuto: non convertirne le proposte in requisiti approvati.
 const originalClientAnalysis=JSON.parse(document.getElementById('client-analysis-original').textContent);
@@ -1074,21 +1070,21 @@ function updateFinanceMetrics(main,active,incassi,passive,pagamenti){
 
 
 
-/* Contabilità generale V4.12 — unico tab Movimenti per estratti conto.
-   MCP rimane il cassetto universale; nessuna nuova tabella né Token 2. */
+/* Contabilità generale V4.13: comandi e feedback generali, Movimenti = sola griglia. */
 const accountingSections=[
  {id:'emesse',label:'Fatture Emesse'},
  {id:'ricevute',label:'Fatture ricevute'},
  {id:'movimenti',label:'Movimenti'}
 ];
-const accountAiInstructions="Contabilità generale FastPharma. Usa il connettore MCP-postgree: prima CommandToMCPPostgree(\"Init\"). Profilo CONNECT_ONLY: solo nota.deposita, nessun Token 2 o session.attach. Il cassetto è UNICO: il catalogo destinazioni di Init NON è un elenco di cassetti e non occorre che includa GESTIONE_COMMESSE. Ometti applicazioneSuggerita; NON usare CONTATTI. Chiedimi di allegare un PDF o fotografie leggibili di un estratto conto. Leggi soltanto dati realmente presenti. Produci una nota con tipo=nota, testoOriginale (descrizione veritiera del documento acquisito), titolo, categoria=documento_contabile, dati={area:\"CONTABILITA\",sezione:\"ESTRATTI_CONTO\",tipoDocumento:\"ESTRATTO_CONTO\",versioneSchema:\"1.0\",banca:\"...\",riferimentoConto:\"identificativo letto\",periodoDa:\"YYYY-MM-DD\",periodoA:\"YYYY-MM-DD\",valuta:\"EUR\",saldoIniziale:\"numero con punto decimale o null\",saldoFinale:\"numero con punto decimale o null\",movimenti:[{dataOperazione:\"YYYY-MM-DD\",dataValuta:\"YYYY-MM-DD o null\",descrizione:\"...\",importo:\"numero con segno; +entrata/-uscita\",riferimentoBancario:\"codice letto o null\"}]}. Date e importi mancanti non vanno inventati. Per il deposito usa CommandToMCPPostgree con comando JSON {\"azione\":\"nota.deposita\",\"nota\":{...}}. Non assegnare codici commessa (il gestionale inserirà \"Da attribuire\"). Non registrare allegati binari o credenziali. Se il JSON dati supera 8000 caratteri o mancano pagine essenziali, non troncare e segnala il problema. Solo dopo una risposta MCP ok=true comunica noteId e stato DA_APPROVARE. Il deposito non equivale a importazione: quella avviene con \"Elabora Cassetto primanota\" in Commesse.";
+const accountAiInstructions="Sei l’assistente AI di FastPharma Commesse, area Contabilità generale. Usa prima CommandToMCPPostgree(\"Init\") in modalità CONNECT_ONLY; non chiedere Token 2 né session.attach. Il cassetto note MCP è unico: ometti applicazioneSuggerita, anche se il catalogo Init mostra soltanto CONTATTI. Chiedi un documento contabile (PDF, foto o testo), riconoscine la tipologia e registra una nota strutturata mediante CommandToMCPPostgree con {\"azione\":\"nota.deposita\",\"nota\":{...}}. Intestazione obbligatoria: nota.tipo=nota, categoria=documento_contabile, testoOriginale descrittivo fedele, titolo, dati.area=CONTABILITA, dati.sezione=ESTRATTI_CONTO oppure FATTURE_EMESSE oppure FATTURE_RICEVUTE, dati.tipoDocumento e dati.versioneSchema=1.0. Estrai esclusivamente dati letti nel documento senza inventare identificativi, importi o date. Per ESTRATTI_CONTO adotta lo schema già collaudato: dati.banca, riferimentoConto, periodoDa, periodoA, valuta=EUR, saldoIniziale, saldoFinale, movimenti con dataOperazione, dataValuta, descrizione, importo con segno (+entrata, -uscita), riferimentoBancario. Per le fatture conserva i dati riconosciuti in dati.documento e informa che l’importazione deterministica delle fatture nel gestionale non è ancora attiva. Non assegnare commesse: i movimenti importati inizieranno con codice Da attribuire. Non includere password o allegati binari, né troncare dati eccedenti 8000 caratteri di dati. Deposita solo dati attendibili dopo richiesta dell’utente; conferma noteId solo se MCP ha risposto ok=true. Il deposito non importa automaticamente: l’operatore userà Elabora Cassetto primanota nel gestionale.";
 let activeAccountingSubtab='movimenti';
 let accountingImportResult=null;
 let accountingBank='';
 let accountingAccount='';
-let accountingPage=0;
-let accountingSourceDocument=0;
-let accountingAccountOptions=null;
+let accountingProject='';
+let accountingDirection='';
+let accountingCatalog=null;
+let accountingProjects=null;
 let accountingLoadVersion=0;
 const accountingMaskAccount=account=>'••••'+String(account||'').slice(-4);
 const accountingMoney=x=>{
@@ -1134,135 +1130,133 @@ function accountingFeedback(node){
     entry.inseriti,entry.duplicati]));
  }
 }
+
 function accountingOption(select,value,label){
  const option=document.createElement('option');
  option.value=value;option.textContent=label;select.append(option);
 }
-function accountingShowFilterOptions(pane){
- const bankSelect=pane.querySelector('[data-accounting-bank]');
- const accountSelect=pane.querySelector('[data-accounting-account]');
- if(!bankSelect||!accountSelect)return;
- const accounts=Array.isArray(accountingAccountOptions)?accountingAccountOptions:[];
- const banks=[...new Set(accounts.map(x=>x.banca).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'it'));
- if(accountingBank&&!banks.includes(accountingBank))accountingBank='';
- bankSelect.replaceChildren();accountingOption(bankSelect,'','Tutte le banche');
- for(const bank of banks)accountingOption(bankSelect,bank,bank);
- bankSelect.value=accountingBank;
- const accountsForBank=accounts.filter(x=>!accountingBank||x.banca===accountingBank);
- if(accountingAccount&&!accountsForBank.some(x=>x.riferimentoConto===accountingAccount))
-  accountingAccount='';
- accountSelect.replaceChildren();accountingOption(accountSelect,'','Tutti i conti');
- for(const account of accountsForBank){
-  const label=(accountingBank?'':account.banca+' · ')+accountingMaskAccount(account.riferimentoConto);
-  accountingOption(accountSelect,account.riferimentoConto,label);
- }
- accountSelect.value=accountingAccount;
+function accountingFilterCell(label,options,value,onChange,colSpan){
+ const cell=document.createElement('th');cell.colSpan=colSpan;
+ const element=document.createElement('label');element.className='accounting-filter-label';
+ const name=document.createElement('span');name.textContent=label;
+ const select=document.createElement('select');select.setAttribute('aria-label','Filtro '+label);
+ for(const option of options)accountingOption(select,option.value,option.label);
+ select.value=value;
+ select.addEventListener('change',()=>onChange(select.value));
+ element.append(name,select);cell.append(element);
+ return cell;
 }
-function accountingDisplayMovements(target,items){
+function accountingRenderMovements(target,items,message){
  target.replaceChildren();
- if(!items.length){
-  target.textContent=accountingPage>0?'Nessun movimento in questa pagina. Torna alla pagina precedente.'
-   :'Nessun movimento per i filtri selezionati.';
-  return;
+ const accounts=Array.isArray(accountingCatalog)?accountingCatalog:[];
+ const projects=Array.isArray(accountingProjects)?accountingProjects:[];
+ const banks=[...new Set(accounts.map(x=>x.banca).filter(Boolean))]
+  .sort((a,b)=>a.localeCompare(b,'it'));
+ if(accountingCatalog!==null&&accountingBank&&!banks.includes(accountingBank))accountingBank='';
+ const filteredAccounts=accounts.filter(x=>!accountingBank||x.banca===accountingBank);
+ if(accountingCatalog!==null&&accountingAccount&&!filteredAccounts.some(x=>x.riferimentoConto===accountingAccount))
+  accountingAccount='';
+ const projectValues=[...new Set(projects.map(x=>x.codiceCommessa).filter(Boolean))]
+  .sort((a,b)=>a==='Da attribuire'?-1:b==='Da attribuire'?1:a.localeCompare(b,'it'));
+ if(accountingProjects!==null&&accountingProject&&!projectValues.includes(accountingProject))accountingProject='';
+ const bankOptions=[{value:'',label:'Tutte le banche'},
+  ...banks.map(x=>({value:x,label:x}))];
+ const accountOptions=[{value:'',label:'Tutti i conti'},
+  ...filteredAccounts.map(x=>({value:x.riferimentoConto,
+   label:(accountingBank?'':x.banca+' · ')+accountingMaskAccount(x.riferimentoConto)}))];
+ const projectOptions=[{value:'',label:'Tutte le commesse'},
+  ...projectValues.map(x=>({value:x,label:x}))];
+ const directionOptions=[
+  {value:'',label:'Tutti'},
+  {value:'entrate',label:'Entrate'},
+  {value:'uscite',label:'Uscite'}
+ ];
+ const holder=document.createElement('div');
+ holder.className='accounting-grid-scroll accounting-movements-table';
+ const table=document.createElement('table');table.className='accounting-feedback-grid';
+ const thead=document.createElement('thead');
+ const filterRow=document.createElement('tr');filterRow.className='accounting-filter-row';
+ const reload=()=>void accountingLoadRows();
+ filterRow.append(
+  accountingFilterCell('Banca',bankOptions,accountingBank,value=>{
+   accountingBank=value;accountingAccount='';reload();
+  },2),
+  accountingFilterCell('Conto',accountOptions,accountingAccount,value=>{
+   accountingAccount=value;reload();
+  },2),
+  accountingFilterCell('Commessa',projectOptions,accountingProject,value=>{
+   accountingProject=value;reload();
+  },2),
+  accountingFilterCell('Entrate/Uscite',directionOptions,accountingDirection,value=>{
+   accountingDirection=value;reload();
+  },1)
+ );
+ const columnRow=document.createElement('tr');
+ for(const label of ['Data','Descrizione','Entrate','Uscite','Banca','Conto','Codice commessa']){
+  const th=document.createElement('th');th.textContent=label;columnRow.append(th);
  }
- const table=accountingGrid(
-  ['Data','Descrizione','Entrate','Uscite','Banca','Conto','Estratto','Codice commessa'],
-  items,x=>{
-   const amount=Number(x.importo);
-   return [accountingDate(x.dataOperazione),x.descrizione,
+ thead.append(filterRow,columnRow);table.append(thead);
+ const body=document.createElement('tbody');
+ if(!items.length){
+  const tr=document.createElement('tr'),cell=document.createElement('td');cell.colSpan=7;
+  cell.textContent=message||'Nessun movimento per i filtri selezionati.';
+  tr.append(cell);body.append(tr);
+ }else{
+  for(const item of items){
+   const amount=Number(item.importo);
+   const values=[accountingDate(item.dataOperazione),item.descrizione,
     amount>0?accountingMoney(amount):'—',
     amount<0?accountingMoney(-amount):'—',
-    x.banca,accountingMaskAccount(x.riferimentoConto),
-    '#'+x.documentoId,x.codiceCommessa];
-  });
- table.classList.add('accounting-movements-table');
- const trs=table.querySelectorAll('tbody tr');
- trs.forEach((tr,i)=>{
-  const docId=Number(items[i].documentoId);
-  const action=document.createElement('button');action.type='button';
-  action.className='accounting-source-action';
-  action.textContent='Apri #'+docId;
-  action.setAttribute('aria-label','Apri dettaglio estratto conto numero '+docId);
-  action.addEventListener('click',()=>void accountingOpenDocument(docId));
-  tr.cells[6].replaceChildren(action);
- });
- target.append(table);
-}
-async function accountingOpenDocument(id){
- const pane=view.querySelector('[data-accounting-pane="movimenti"]');
- if(!pane)return;
- const panel=pane.querySelector('.accounting-document-detail');
- panel.hidden=false;panel.replaceChildren();
- const status=document.createElement('p');status.textContent='Lettura dell’estratto di provenienza…';
- panel.append(status);
- try{
-  const response=await apiCall('/api/v4/contabilita/prima-nota/documenti/'+encodeURIComponent(id));
-  const docs=await response.json();
-  if(!panel.isConnected)return;
-  const d=Array.isArray(docs)?docs[0]:null;
-  if(!d){panel.textContent='Estratto conto non trovato.';return;}
-  panel.replaceChildren();
-  const heading=document.createElement('h3');heading.textContent='Estratto conto #'+d.id;
-  const info=document.createElement('p');info.className='accounting-explanation';
-  info.textContent=d.banca+' · Conto '+accountingMaskAccount(d.riferimentoConto)+
-   ' · '+accountingDate(d.periodoDa)+' / '+accountingDate(d.periodoA);
-  const stats=accountingGrid(['Saldo iniziale','Saldo finale','Movimenti','Codice commessa'],[d],
-   x=>[accountingMoney(x.saldoIniziale),accountingMoney(x.saldoFinale),
-    x.movimenti,x.codiceCommessa]);
-  const actions=document.createElement('div');actions.className='accounting-detail-actions';
-  const only=document.createElement('button');only.type='button';
-  only.textContent='Mostra movimenti di questo estratto';
-  only.addEventListener('click',()=>{
-   accountingSourceDocument=Number(d.id);
-   accountingPage=0;void accountingLoadRows();
-  });
-  const all=document.createElement('button');all.type='button';
-  all.textContent='Mostra tutti i movimenti';
-  all.addEventListener('click',()=>{
-   accountingSourceDocument=0;accountingPage=0;void accountingLoadRows();
-  });
-  const close=document.createElement('button');close.type='button';close.textContent='Chiudi dettaglio';
-  close.addEventListener('click',()=>{panel.replaceChildren();panel.hidden=true;});
-  actions.append(only,all,close);panel.append(heading,info,stats,actions);
- }catch(error){if(panel.isConnected)panel.textContent='Dettaglio non disponibile: '+(error.message||'errore');}
-}
-async function accountingLoadRows(refreshFilters=false){
- const pane=view.querySelector('[data-accounting-pane="movimenti"]');
- if(!pane)return;
- const version=++accountingLoadVersion;
- const target=pane.querySelector('.accounting-saved-list');
- const pageLabel=pane.querySelector('.accounting-page-label');
- const prev=pane.querySelector('[data-accounting-prev]');
- const next=pane.querySelector('[data-accounting-next]');
- target.textContent='Lettura movimenti…';
- if(prev)prev.disabled=true;if(next)next.disabled=true;
- try{
-  if(refreshFilters||accountingAccountOptions===null){
-   const response=await apiCall('/api/v4/contabilita/prima-nota/conti');
-   const options=await response.json();
-   if(version!==accountingLoadVersion||!target.isConnected)return;
-   if(!Array.isArray(options))throw Error('Elenco banche non valido');
-   accountingAccountOptions=options;
+    item.banca,accountingMaskAccount(item.riferimentoConto),item.codiceCommessa];
+   const tr=document.createElement('tr');
+   for(const value of values){
+    const cell=document.createElement('td');
+    cell.textContent=value===null||value===undefined?'—':String(value);tr.append(cell);
+   }
+   body.append(tr);
   }
-  accountingShowFilterOptions(pane);
-  const params=new URLSearchParams();
-  if(accountingBank)params.set('banca',accountingBank);
-  if(accountingAccount)params.set('conto',accountingAccount);
-  if(accountingSourceDocument)params.set('documento',String(accountingSourceDocument));
-  params.set('pagina',String(accountingPage));
-  const response=await apiCall('/api/v4/contabilita/prima-nota/movimenti?'+params.toString());
-  const items=await response.json();
-  if(version!==accountingLoadVersion||!target.isConnected)return;
-  if(!Array.isArray(items))throw Error('Risposta movimenti non valida');
-  accountingDisplayMovements(target,items);
-  if(pageLabel)pageLabel.textContent='Pagina '+(accountingPage+1)+
-   ' · '+items.length+' movimenti visualizzati'+(accountingSourceDocument?' · Estratto #'+accountingSourceDocument:'');
-  if(prev)prev.disabled=accountingPage===0;
-  if(next)next.disabled=items.length<200;
+ }
+ table.append(body);holder.append(table);target.append(holder);
+}
+async function accountingLoadRows(refreshCatalog=false){
+ const pane=view.querySelector('[data-accounting-pane="movimenti"]');
+ if(!pane||pane.hidden)return;
+ const target=pane.querySelector('.accounting-saved-list');
+ if(!target)return;
+ const version=++accountingLoadVersion;
+ accountingRenderMovements(target,[],'Caricamento dei movimenti…');
+ try{
+  if(refreshCatalog||accountingCatalog===null||accountingProjects===null){
+   const [accountsResponse,projectsResponse]=await Promise.all([
+    apiCall('/api/v4/contabilita/prima-nota/conti'),
+    apiCall('/api/v4/contabilita/prima-nota/commesse')
+   ]);
+   const [accounts,projects]=await Promise.all([accountsResponse.json(),projectsResponse.json()]);
+   if(version!==accountingLoadVersion||!target.isConnected)return;
+   if(!Array.isArray(accounts)||!Array.isArray(projects))throw Error('Filtri contabili non disponibili');
+   accountingCatalog=accounts;accountingProjects=projects;
+  }
+  const rows=[];
+  // Paginazione interna, senza pulsanti: la griglia contiene TUTTI i movimenti
+  // corrispondenti ai filtri; il backend mantiene blocchi di 200 per richiesta.
+  for(let page=0;;page++){
+   const params=new URLSearchParams();
+   if(accountingBank)params.set('banca',accountingBank);
+   if(accountingAccount)params.set('conto',accountingAccount);
+   if(accountingProject)params.set('commessa',accountingProject);
+   if(accountingDirection)params.set('direzione',accountingDirection);
+   params.set('pagina',String(page));
+   const response=await apiCall('/api/v4/contabilita/prima-nota/movimenti?'+params.toString());
+   const batch=await response.json();
+   if(version!==accountingLoadVersion||!target.isConnected)return;
+   if(!Array.isArray(batch))throw Error('Risposta movimenti non valida');
+   rows.push(...batch);
+   accountingRenderMovements(target,rows,batch.length===200?'Altri movimenti in caricamento…':undefined);
+   if(batch.length<200)break;
+  }
  }catch(error){
-  if(version!==accountingLoadVersion||!target.isConnected)return;
-  target.textContent='Movimenti non disponibili: '+(error.message||'errore di lettura');
-  if(pageLabel)pageLabel.textContent='';
+  if(version===accountingLoadVersion&&target.isConnected)
+   accountingRenderMovements(target,[],'Movimenti non disponibili: '+(error.message||'errore di lettura'));
  }
 }
 function setAccountingSubtab(id){
@@ -1272,17 +1266,48 @@ function setAccountingSubtab(id){
   const selected=tab.dataset.accountingSubtab===id;
   tab.setAttribute('aria-selected',String(selected));tab.tabIndex=selected?0:-1;
  }
- for(const pane of view.querySelectorAll('.accounting-pane'))pane.hidden=pane.dataset.accountingPane!==id;
+ for(const pane of view.querySelectorAll('.accounting-pane'))
+  pane.hidden=pane.dataset.accountingPane!==id;
  if(id==='movimenti')void accountingLoadRows();
+ else accountingLoadVersion++;
 }
 function buildGeneralAccounting(){
  const main=document.createElement('main');main.className='accounting-screen';
  const title=document.createElement('h1');title.textContent='6 · Contabilità generale';
  const note=document.createElement('p');note.className='accounting-explanation';
- note.textContent='Archivio contabile generale indipendente dalle commesse. I movimenti acquisiti da estratti conto iniziano con codice commessa «Da attribuire».';
+ note.textContent='Archivio contabile generale indipendente dalla commessa. Acquisisci i documenti con AI e importa dal cassetto universale MCP; i nuovi movimenti sono inizialmente «Da attribuire».';
+ const actions=document.createElement('div');actions.className='accounting-actions';
+ const ai=document.createElement('button');ai.type='button';ai.textContent='Carica con AI';
+ ai.title='Apre ChatGPT con le istruzioni di Contabilità generale, senza Token 2';
+ ai.addEventListener('click',()=>{
+  const url='https://chatgpt.com/?prompt='+encodeURIComponent(accountAiInstructions);
+  window.open(url,'_blank','noopener,noreferrer');
+ });
+ const process=document.createElement('button');process.type='button';
+ process.textContent='Elabora Cassetto primanota';
+ const feedback=document.createElement('section');feedback.className='accounting-result';feedback.hidden=true;
+ const feedbackTitle=document.createElement('h2');feedbackTitle.textContent='Risultato elaborazione';
+ const feedbackContent=document.createElement('div');
+ feedback.append(feedbackTitle,feedbackContent);
+ process.addEventListener('click',async()=>{
+  if(!window.confirm('Elaborare le note contabili del cassetto MCP unico? Saranno registrati soltanto i tipi già supportati, senza duplicazioni.'))return;
+  process.disabled=true;process.textContent='Elaborazione in corso…';
+  try{
+   const response=await apiCall('/api/v4/contabilita/elabora-cassetto',{method:'POST'});
+   accountingImportResult=await response.json();
+  }catch(error){
+   accountingImportResult={error:'Richiesta non completata',message:error.message||'Errore di rete'};
+  }finally{
+   process.disabled=false;process.textContent='Elabora Cassetto primanota';
+   feedback.hidden=false;accountingFeedback(feedbackContent);
+   accountingCatalog=null;accountingProjects=null;
+   if(activeAccountingSubtab==='movimenti')void accountingLoadRows(true);
+  }
+ });
+ actions.append(ai,process);
  const nav=document.createElement('nav');nav.className='accounting-subtabs';
  nav.setAttribute('role','tablist');nav.setAttribute('aria-label','Sottoschede di Contabilità generale');
- main.append(title,note,nav);
+ main.append(title,note,actions,feedback,nav);
  for(const entry of accountingSections){
   const tab=document.createElement('button');tab.type='button';
   tab.id='accounting-tab-'+entry.id;tab.className='accounting-subtab';
@@ -1292,83 +1317,16 @@ function buildGeneralAccounting(){
   const section=document.createElement('section');section.className='accounting-pane';
   section.id='accounting-pane-'+entry.id;section.dataset.accountingPane=entry.id;
   section.setAttribute('role','tabpanel');section.setAttribute('aria-labelledby',tab.id);
-  const heading=document.createElement('h2');heading.textContent=entry.label;
-  section.append(heading);
   if(entry.id==='movimenti'){
-   const explanation=document.createElement('p');explanation.className='accounting-explanation';
-   explanation.textContent='Carica qui gli estratti conto tramite ChatGPT e acquisisci i nuovi movimenti dal cassetto universale MCP. Puoi consultare l’estratto originale strutturato dalla colonna Estratto.';
-   const actions=document.createElement('div');actions.className='accounting-actions';
-   const ai=document.createElement('button');ai.type='button';ai.textContent='Carica con AI';
-   ai.title='Apre ChatGPT con le istruzioni contabili, senza Token 2';
-   ai.addEventListener('click',()=>{
-    const url='https://chatgpt.com/?prompt='+encodeURIComponent(accountAiInstructions);
-    window.open(url,'_blank','noopener,noreferrer');
-   });
-   const process=document.createElement('button');process.type='button';
-   process.textContent='Elabora Cassetto primanota';
-   const feedback=document.createElement('section');feedback.className='accounting-result';
-   const feedbackTitle=document.createElement('h3');feedbackTitle.textContent='Risultato elaborazione';
-   const feedbackContent=document.createElement('div');accountingFeedback(feedbackContent);
-   feedback.append(feedbackTitle,feedbackContent);
-   process.addEventListener('click',async()=>{
-    if(!window.confirm('Acquisire i nuovi documenti contabili dal cassetto MCP? I movimenti saranno integrati senza duplicati e inizialmente «Da attribuire».'))return;
-    process.disabled=true;process.textContent='Elaborazione in corso…';
-    try{
-     const response=await apiCall('/api/v4/contabilita/elabora-cassetto',{method:'POST'});
-     accountingImportResult=await response.json();
-    }catch(error){
-     accountingImportResult={error:'Richiesta non completata',message:error.message||'Errore di rete'};
-    }finally{
-     process.disabled=false;process.textContent='Elabora Cassetto primanota';
-     accountingFeedback(feedbackContent);
-     accountingPage=0;
-     if(activeAccountingSubtab==='movimenti')void accountingLoadRows(true);
-     else accountingAccountOptions=null;
-    }
-   });
-   actions.append(ai,process);
-   const filters=document.createElement('div');filters.className='accounting-filters';
-   const bankLabel=document.createElement('label');bankLabel.textContent='Banca';
-   const bank=document.createElement('select');bank.dataset.accountingBank='1';
-   bank.addEventListener('change',()=>{
-    accountingBank=bank.value;accountingAccount='';accountingSourceDocument=0;
-    accountingPage=0;void accountingLoadRows();
-   });bankLabel.append(bank);
-   const accountLabel=document.createElement('label');accountLabel.textContent='Conto';
-   const account=document.createElement('select');account.dataset.accountingAccount='1';
-   account.addEventListener('change',()=>{
-    accountingAccount=account.value;accountingSourceDocument=0;
-    accountingPage=0;void accountingLoadRows();
-   });accountLabel.append(account);
-   const reset=document.createElement('button');reset.type='button';
-   reset.textContent='Tutte le banche e conti';
-   reset.addEventListener('click',()=>{
-    accountingBank='';accountingAccount='';accountingSourceDocument=0;
-    accountingPage=0;void accountingLoadRows();
-   });
-   filters.append(bankLabel,accountLabel,reset);
-   const detail=document.createElement('section');detail.className='accounting-document-detail';
-   detail.hidden=true;detail.setAttribute('aria-label','Dettaglio estratto conto');
    const saved=document.createElement('div');saved.className='accounting-saved-list';
-   saved.textContent='Lettura movimenti…';
-   const pager=document.createElement('div');pager.className='accounting-pager';
-   const prev=document.createElement('button');prev.type='button';prev.dataset.accountingPrev='1';
-   prev.textContent='Precedenti';prev.addEventListener('click',()=>{
-    if(accountingPage>0){accountingPage--;void accountingLoadRows();}
-   });
-   const pageLabel=document.createElement('span');pageLabel.className='accounting-page-label';
-   const next=document.createElement('button');next.type='button';next.dataset.accountingNext='1';
-   next.textContent='Successivi';next.addEventListener('click',()=>{
-    accountingPage++;void accountingLoadRows();
-   });
-   pager.append(prev,pageLabel,next);
-   section.append(explanation,actions,feedback,filters,detail,saved,pager);
+   section.append(saved);
   }else{
+   const heading=document.createElement('h2');heading.textContent=entry.label;
    const placeholder=document.createElement('div');placeholder.className='accounting-placeholder';
    const msg=document.createElement('strong');msg.textContent='Formato di importazione non ancora attivato';
    const detail=document.createElement('p');
-   detail.textContent='La Prima Nota è condivisa, ma al momento sono gestiti soltanto i movimenti bancari importati dagli estratti conto.';
-   placeholder.append(msg,detail);section.append(placeholder);
+   detail.textContent='Il cassetto è universale. L’importatore deterministico gestisce attualmente solo estratti bancari e movimenti; le fatture sono previste in una fase successiva.';
+   placeholder.append(msg,detail);section.append(heading,placeholder);
   }
   main.append(section);
  }
@@ -2529,7 +2487,7 @@ document.getElementById('tab-invoices').onclick=()=>{if(currentProjectId)goTo('f
  document.getElementById('tab-accounting').onclick=()=>goTo('contabilita');
 document.getElementById('commesse-version').textContent='V'+UI_VERSION;
 syncCommessaTabs('commesse');
-document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse V4.12.0 TEST: 6 Contabilità generale ha Fatture Emesse, Fatture ricevute e Movimenti. Movimenti integra il caricamento di estratti conto tramite AI, filtri per banca/conto, griglia entrate/uscite, dettaglio estratto di origine e codice commessa Da attribuire. La sottoscheda Estratti Conto è stata eliminata senza cancellare dati.  4A Anagrafica fornitori è autonoma da Contatti, sempre accessibile, con modifiche e storico DURC.  la scheda 4 Fornitori ospita preventivi, fatture e pagamenti ai fornitori con analisi Scaramozzino separata. La scheda 5 ospita fatture emesse, incassi del committente e relativa Analisi Scaramozzino. Le prime griglie sono di sola lettura; i moduli storici sono conservati.');
+document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse V4.13.0 TEST: Contabilità generale offre globalmente Carica con AI ed Elabora Cassetto primanota con feedback sopra le sottoschede. Movimenti contiene solo un'unica griglia: prima riga con filtri Banca (Tutte le banche), Conto (Tutti i conti), Commessa (Tutte le commesse), Entrate/Uscite (Tutti); seguono tutti i movimenti, senza colonna Estratto, dettaglio documento o paginazione visibile. Codice commessa iniziale Da attribuire; nessuna perdita di dati.  4A Anagrafica fornitori è autonoma da Contatti, sempre accessibile, con modifiche e storico DURC.  la scheda 4 Fornitori ospita preventivi, fatture e pagamenti ai fornitori con analisi Scaramozzino separata. La scheda 5 ospita fatture emesse, incassi del committente e relativa Analisi Scaramozzino. Le prime griglie sono di sola lettura; i moduli storici sono conservati.');
 backButton.addEventListener('click',()=>goTo(parentPage[location.hash.slice(1)]||'commesse'));
 window.addEventListener('hashchange',()=>{if(authToken)show(location.hash.slice(1));});
 // Avvio chiuso: nessuna vista gestionale prima di login().
