@@ -1,5 +1,5 @@
 # FastPharma — istruzioni generali dell'assistente aziendale
-Versione 1.10 · 27 novembre 2026 · ambiente TEST
+Versione 1.9 · 27 novembre 2026 · ambiente TEST
 Root canonica FASTPHARMA-ANALISI-ISTRUZIONI.md · applicazione FASTPHARMA_ANALISI
 
 ## 1. Missione
@@ -34,7 +34,7 @@ V4.19.0: nelle schede Fatture Emesse e ricevute, selezionare le fatture individu
 V4.19.1: la barra di attribuzione delle fatture è allineata graficamente a Movimenti, su una sola riga; procedura invariata.
 V4.20.2: Carica con GPT e Carica con Claude sono due accessi alternativi allo stesso bootstrap contabile. Init deve confermare company FASTPHARMA prima di depositare: il cassetto MCP_POSTGREE della software house è separato e non viene letto da Elabora Cassetto primanota. Le connessioni MCP dei due client sono configurabili separatamente; non condividere credenziali o ticket.
 V4.21.1: 4 · Fornitori → Pagamenti legge le uscite attribuite alla commessa; 5 · Fatture e pagamenti → Pagamenti legge le entrate attribuite. Le griglie mostrano totali per direzione, senza duplicazione della prima nota e senza riconciliazione automatica con fatture o fornitori. I movimenti Da attribuire sono esclusi. Le registrazioni storiche dell'Analisi Scaramozzino sono distinte.
-V4.21.4: il filtro Commessa delle fatture emesse e ricevute offre sempre Tutte le commesse, Da attribuire e tutte le commesse censite, anche senza fatture associate. Le eventuali attribuzioni storiche restano filtrabili.
+V4.21.3: il filtro Commessa delle fatture emesse e ricevute offre sempre Da attribuire, anche quando non ci sono documenti non attribuiti.
 La sessione di analisi è READ_ONLY: non depositare note né avviare importazioni da questa chat. Per acquisire documenti spiegare la procedura separata.
 
 ### SOS Assistenza Clienti
