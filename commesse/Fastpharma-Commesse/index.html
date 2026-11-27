@@ -350,7 +350,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 <script>
 (function(){
 'use strict';
-const UI_VERSION='4.18.0';
+const UI_VERSION='4.18.1';
 const pages=JSON.parse(document.getElementById('screens').textContent);
 // Archivio originale ricevuto: non convertirne le proposte in requisiti approvati.
 const originalClientAnalysis=JSON.parse(document.getElementById('client-analysis-original').textContent);
@@ -1370,6 +1370,62 @@ async function loadBankAccounts(){
   const total=document.createElement('p');total.textContent='Totale saldi dei conti configurati: '+accountingMoney(rows.reduce((sum,r)=>sum+Number(r.saldoAttuale),0))+(missing.length?' · Attenzione: non comprende i conti ancora da configurare.':'');target.append(total);
  }catch(error){if(version===bankLoadVersion&&target.isConnected)target.textContent='Anagrafica conti non disponibile: '+error.message;}
 }
+// Dettaglio fiscale in sola lettura dall'XML originale, senza reinterpretazioni AI.
+function fiscalXmlDetail(xml,row,panel){
+ const children=(x,n)=>Array.from(x?.children||[]).filter(y=>y.localName===n);
+ const child=(x,n)=>children(x,n)[0];
+ const val=(x,n)=>child(x,n)?.textContent.trim()||'';
+ const txt=(tag,value)=>{const e=document.createElement(tag);e.textContent=value;return e;};
+ const doc=new DOMParser().parseFromString(xml,'application/xml');
+ if(doc.getElementsByTagName('parsererror').length||doc.documentElement?.localName!=='FatturaElettronica'||doc.doctype)throw Error('XML originale non leggibile.');
+ const bodies=children(doc.documentElement,'FatturaElettronicaBody').filter(b=>{
+  const g=child(child(b,'DatiGenerali'),'DatiGeneraliDocumento');
+  return val(g,'Numero')===String(row.numero)&&val(g,'Data')===String(row.data).slice(0,10)&&val(g,'TipoDocumento').toUpperCase()===String(row.tipo);
+ });
+ if(bodies.length!==1)throw Error('Impossibile identificare univocamente il corpo della fattura.');
+ const body=bodies[0],general=child(body,'DatiGenerali'),goods=child(body,'DatiBeniServizi');
+ const amount=v=>v===''?'—':new Intl.NumberFormat('it-IT',{minimumFractionDigits:2,maximumFractionDigits:8}).format(Number(v));
+ const makeTable=(heads,rows)=>{
+  const table=accountingGrid(heads,rows,x=>x);
+  table.querySelectorAll('td').forEach(td=>{td.style.whiteSpace='pre-wrap';td.style.overflowWrap='anywhere';});
+  return table;
+ };
+ const subtitle=title=>panel.append(txt('h3',title));
+ panel.append(txt('p','Emittente: '+row.emittente+' · Destinatario: '+row.destinatario+' · Divisa: '+row.valuta+' · Commessa: '+row.codiceCommessa));
+ const g=child(general,'DatiGeneraliDocumento');
+ const causali=children(g,'Causale').map(x=>x.textContent.trim()).filter(Boolean);
+ if(causali.length)panel.append(txt('p','Causale: '+causali.join(' | ')));
+ subtitle('Corpo della fattura — righe di dettaglio');
+ const lines=children(goods,'DettaglioLinee');
+ const table=makeTable(['Riga','Descrizione integrale','Quantità','U.M.','Prezzo unitario','Totale riga','IVA %'],lines.map(x=>[val(x,'NumeroLinea'),val(x,'Descrizione'),val(x,'Quantita'),val(x,'UnitaMisura'),amount(val(x,'PrezzoUnitario')),amount(val(x,'PrezzoTotale')),val(x,'AliquotaIVA')]));
+ table.querySelectorAll('tbody tr').forEach(tr=>{const td=tr.children[1];if(td){td.style.minWidth='240px';td.style.width='48%';}});
+ panel.append(table);
+ subtitle('Riepilogo IVA');
+ panel.append(makeTable(['Aliquota %','Natura','Imponibile','Imposta','Esigibilità','Riferimento normativo'],children(goods,'DatiRiepilogo').map(x=>[val(x,'AliquotaIVA'),val(x,'Natura'),amount(val(x,'ImponibileImporto')),amount(val(x,'Imposta')),val(x,'EsigibilitaIVA'),val(x,'RiferimentoNormativo')])));
+ const summary=txt('p','Imponibile: '+amount(String(row.imponibile??''))+' '+row.valuta+' · IVA: '+amount(String(row.iva??''))+' '+row.valuta+' · Totale documento: '+amount(String(row.totale??''))+' '+row.valuta);summary.style.fontWeight='bold';panel.append(summary);
+ subtitle('Dati di pagamento previsti (non attestano un pagamento eseguito)');
+ const payments=children(body,'DatiPagamento').flatMap(p=>children(p,'DettaglioPagamento').map(x=>[val(p,'CondizioniPagamento'),val(x,'ModalitaPagamento'),val(x,'Beneficiario'),val(x,'DataRiferimentoTerminiPagamento'),val(x,'DataScadenzaPagamento'),amount(val(x,'ImportoPagamento')),val(x,'IstitutoFinanziario'),val(x,'IBAN')]));
+ if(payments.length)panel.append(makeTable(['Condizioni','Modalità','Beneficiario','Data riferimento','Scadenza','Importo','Banca','IBAN'],payments));else panel.append(txt('p','Non indicati nel documento.'));
+ // Rende consultabili anche tutti gli altri campi del corpo senza mostrare blob allegati.
+ const extra=document.createElement('details');extra.append(txt('summary','Tutti i campi XML del corpo e i riferimenti documentali'));
+ const fields=[];
+ function walk(node,path){
+  const name=node.localName;
+  if(name==='Attachment'){fields.push([path+'/'+name,'Contenuto binario disponibile nell’XML originale']);return;}
+  const next=path?path+'/'+name:name;
+  if(!node.children.length){fields.push([next,node.textContent.trim()]);return;}
+  for(const c of node.children)walk(c,next);
+ }
+ walk(body,'');extra.append(makeTable(['Campo XML','Valore originale'],fields));panel.append(extra);
+}
+async function fiscalReadXml(response){
+ const bytes=new Uint8Array(await response.arrayBuffer());
+ let encoding='utf-8';
+ if(bytes[0]===255&&bytes[1]===254||bytes[0]===60&&bytes[1]===0)encoding='utf-16le';
+ else if(bytes[0]===254&&bytes[1]===255||bytes[0]===0&&bytes[1]===60)encoding='utf-16be';
+ else {const prefix=new TextDecoder('utf-8').decode(bytes.slice(0,512));const m=prefix.match(/encoding\s*=\s*["']([^"']+)["']/i);if(m)encoding=m[1];}
+ return new TextDecoder(encoding,{fatal:true}).decode(bytes);
+}
 function buildFiscalInvoices(section,entry){
  const base='/api/v4/contabilita/fatture/'+entry.id;
  const heading=document.createElement('h2');heading.textContent=entry.label;
@@ -1380,6 +1436,15 @@ function buildFiscalInvoices(section,entry){
  const status=document.createElement('p');status.setAttribute('role','status');
  const results=document.createElement('div');
  const grid=document.createElement('div');let generation=0,busy=false;
+ const detail=document.createElement('section');detail.className='accounting-result';detail.hidden=true;let detailVersion=0;
+ async function openDetail(row){
+  const ver=++detailVersion;detail.hidden=false;detail.replaceChildren();
+  const title=document.createElement('h2');title.textContent='Fattura n. '+row.numero+' del '+accountingDate(row.data);
+  const close=document.createElement('button');close.type='button';close.textContent='Chiudi dettaglio';close.onclick=()=>{detailVersion++;detail.hidden=true;detail.replaceChildren();};
+  const content=document.createElement('div');content.textContent='Caricamento corpo fattura…';detail.append(title,close,content);detail.scrollIntoView({block:'nearest'});
+  try{const response=await apiCall('/api/v4/contabilita/fatture/xml/'+row.id);const xml=await fiscalReadXml(response);if(ver!==detailVersion||!section.isConnected)return;content.replaceChildren();fiscalXmlDetail(xml,row,content);}
+  catch(e){if(ver===detailVersion&&section.isConnected)content.textContent='Corpo fattura non disponibile: '+e.message;}
+ }
  const amount=(v,cur)=>v==null?'—':new Intl.NumberFormat('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(v))+' '+cur;
  async function load(){
   const ver=++generation;grid.textContent='Caricamento fatture…';
@@ -1396,6 +1461,7 @@ function buildFiscalInvoices(section,entry){
      const blob=await response.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');
      a.href=url;a.download='fattura-'+rows[i].id+'.xml';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
     }catch(e){window.alert(e.message);}finally{b.disabled=false;}});
+    const open=document.createElement('button');open.type='button';open.textContent=String(rows[i].numero)+' · Corpo fattura';open.title='Visualizza le righe e tutti i dati del documento';open.onclick=()=>void openDetail(rows[i]);tr.children[1].replaceChildren(open);
     tr.lastElementChild.append(b);
    });grid.append(table);
   }catch(e){if(ver===generation&&section.isConnected)grid.textContent='Archivio non disponibile: '+e.message;}
@@ -1424,7 +1490,7 @@ function buildFiscalInvoices(section,entry){
  };
  actions.append(imp,refresh,pick);
  const info=document.createElement('p');info.textContent='Seleziona uno o più XML FatturaPA scaricati dal portale fiscale. Nessun passaggio AI o MCP. Le fatture nuove sono Da attribuire.';
- section.append(heading,actions,info,status,results,grid);
+ section.append(heading,actions,info,status,results,grid,detail);
  section.addEventListener('fiscalrefresh',()=>void load());
 }
 function setAccountingSubtab(id){
@@ -2666,7 +2732,7 @@ document.getElementById('tab-invoices').onclick=()=>{if(currentProjectId)goTo('f
 document.getElementById('commesse-version').textContent='V'+UI_VERSION;
 syncCommessaTabs('commesse');
 document.getElementById('generalMenu').onclick=()=>{location.assign('menu.html');};
-document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse V4.18.0 TEST: Fatture Emesse e Fatture ricevute importano XML dal cassetto fiscale senza AI; i fornitori sono aggiornati solo per ricevute.  Movimenti include Banche e saldi con anagrafica e saldo calcolato.  i Pagamenti delle schede 4 e 5 leggono i movimenti attribuiti in Contabilità generale.  seleziona i movimenti e attribuiscili alla commessa corrente.  Contabilità generale offre globalmente Carica con AI ed Elabora Cassetto primanota con feedback sopra le sottoschede. Movimenti contiene soltanto una griglia unica: prima riga con filtri Banca (Tutte le banche), Conto (Tutti i conti), Commessa (Tutte le commesse), Entrate/Uscite (Tutti); seguono tutti i movimenti, senza colonna Estratto, dettaglio documento o paginazione visibile. Codice commessa iniziale Da attribuire; nessuna perdita di dati.  4A Anagrafica fornitori è autonoma da Contatti, sempre accessibile, con modifiche e storico DURC.  la scheda 4 Fornitori ospita preventivi, fatture e pagamenti ai fornitori con analisi Scaramozzino separata. La scheda 5 ospita fatture emesse, incassi del committente e relativa Analisi Scaramozzino. Le prime griglie sono di sola lettura; i moduli storici sono conservati.');
+document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse V4.18.1 TEST: clicca il numero per consultare il corpo fattura completo.  Fatture Emesse e Fatture ricevute importano XML dal cassetto fiscale senza AI; i fornitori sono aggiornati solo per ricevute.  Movimenti include Banche e saldi con anagrafica e saldo calcolato.  i Pagamenti delle schede 4 e 5 leggono i movimenti attribuiti in Contabilità generale.  seleziona i movimenti e attribuiscili alla commessa corrente.  Contabilità generale offre globalmente Carica con AI ed Elabora Cassetto primanota con feedback sopra le sottoschede. Movimenti contiene soltanto una griglia unica: prima riga con filtri Banca (Tutte le banche), Conto (Tutti i conti), Commessa (Tutte le commesse), Entrate/Uscite (Tutti); seguono tutti i movimenti, senza colonna Estratto, dettaglio documento o paginazione visibile. Codice commessa iniziale Da attribuire; nessuna perdita di dati.  4A Anagrafica fornitori è autonoma da Contatti, sempre accessibile, con modifiche e storico DURC.  la scheda 4 Fornitori ospita preventivi, fatture e pagamenti ai fornitori con analisi Scaramozzino separata. La scheda 5 ospita fatture emesse, incassi del committente e relativa Analisi Scaramozzino. Le prime griglie sono di sola lettura; i moduli storici sono conservati.');
 backButton.addEventListener('click',()=>goTo(parentPage[location.hash.slice(1)]||'commesse'));
 window.addEventListener('hashchange',()=>{if(authToken)show(location.hash.slice(1));});
 // Avvio chiuso: nessuna vista gestionale prima di login().
