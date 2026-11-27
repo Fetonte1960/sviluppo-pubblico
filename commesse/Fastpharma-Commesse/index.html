@@ -350,7 +350,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 <script>
 (function(){
 'use strict';
-const UI_VERSION='4.18.1';
+const UI_VERSION='4.19.0';
 const pages=JSON.parse(document.getElementById('screens').textContent);
 // Archivio originale ricevuto: non convertirne le proposte in requisiti approvati.
 const originalClientAnalysis=JSON.parse(document.getElementById('client-analysis-original').textContent);
@@ -1435,7 +1435,43 @@ function buildFiscalInvoices(section,entry){
  const refresh=document.createElement('button');refresh.type='button';refresh.textContent='Aggiorna elenco';
  const status=document.createElement('p');status.setAttribute('role','status');
  const results=document.createElement('div');
- const grid=document.createElement('div');let generation=0,busy=false;
+ const grid=document.createElement('div');let generation=0,busy=false,assigning=false,loading=false;
+ let rows=[],projects=[],checks=[],projectFilter='',destinationId='';
+ const assignmentStatus=document.createElement('p');assignmentStatus.setAttribute('role','status');
+ const commands=document.createElement('div');commands.className='accounting-actions';commands.style.flexWrap='wrap';
+ const assign=document.createElement('button');assign.type='button';assign.textContent='Attribuisci alla commessa selezionata';
+ const assignOther=document.createElement('button');assignOther.type='button';assignOther.textContent='Attribuisci ad una commessa';
+ const destination=document.createElement('select');destination.setAttribute('aria-label','Commessa di destinazione');destination.style.minWidth='220px';
+ const filter=document.createElement('select');filter.setAttribute('aria-label','Filtra per commessa');
+ const filterLabel=document.createElement('label');filterLabel.textContent='Commessa: ';filterLabel.append(filter);
+ const all=document.createElement('input');all.type='checkbox';all.setAttribute('aria-label','Seleziona tutte le fatture visualizzate');
+ commands.append(assign,assignOther,destination,filterLabel);
+ function sync(){
+  const n=checks.filter(c=>c.checked).length,locked=busy||assigning||loading;
+  all.checked=checks.length>0&&n===checks.length;all.indeterminate=n>0&&n<checks.length;
+  all.disabled=locked||!checks.length;assign.disabled=locked||!currentProjectId||!n;
+  assignOther.disabled=locked||!destination.value||!n;destination.disabled=locked||!projects.length;filter.disabled=locked;
+  imp.disabled=locked;refresh.disabled=locked;for(const c of checks)c.disabled=locked;
+ }
+ all.onchange=()=>{for(const c of checks)c.checked=all.checked;sync();};
+ destination.onchange=()=>{destinationId=destination.value;sync();};
+ filter.onchange=()=>{projectFilter=filter.value;detailVersion++;detail.hidden=true;renderRows();};
+ async function assignTo(projectId,caption){
+  const ids=checks.filter(c=>c.checked).map(c=>Number(c.value));
+  if(!ids.length||!projectId||busy||assigning||loading)return;
+  if(!window.confirm('Attribuire '+ids.length+' fatture alla commessa '+caption+'?'))return;
+  assigning=true;sync();assignmentStatus.textContent='Attribuzione in corso…';
+  try{
+   const response=await apiCall(base+'/attribuisci',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({progettoId:Number(projectId),fattureIds:ids})});
+   const r=await response.json();if(r.aggiornati!==ids.length)throw Error('Attribuzione non confermata');
+   assignmentStatus.textContent=r.aggiornati+' fatture attribuite a '+r.codiceCommessa+'.';
+   detailVersion++;detail.hidden=true;detail.replaceChildren();
+   assigning=false;await load();
+  }catch(e){assignmentStatus.textContent='Attribuzione non riuscita: '+e.message;}
+  finally{assigning=false;sync();}
+ }
+ assign.onclick=()=>void assignTo(currentProjectId,currentProjectCaption);
+ assignOther.onclick=()=>{const p=projects.find(p=>String(p.id)===destination.value);if(p)void assignTo(p.id,p.codice+' — '+p.titolo);};
  const detail=document.createElement('section');detail.className='accounting-result';detail.hidden=true;let detailVersion=0;
  async function openDetail(row){
   const ver=++detailVersion;detail.hidden=false;detail.replaceChildren();
@@ -1446,31 +1482,48 @@ function buildFiscalInvoices(section,entry){
   catch(e){if(ver===detailVersion&&section.isConnected)content.textContent='Corpo fattura non disponibile: '+e.message;}
  }
  const amount=(v,cur)=>v==null?'—':new Intl.NumberFormat('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(v))+' '+cur;
- async function load(){
-  const ver=++generation;grid.textContent='Caricamento fatture…';
-  try{
-   const response=await apiCall(base);const rows=await response.json();
-   if(ver!==generation||!section.isConnected)return;
-   grid.replaceChildren();
-   if(!rows.length){grid.textContent='Nessuna fattura importata.';return;}
-   const table=accountingGrid(['Data','Numero','Tipo',entry.id==='ricevute'?'Fornitore':'Cliente','Imponibile','IVA','Totale','Codice commessa','XML'],rows,r=>[accountingDate(r.data),r.numero,r.tipo,entry.id==='ricevute'?r.emittente:r.destinatario,amount(r.imponibile,r.valuta),amount(r.iva,r.valuta),amount(r.totale,r.valuta),r.codiceCommessa,'']);
-   [...table.querySelectorAll('tbody tr')].forEach((tr,i)=>{
-    const b=document.createElement('button');b.type='button';b.textContent='Scarica XML';
-    b.addEventListener('click',async()=>{b.disabled=true;try{
-     const response=await apiCall('/api/v4/contabilita/fatture/xml/'+rows[i].id);
-     const blob=await response.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');
-     a.href=url;a.download='fattura-'+rows[i].id+'.xml';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
-    }catch(e){window.alert(e.message);}finally{b.disabled=false;}});
-    const open=document.createElement('button');open.type='button';open.textContent=String(rows[i].numero)+' · Corpo fattura';open.title='Visualizza le righe e tutti i dati del documento';open.onclick=()=>void openDetail(rows[i]);tr.children[1].replaceChildren(open);
-    tr.lastElementChild.append(b);
-   });grid.append(table);
-  }catch(e){if(ver===generation&&section.isConnected)grid.textContent='Archivio non disponibile: '+e.message;}
+ function renderRows(){
+  grid.replaceChildren();checks=[];
+  const visible=rows.filter(r=>!projectFilter||r.codiceCommessa===projectFilter);
+  if(!visible.length){grid.textContent=rows.length?'Nessuna fattura per la commessa selezionata.':'Nessuna fattura importata.';sync();return;}
+  const table=accountingGrid(['','Data','Numero','Tipo',entry.id==='ricevute'?'Fornitore':'Cliente','Imponibile','IVA','Totale','Codice commessa','XML'],visible,r=>['',accountingDate(r.data),r.numero,r.tipo,entry.id==='ricevute'?r.emittente:r.destinatario,amount(r.imponibile,r.valuta),amount(r.iva,r.valuta),amount(r.totale,r.valuta),r.codiceCommessa,'']);
+  table.querySelector('thead th').replaceChildren(all);
+  [...table.querySelectorAll('tbody tr')].forEach((tr,i)=>{
+   const row=visible[i],check=document.createElement('input');check.type='checkbox';check.value=String(row.id);check.setAttribute('aria-label','Seleziona fattura '+row.numero);check.onchange=sync;checks.push(check);tr.children[0].append(check);
+   const b=document.createElement('button');b.type='button';b.textContent='Scarica XML';
+   b.addEventListener('click',async()=>{b.disabled=true;try{
+    const response=await apiCall('/api/v4/contabilita/fatture/xml/'+row.id);
+    const blob=await response.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download='fattura-'+row.id+'.xml';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+   }catch(e){window.alert(e.message);}finally{b.disabled=false;}});
+   const open=document.createElement('button');open.type='button';open.textContent=String(row.numero)+' · Corpo fattura';open.title='Visualizza le righe e tutti i dati del documento';open.onclick=()=>void openDetail(row);tr.children[2].replaceChildren(open);
+   tr.lastElementChild.append(b);
+  });grid.append(table);sync();
  }
- imp.onclick=()=>{if(!busy)pick.click();};
+ async function load(){
+  const ver=++generation;loading=true;checks=[];grid.textContent='Caricamento fatture…';sync();
+  try{
+   const [response,projectResponse]=await Promise.all([apiCall(base),apiCall('/api/commesse')]);
+   const [data,projectData]=await Promise.all([response.json(),projectResponse.json()]);
+   if(ver!==generation||!section.isConnected)return;
+   if(!Array.isArray(data)||!Array.isArray(projectData))throw Error('Risposta archivio non valida');
+   rows=data;projects=projectData.filter(p=>Number.isSafeInteger(Number(p.id))&&Number(p.id)>0);
+   destination.replaceChildren();accountingOption(destination,'','Seleziona commessa...');
+   for(const p of projects)accountingOption(destination,String(p.id),p.codice+' — '+p.titolo);
+   if(!projects.some(p=>String(p.id)===destinationId))destinationId='';
+   destination.value=destinationId;
+   const codes=[...new Set(rows.map(r=>r.codiceCommessa).filter(Boolean))].sort((a,b)=>a==='Da attribuire'?-1:b==='Da attribuire'?1:a.localeCompare(b,'it'));
+   filter.replaceChildren();accountingOption(filter,'','Tutte le commesse');for(const code of codes)accountingOption(filter,code,code);
+   if(projectFilter&&!codes.includes(projectFilter))projectFilter='';filter.value=projectFilter;
+   renderRows();
+  }catch(e){if(ver===generation&&section.isConnected){rows=[];projects=[];checks=[];grid.textContent='Archivio non disponibile: '+e.message;}}
+  finally{if(ver===generation){loading=false;sync();}}
+ }
+ imp.onclick=()=>{if(!busy&&!assigning&&!loading)pick.click();};
  refresh.onclick=()=>void load();
  pick.onchange=async()=>{
-  const files=[...pick.files];pick.value='';if(!files.length||busy)return;
-  busy=true;imp.disabled=true;refresh.disabled=true;results.replaceChildren();
+  const files=[...pick.files];pick.value='';if(!files.length||busy||assigning||loading)return;
+  busy=true;sync();results.replaceChildren();
   const esiti=[];let nuove=0,dup=0,conflitti=0,scarti=0;
   try{
    await apiCall(base);
@@ -1486,11 +1539,11 @@ function buildFiscalInvoices(section,entry){
    status.textContent='Nuove fatture: '+nuove+' · Già presenti: '+dup+' · Conflitti: '+conflitti+' · File non acquisiti: '+scarti;
    results.append(accountingGrid(['File','Nuove','Duplicate','Conflitti','Esito'],esiti,x=>x));
   }catch(e){status.textContent='Importazione non avviata: '+e.message;}
-  finally{busy=false;imp.disabled=false;refresh.disabled=false;await load();}
+  finally{busy=false;await load();}
  };
  actions.append(imp,refresh,pick);
  const info=document.createElement('p');info.textContent='Seleziona uno o più XML FatturaPA scaricati dal portale fiscale. Nessun passaggio AI o MCP. Le fatture nuove sono Da attribuire.';
- section.append(heading,actions,info,status,results,grid,detail);
+ section.append(heading,actions,info,status,results,commands,assignmentStatus,grid,detail);sync();
  section.addEventListener('fiscalrefresh',()=>void load());
 }
 function setAccountingSubtab(id){
@@ -2732,7 +2785,7 @@ document.getElementById('tab-invoices').onclick=()=>{if(currentProjectId)goTo('f
 document.getElementById('commesse-version').textContent='V'+UI_VERSION;
 syncCommessaTabs('commesse');
 document.getElementById('generalMenu').onclick=()=>{location.assign('menu.html');};
-document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse V4.18.1 TEST: clicca il numero per consultare il corpo fattura completo.  Fatture Emesse e Fatture ricevute importano XML dal cassetto fiscale senza AI; i fornitori sono aggiornati solo per ricevute.  Movimenti include Banche e saldi con anagrafica e saldo calcolato.  i Pagamenti delle schede 4 e 5 leggono i movimenti attribuiti in Contabilità generale.  seleziona i movimenti e attribuiscili alla commessa corrente.  Contabilità generale offre globalmente Carica con AI ed Elabora Cassetto primanota con feedback sopra le sottoschede. Movimenti contiene soltanto una griglia unica: prima riga con filtri Banca (Tutte le banche), Conto (Tutti i conti), Commessa (Tutte le commesse), Entrate/Uscite (Tutti); seguono tutti i movimenti, senza colonna Estratto, dettaglio documento o paginazione visibile. Codice commessa iniziale Da attribuire; nessuna perdita di dati.  4A Anagrafica fornitori è autonoma da Contatti, sempre accessibile, con modifiche e storico DURC.  la scheda 4 Fornitori ospita preventivi, fatture e pagamenti ai fornitori con analisi Scaramozzino separata. La scheda 5 ospita fatture emesse, incassi del committente e relativa Analisi Scaramozzino. Le prime griglie sono di sola lettura; i moduli storici sono conservati.');
+document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse V4.19.0 TEST: seleziona fatture e attribuiscile alla commessa corrente o ad altra commessa.  clicca il numero per consultare il corpo fattura completo.  Fatture Emesse e Fatture ricevute importano XML dal cassetto fiscale senza AI; i fornitori sono aggiornati solo per ricevute.  Movimenti include Banche e saldi con anagrafica e saldo calcolato.  i Pagamenti delle schede 4 e 5 leggono i movimenti attribuiti in Contabilità generale.  seleziona i movimenti e attribuiscili alla commessa corrente.  Contabilità generale offre globalmente Carica con AI ed Elabora Cassetto primanota con feedback sopra le sottoschede. Movimenti contiene soltanto una griglia unica: prima riga con filtri Banca (Tutte le banche), Conto (Tutti i conti), Commessa (Tutte le commesse), Entrate/Uscite (Tutti); seguono tutti i movimenti, senza colonna Estratto, dettaglio documento o paginazione visibile. Codice commessa iniziale Da attribuire; nessuna perdita di dati.  4A Anagrafica fornitori è autonoma da Contatti, sempre accessibile, con modifiche e storico DURC.  la scheda 4 Fornitori ospita preventivi, fatture e pagamenti ai fornitori con analisi Scaramozzino separata. La scheda 5 ospita fatture emesse, incassi del committente e relativa Analisi Scaramozzino. Le prime griglie sono di sola lettura; i moduli storici sono conservati.');
 backButton.addEventListener('click',()=>goTo(parentPage[location.hash.slice(1)]||'commesse'));
 window.addEventListener('hashchange',()=>{if(authToken)show(location.hash.slice(1));});
 // Avvio chiuso: nessuna vista gestionale prima di login().
