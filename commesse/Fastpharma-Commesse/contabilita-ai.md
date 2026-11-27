@@ -1,4 +1,4 @@
-# Contabilità generale — bootstrap AI universale per la Prima Nota (V1.12)
+# Contabilità generale — bootstrap AI universale per la Prima Nota (V1.13)
 
 ## Importazione diretta fatture fiscali (V4.18.0)
 
@@ -23,6 +23,10 @@ In Contabilità generale, **Carica con GPT** e **Carica con Claude** aprono risp
 ## Saldi facoltativi (V4.21.0)
 
 Il JSON schema 1.2 non cambia. Il backend crea il conto anche con data e saldo iniziale null e importa i movimenti validi. I saldi eventualmente documentati vengono conservati senza sovrascrivere quelli dei conti esistenti. Banche e saldi consente di inserire o correggere data e saldo iniziale in seguito: il saldo attuale si ricalcola quando entrambi sono noti, altrimenti mostra Non determinabile. Il totale generale non è determinabile se almeno un conto non ha un saldo noto; l'eventuale subtotale noto è indicato separatamente. I controlli su identità, date, importi, quadratura quando entrambi i saldi sono disponibili e duplicati restano attivi. Le note non acquisite per mancanza di saldi possono essere elaborate nuovamente senza nuovo deposito.
+
+## Movimenti attribuiti nelle schede di commessa (V4.21.1)
+
+Dopo aver attribuito i movimenti in Contabilità generale, aprire la commessa interessata. In 4 · Fornitori → Pagamenti compaiono le uscite; in 5 · Fatture e pagamenti → Pagamenti compaiono le entrate (incassi). Le due griglie leggono la stessa prima nota, filtrata per codice commessa e segno, con tutte le pagine, importi visualizzati positivi e totale della rispettiva direzione. Nessun movimento Da attribuire è incluso. Se non ci sono movimenti attribuiti, il messaggio lo indica esplicitamente. Rientrando nella scheda si rileggono i dati aggiornati; non si duplicano movimenti e non si deducono collegamenti a specifiche fatture o fornitori. Il saldo bancario e l'Analisi Scaramozzino storica restano distinti.
 
 ## Ambito e privilegi
 
