@@ -1,4 +1,4 @@
-# Contabilità generale — bootstrap AI per la Prima Nota (V1.0)
+# Contabilità generale — bootstrap AI universale per la Prima Nota (V1.1)
 
 ## Ambito e privilegi
 
@@ -6,10 +6,24 @@ Questa istruzione specifica integra il bootstrap del connettore **MCP-postgree**
 
 1. Avvia `CommandToMCPPostgree("Init")` usando la connessione OAuth già attiva (Token 1). Non chiedere Token 2, ticket né `session.attach`. Il cassetto MCP è **uno solo**: non cercare un destinatario `GESTIONE_COMMESSE` in `Init` e non confonderlo con un cassetto dedicato.
 2. Se `Init` non autorizza `nota.deposita`, fermati. Se il catalogo mostra soltanto `CONTATTI`, **non è un blocco** per la Prima Nota: ometti `applicazioneSuggerita`, usa l'intestazione `dati.area`/`dati.sezione` per la classificazione. Non inventare accessi o conferme.
-3. Chiedi all'utente fotografie leggibili oppure il PDF di un **estratto conto bancario**. Interpreta solo ciò che è leggibile; non compilare dati immaginati. Se mancano pagine o l'estratto è incompleto, segnala chiaramente la situazione.
-4. Prepara **un'unica nota strutturata** quando la dimensione lo consente, con l'intestazione indicata sotto; deposita mediante `nota.deposita`. Non utilizzare il gestionale e non cambiare archivi.
-5. L'identificativo di commessa **non deve essere inventato né ricavato automaticamente**: dopo importazione i documenti e i movimenti saranno `Da attribuire`; l'utente li assegnerà manualmente in una fase successiva.
+3. Chiedi all'utente fotografie leggibili oppure il PDF di un **documento contabile** (estratto conto, fattura emessa, fattura ricevuta). Classifica e interpreta solo ciò che è leggibile; non compilare dati immaginati. Se mancano pagine o il documento è incompleto, segnala chiaramente la situazione.
+4. Prepara **un'unica nota strutturata** quando la dimensione lo consente. Usa `dati.area=CONTABILITA` e una sezione in base al documento: `ESTRATTI_CONTO`, `FATTURE_EMESSE` o `FATTURE_RICEVUTE`. Deposita mediante `nota.deposita`; non utilizzare il gestionale e non cambiare archivi.
+5. L'identificativo di commessa **non deve essere inventato né ricavato automaticamente**: i movimenti bancari importati saranno `Da attribuire`; l'utente li assegnerà manualmente in una fase successiva.
 6. Comunica soltanto il `noteId` e lo stato realmente restituiti dal server. Depositare non equivale a importare: l'operatore dovrà usare il pulsante **Elabora Cassetto primanota** nel gestionale.
+
+## Tipologie contabili e stato dei gestionali
+
+Il cassetto MCP è universale e può ricevere note contabili indipendentemente dalla tipologia del documento. Le istruzioni specifiche dipendono dalla sezione; il deposito **non** implica importazione:
+
+| Sezione | Documento | Importazione deterministica |
+|---|---|---|
+| `ESTRATTI_CONTO` | Estratto conto bancario | Attiva: alimenta la griglia unica **Movimenti** |
+| `FATTURE_EMESSE` | Fattura emessa | Non ancora attiva: nota conservata in attesa di specifica |
+| `FATTURE_RICEVUTE` | Fattura ricevuta | Non ancora attiva: nota conservata in attesa di specifica |
+
+Per una fattura, conservare le informazioni effettivamente lette in `dati.documento` (numero, data, emittente, destinatario, imponibile, IVA, totale, scadenza, riferimenti se presenti). Non inventare campi assenti e non annunciare l'importazione in archivio; il gestionale restituirà `NON_SUPPORTATO` fino all'attivazione del contratto deterministico.
+
+I comandi **Carica con AI** ed **Elabora Cassetto primanota** appartengono a **Contabilità generale** e sono visibili sopra tutte le sottoschede. Il risultato dell'elaborazione è generale; la sottoscheda **Movimenti** mostra esclusivamente una griglia con quattro filtri in prima riga: **Banca, Conto, Commessa ed Entrate/Uscite**, tutti inizialmente su `Tutti`. Le informazioni di origine bancaria restano archiviate per controllo tecnico ma non diventano un tab o pannello operativo separato.
 
 ## Prima tipologia: ESTRATTO_CONTO
 
@@ -64,7 +78,7 @@ Regole per i dati:
 
 ## Lettura e importazione nel gestionale
 
-Il pulsante **Elabora Cassetto primanota** è l'autorizzazione esplicita dell'operatore FastPharma autenticato. Il backend **legge tutte le note del cassetto unico visibili all'organizzazione**, ignora quelle non contabili, riconosce quelle contabili dall'intestazione JSON e le acquisisce in un archivio autonomo, controlla schema, banca, conto, date, saldi e movimenti, e applica deduplicazione per identificativo nota, documento e singoli movimenti.
+Il pulsante generale **Elabora Cassetto primanota** è l'autorizzazione esplicita dell'operatore FastPharma autenticato. Il backend **legge tutte le note del cassetto unico visibili all'organizzazione**, ignora quelle non contabili, riconosce quelle contabili dall'intestazione JSON e le acquisisce in un archivio autonomo, controlla schema, banca, conto, date, saldi e movimenti, e applica deduplicazione per identificativo nota, documento e singoli movimenti.
 
 - Un documento già visto non viene caricato nuovamente.
 - Estratti parzialmente sovrapposti aggiungono solo i movimenti nuovi.
