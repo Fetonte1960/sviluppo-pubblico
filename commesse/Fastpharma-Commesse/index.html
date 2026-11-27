@@ -350,7 +350,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 <script>
 (function(){
 'use strict';
-const UI_VERSION='4.15.1';
+const UI_VERSION='4.16.0';
 const pages=JSON.parse(document.getElementById('screens').textContent);
 // Archivio originale ricevuto: non convertirne le proposte in requisiti approvati.
 const originalClientAnalysis=JSON.parse(document.getElementById('client-analysis-original').textContent);
@@ -1095,6 +1095,8 @@ let accountingDirection='';
 let accountingCatalog=null;
 let accountingProjects=null;
 let accountingLoadVersion=0;
+let activeMovementSubtab='movimenti';
+let bankLoadVersion=0;
 let accountingAssigning=false;
 const accountingMaskAccount=account=>'••••'+String(account||'').slice(-4);
 const accountingMoney=x=>{
@@ -1239,7 +1241,7 @@ function accountingRenderMovements(target,items,message){
 }
 async function accountingLoadRows(refreshCatalog=false){
  const pane=view.querySelector('[data-accounting-pane="movimenti"]');
- if(!pane||pane.hidden)return;
+ if(!pane||pane.hidden||activeMovementSubtab!=='movimenti')return;
  const target=pane.querySelector('.accounting-saved-list');
  if(!target)return;
  const version=++accountingLoadVersion;
@@ -1278,6 +1280,56 @@ async function accountingLoadRows(refreshCatalog=false){
    accountingRenderMovements(target,[],'Movimenti non disponibili: '+(error.message||'errore di lettura'));
  }
 }
+function setMovementSubtab(id){
+ activeMovementSubtab=id;
+ const pane=view.querySelector('[data-accounting-pane="movimenti"]');if(!pane)return;
+ for(const tab of pane.querySelectorAll('[data-movement-subtab]')){const active=tab.dataset.movementSubtab===id;tab.setAttribute('aria-selected',String(active));tab.tabIndex=active?0:-1;}
+ pane.querySelector('.accounting-saved-list').hidden=id!=='movimenti';
+ pane.querySelector('.bank-accounts-pane').hidden=id!=='banche';
+ accountingLoadVersion++;bankLoadVersion++;
+ if(id==='movimenti')void accountingLoadRows();else void loadBankAccounts();
+}
+async function loadBankAccounts(){
+ const target=view.querySelector('.bank-accounts-pane');
+ if(!target||target.hidden||activeAccountingSubtab!=='movimenti')return;
+ const version=++bankLoadVersion;
+ target.textContent='Caricamento conti…';
+ try{
+  const response=await apiCall('/api/v4/contabilita/banche');
+  const rows=await response.json();
+  const catalogResponse=await apiCall('/api/v4/contabilita/prima-nota/conti');
+  const catalog=await catalogResponse.json();
+  if(version!==bankLoadVersion||!target.isConnected)return;
+  if(!Array.isArray(rows)||!Array.isArray(catalog))throw Error('Archivio conti non valido');
+  target.replaceChildren();
+  const h=document.createElement('h2');h.textContent='Anagrafica conti bancari';target.append(h);
+  const note=document.createElement('p');note.textContent='Il saldo iniziale è riferito all’apertura della data indicata. Il saldo attuale somma tutti i movimenti da tale data fino a oggi, senza memorizzarlo.';target.append(note);
+  const button=(label,fn)=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.addEventListener('click',fn);return b;};
+  const formHost=document.createElement('div');
+  function edit(row){
+   formHost.replaceChildren();const form=document.createElement('form');form.className='accounting-actions';
+   const field=(label,type,value)=>{const l=document.createElement('label');l.textContent=label+' ';const input=document.createElement('input');input.type=type;input.required=true;input.value=value??'';l.append(input);form.append(l);return input;};
+   const banca=field('Banca','text',row?.banca);banca.maxLength=200;
+   const conto=field('Conto','text',row?.riferimentoConto);conto.maxLength=90;
+   const data=field('Data saldo iniziale','date',row?.dataIniziale?String(row.dataIniziale).slice(0,10):'');
+   const saldo=field('Saldo iniziale EUR','number',row?.saldoIniziale);saldo.step='0.01';
+   const save=document.createElement('button');save.type='submit';save.textContent='Salva';form.append(save,button('Annulla',()=>formHost.replaceChildren()));
+   form.addEventListener('submit',async e=>{e.preventDefault();save.disabled=true;try{
+    await apiCall('/api/v4/contabilita/banche'+(row?.id?'/'+row.id:''),{method:row?.id?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({banca:banca.value,riferimentoConto:conto.value,dataIniziale:data.value,saldoIniziale:Number(saldo.value)})});
+    accountingCatalog=null;await loadBankAccounts();
+   }catch(error){window.alert(error.message);save.disabled=false;}});
+   formHost.append(form);
+  }
+  target.append(button('Nuovo conto',()=>edit(null)),formHost);
+  const missing=catalog.filter(c=>!rows.some(r=>r.banca===c.banca&&r.riferimentoConto===c.riferimentoConto));
+  if(missing.length){const p=document.createElement('p');p.textContent='Conti rilevati negli estratti, ancora da configurare:';target.append(p);for(const c of missing)target.append(button(c.banca+' · '+accountingMaskAccount(c.riferimentoConto),()=>edit(c)));}
+  const grid=accountingGrid(['Banca','Conto','Data saldo iniziale','Saldo iniziale','Saldo attuale','Azioni'],rows,r=>[r.banca,r.riferimentoConto,accountingDate(r.dataIniziale),accountingMoney(r.saldoIniziale),accountingMoney(r.saldoAttuale),'']);
+  const trs=grid.querySelectorAll('tbody tr');
+  rows.forEach((r,i)=>{const td=trs[i].lastElementChild;td.append(button('Modifica',()=>edit(r)),button('Cancella',async()=>{if(!window.confirm('Cancellare solo l’anagrafica di questo conto? I movimenti non saranno cancellati.'))return;try{await apiCall('/api/v4/contabilita/banche/'+r.id,{method:'DELETE'});accountingCatalog=null;await loadBankAccounts();}catch(e){window.alert(e.message);}}));});
+  target.append(grid);
+  const total=document.createElement('p');total.textContent='Totale saldi dei conti configurati: '+accountingMoney(rows.reduce((sum,r)=>sum+Number(r.saldoAttuale),0))+(missing.length?' · Attenzione: non comprende i conti ancora da configurare.':'');target.append(total);
+ }catch(error){if(version===bankLoadVersion&&target.isConnected)target.textContent='Anagrafica conti non disponibile: '+error.message;}
+}
 function setAccountingSubtab(id){
  if(!accountingSections.some(section=>section.id===id))return;
  activeAccountingSubtab=id;
@@ -1287,8 +1339,8 @@ function setAccountingSubtab(id){
  }
  for(const pane of view.querySelectorAll('.accounting-pane'))
   pane.hidden=pane.dataset.accountingPane!==id;
- if(id==='movimenti')void accountingLoadRows();
- else accountingLoadVersion++;
+ if(id==='movimenti')setMovementSubtab(activeMovementSubtab);
+ else {accountingLoadVersion++;bankLoadVersion++;}
 }
 function buildGeneralAccounting(){
  const main=document.createElement('main');main.className='accounting-screen';
@@ -1320,7 +1372,7 @@ function buildGeneralAccounting(){
    process.disabled=false;process.textContent='Elabora Cassetto primanota';
    feedback.hidden=false;accountingFeedback(feedbackContent);
    accountingCatalog=null;accountingProjects=null;
-   if(activeAccountingSubtab==='movimenti')void accountingLoadRows(true);
+   if(activeAccountingSubtab==='movimenti'){if(activeMovementSubtab==='movimenti')void accountingLoadRows(true);else void loadBankAccounts();}
   }
  });
  actions.append(ai,process);
@@ -1338,7 +1390,12 @@ function buildGeneralAccounting(){
   section.setAttribute('role','tabpanel');section.setAttribute('aria-labelledby',tab.id);
   if(entry.id==='movimenti'){
    const saved=document.createElement('div');saved.className='accounting-saved-list';
-   section.append(saved);
+   const subnav=document.createElement('nav');subnav.className='accounting-subtabs';subnav.setAttribute('role','tablist');subnav.setAttribute('aria-label','Movimenti e conti');
+   for(const [id,label] of [['movimenti','Movimenti'],['banche','Banche e saldi']]){
+    const btn=document.createElement('button');btn.type='button';btn.className='accounting-subtab';btn.dataset.movementSubtab=id;btn.textContent=label;btn.setAttribute('role','tab');btn.addEventListener('click',()=>setMovementSubtab(id));subnav.append(btn);
+   }
+   const bankPane=document.createElement('div');bankPane.className='bank-accounts-pane';bankPane.hidden=true;
+   section.append(subnav,saved,bankPane);
   }else{
    const heading=document.createElement('h2');heading.textContent=entry.label;
    const placeholder=document.createElement('div');placeholder.className='accounting-placeholder';
@@ -2507,7 +2564,7 @@ document.getElementById('tab-invoices').onclick=()=>{if(currentProjectId)goTo('f
 document.getElementById('commesse-version').textContent='V'+UI_VERSION;
 syncCommessaTabs('commesse');
 document.getElementById('generalMenu').onclick=()=>{location.assign('menu.html');};
-document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse V4.15.1 TEST: i Pagamenti delle schede 4 e 5 leggono i movimenti attribuiti in Contabilità generale.  seleziona i movimenti e attribuiscili alla commessa corrente.  Contabilità generale offre globalmente Carica con AI ed Elabora Cassetto primanota con feedback sopra le sottoschede. Movimenti contiene soltanto una griglia unica: prima riga con filtri Banca (Tutte le banche), Conto (Tutti i conti), Commessa (Tutte le commesse), Entrate/Uscite (Tutti); seguono tutti i movimenti, senza colonna Estratto, dettaglio documento o paginazione visibile. Codice commessa iniziale Da attribuire; nessuna perdita di dati.  4A Anagrafica fornitori è autonoma da Contatti, sempre accessibile, con modifiche e storico DURC.  la scheda 4 Fornitori ospita preventivi, fatture e pagamenti ai fornitori con analisi Scaramozzino separata. La scheda 5 ospita fatture emesse, incassi del committente e relativa Analisi Scaramozzino. Le prime griglie sono di sola lettura; i moduli storici sono conservati.');
+document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse V4.16.0 TEST: Movimenti include Banche e saldi con anagrafica e saldo calcolato.  i Pagamenti delle schede 4 e 5 leggono i movimenti attribuiti in Contabilità generale.  seleziona i movimenti e attribuiscili alla commessa corrente.  Contabilità generale offre globalmente Carica con AI ed Elabora Cassetto primanota con feedback sopra le sottoschede. Movimenti contiene soltanto una griglia unica: prima riga con filtri Banca (Tutte le banche), Conto (Tutti i conti), Commessa (Tutte le commesse), Entrate/Uscite (Tutti); seguono tutti i movimenti, senza colonna Estratto, dettaglio documento o paginazione visibile. Codice commessa iniziale Da attribuire; nessuna perdita di dati.  4A Anagrafica fornitori è autonoma da Contatti, sempre accessibile, con modifiche e storico DURC.  la scheda 4 Fornitori ospita preventivi, fatture e pagamenti ai fornitori con analisi Scaramozzino separata. La scheda 5 ospita fatture emesse, incassi del committente e relativa Analisi Scaramozzino. Le prime griglie sono di sola lettura; i moduli storici sono conservati.');
 backButton.addEventListener('click',()=>goTo(parentPage[location.hash.slice(1)]||'commesse'));
 window.addEventListener('hashchange',()=>{if(authToken)show(location.hash.slice(1));});
 // Avvio chiuso: nessuna vista gestionale prima di login().
