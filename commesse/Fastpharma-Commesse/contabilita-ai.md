@@ -1,4 +1,4 @@
-# Contabilità generale — bootstrap AI universale per la Prima Nota (V1.10)
+# Contabilità generale — bootstrap AI universale per la Prima Nota (V1.11)
 
 ## Importazione diretta fatture fiscali (V4.18.0)
 
@@ -15,6 +15,10 @@ In Fatture Emesse e Fatture ricevute è disponibile la stessa procedura dei Movi
 ## Uniformità grafica con Movimenti (V4.19.1)
 
 Nelle griglie fatture, i due pulsanti di attribuzione e il selettore di destinazione occupano una sola riga, con lo stesso stile di Movimenti. Il filtro Commessa è nella riga sottostante. Selezione e salvataggio invariati.
+
+## Avvio GPT o Claude (V4.20.2)
+
+In Contabilità generale, **Carica con GPT** e **Carica con Claude** aprono rispettivamente ChatGPT e Claude con le stesse istruzioni contabili e l'elenco dei conti censiti. L'operatore può configurare separatamente le due connessioni MCP; il client scelto deve verificare con Init l'identità FASTPHARMA prima del deposito. Non si trasferiscono credenziali, ticket o token tra i client. Il precompilatore del sito AI dipende dal client; verificare il prompt prima dell'invio. Elabora Cassetto primanota resta unico e legge soltanto il cassetto FASTPHARMA.
 
 ## Ambito e privilegi
 
