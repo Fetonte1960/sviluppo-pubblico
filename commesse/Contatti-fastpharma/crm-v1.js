@@ -4,19 +4,36 @@
 (() => {
  const cfg=window.CONTATTI_CONFIG||{},base=String(cfg.apiBase||"").replace(/\/$/,"");
  const desktop=cfg.desktop===true&&!!window.CONTATTI_DESKTOP?.key;
+ // Cloud usa il client OIDC FastPharma Access; il legacy resta solo per locale.
+ const oidcMode=!desktop&&(cfg.authMode==="oidc"||
+  (cfg.authMode!=="legacy"&&!cfg.local&&
+   ["fetonte1960.github.io","contatti-fastpharma-api.onrender.com"].includes(location.hostname)));
+ const oidcStorageKey="fastpharma.contatti.pkce.v1";
+ const oidcRedirectUri=location.origin+location.pathname.replace(/index\.html$/,"");
+ const authHeaders=()=>oidcMode?{"Authorization":"Bearer "+key}:{"X-Demo-Key":key};
+ const oauthReturnSearch=(()=>{
+  if(!new URLSearchParams(location.search).has("code"))return "";
+  try{return JSON.parse(sessionStorage.getItem(oidcStorageKey)||"null")?.originalSearch||"";}
+  catch(_){return "";}
+ })();
  // API in same-origin sul backend Render/Windows; su Pages config.js imposta apiBase.
  const hasApi=true;
  const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 
  // Selezione di Organizzazioni per Gestione Commesse, solo dopo login CRM.
- const pickerParams=new URLSearchParams(location.search);
+ const pickerParams=new URLSearchParams(oauthReturnSearch||location.search);
  const pickerNonce=pickerParams.get("nonce")||"";
  const pickerKind=pickerParams.get("picker")||"";
+ const pickerReferrer=(()=>{
+  if(!oauthReturnSearch)return document.referrer;
+  try{return JSON.parse(sessionStorage.getItem(oidcStorageKey)||"null")?.originalReferrer||document.referrer;}
+  catch(_){return document.referrer;}
+ })();
  const preventiviTrust=pickerKind==="preventivi" &&
-  /^https:\/\/fetonte1960\.github\.io\/sviluppo-pubblico\/commesse\/Preventivi\//.test(document.referrer);
+  /^https:\/\/fetonte1960\.github\.io\/sviluppo-pubblico\/commesse\/Preventivi\//.test(pickerReferrer);
  const pickerEnabled=/^[a-f0-9]{32}$/.test(pickerNonce) && Boolean(window.opener) &&
   ((pickerKind==="commesse" &&
-    /^https:\/\/fetonte1960\.github\.io\/sviluppo-pubblico\/commesse\/Fastpharma-Commesse\//.test(document.referrer))||preventiviTrust);
+    /^https:\/\/fetonte1960\.github\.io\/sviluppo-pubblico\/commesse\/Fastpharma-Commesse\//.test(pickerReferrer))||preventiviTrust);
  const preventiviPicker=pickerEnabled&&pickerKind==="preventivi";
  let selectedForPreventivi=null;
  const recordedNotes=new Set();
@@ -73,12 +90,12 @@
   if(recordedNotes.has(qid)){respond(true);return;}
   try{
    const res=await fetch(base+"/api/v1/activities",{
-    method:"POST",headers:{"X-Demo-Key":key,"Content-Type":"application/json"},
+    method:"POST",headers:{...authHeaders(),"Content-Type":"application/json"},
     body:JSON.stringify({subject:"Iniziato un nuovo preventivo",
       type:"Altro",status:"Completata",organization_id:orgId,
       notes:"Categoria: da completare. Preventivo "+ref+" ("+qid+"). Oggetto: "+subject}),
     signal:AbortSignal.timeout(20000)});
-   if(!res.ok)throw Error("HTTP "+res.status);
+   if(!res.ok){if(res.status===401)onOidcExpired();throw Error("HTTP "+res.status);}
    recordedNotes.add(qid);respond(true);
    showNotice("Attività «Iniziato un nuovo preventivo» registrata su Contatti.");
   }catch(e){respond(false,"La nota non è stata registrata: "+(e.message||"errore"));}
@@ -163,6 +180,7 @@
   archivesFrame.contentWindow.postMessage({
    type:"fastpharma-archive-session",
    key:authenticated?key:"",
+   authMode:oidcMode?"oidc":"legacy",
    importKey:desktop?(window.CONTATTI_DESKTOP?.importKey||""):""
   },window.location.origin);
  }
@@ -264,7 +282,7 @@
   try{
    if(action==="complete"){
     const response=await fetch(base+"/api/v1/reminders/"+encodeURIComponent(id)+"/complete",{
-     method:"PUT",headers:{"X-Demo-Key":key},signal:AbortSignal.timeout(20000)
+     method:"PUT",headers:{...authHeaders()},signal:AbortSignal.timeout(20000)
     });
     if(!response.ok){
      const failure=await response.json().catch(()=>({}));
@@ -338,7 +356,7 @@
   $("#archivesScreen").hidden=screen!=="archives";
   $("#listsScreen").hidden=screen!=="lists";
   $("#remindersScreen").hidden=screen!=="reminders";
-  $("#accessSection").hidden=screen!=="dashboard";
+  $("#accessSection").hidden=oidcMode||authenticated||screen!=="dashboard";
   $("#archivesNav").classList.toggle("is-active",screen==="archives");
   const m=models[module];
   $("#breadcrumb").textContent=screen==="reminders"?"CRM / Promemoria / Attività da completare":screen==="lists"?"CRM / Anagrafiche / Liste":screen==="archives"?"CRM / Amministrazione / Archivi":m?`CRM / ${m.group} / ${m.title}`:"CRM / Panoramica";
@@ -352,7 +370,7 @@
   $("#newRecord").textContent=m?"+ Aggiungi "+m.single:"+ Aggiungi";
   dashboard();
   if(screen==="list")list();if(screen==="detail")detail();
-  if(screen==="lists")window.FastPharmaLists?.open({key:authenticated?key:"",base});
+  if(screen==="lists")window.FastPharmaLists?.open({key:authenticated?key:"",base,authMode:oidcMode?"oidc":"legacy"});
  }
  function list(){
   const m=models[module],raw=data[module].filter(r=>!commercial(module)||
@@ -540,9 +558,17 @@
    else $("#dialogError").textContent="";
   }
  }
+ function onOidcExpired(){
+  if(!oidcMode||!authenticated)return;
+  authenticated=false;key="";data=structuredClone(demo);
+  $("#crmApp").hidden=true;$("#crmAuth").hidden=false;
+  $("#oidcLogin").disabled=false;oidcBusy=false;
+  authFeedback("La sessione Contatti è scaduta. Accedi di nuovo con FastPharma Access.",true);
+ }
+ window.addEventListener("fastpharma-auth-expired",onOidcExpired);
  async function get(path){
-  const r=await fetch(base+path,{headers:{"X-Demo-Key":key},cache:"no-store",signal:AbortSignal.timeout(20000)});
-  if(r.status===401)throw new Error("Chiave di accesso non riconosciuta. Verifica la chiave e riprova.");
+  const r=await fetch(base+path,{headers:authHeaders(),cache:"no-store",signal:AbortSignal.timeout(20000)});
+  if(r.status===401){if(oidcMode)onOidcExpired();throw new Error(oidcMode?"Sessione FastPharma Access scaduta: accedi nuovamente.":"Password non riconosciuta.");}
   if(r.status===503)throw new Error("Server o archivio non disponibile. Riprova.");
   if(!r.ok)throw new Error("Archivio non disponibile (HTTP "+r.status+").");
   return await r.json();
@@ -576,12 +602,12 @@
  // Chrome gestisce la credenziale nel proprio Password Manager. Mai in localStorage,
  // sessionStorage, cookie o PostgreSQL; la chiave resta solo nella sessione RAM del CRM.
  function hasChromePasswordStore(){
-  return !desktop && typeof window.PasswordCredential==="function" &&
+  return !desktop && !oidcMode && typeof window.PasswordCredential==="function" &&
    typeof navigator.credentials?.store==="function";
  }
  function showChromePasswordUi(){
-  $("#chromeLoadKey").hidden=desktop || !(typeof navigator.credentials?.get==="function");
-  $("#chromePasswordActions").hidden=!authenticated || !hasChromePasswordStore();
+  $("#chromeLoadKey").hidden=desktop || oidcMode || !(typeof navigator.credentials?.get==="function");
+  $("#chromePasswordActions").hidden=oidcMode || !authenticated || !hasChromePasswordStore();
  }
  async function saveToChromePasswordManager(){
   if(!authenticated || !key || !hasChromePasswordStore() || chromeStorePending)return;
@@ -623,6 +649,105 @@
    loginStatus("Chrome non ha restituito una password. Puoi inserirla manualmente.",true);
   }finally{button.disabled=false;}
  }
+ // FastPharma Access OIDC: stesso provider e password di Commesse/Preventivi.
+ // Il client Contatti usa uno scope e un'audience separati.
+ let oidcMeta=null,oidcBusy=false;
+ const authFeedback=(message,error=false)=>{
+  $("#crmAuthStatus").textContent=message;
+  $("#crmAuthStatus").classList.toggle("error",error);
+ };
+ const asBase64Url=bytes=>btoa(Array.from(bytes,x=>String.fromCharCode(x)).join(""))
+  .replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+ async function fetchOidcMeta(){
+  if(oidcMeta)return oidcMeta;
+  const response=await fetch(base+"/api/meta",{
+   cache:"no-store",signal:AbortSignal.timeout(35000)
+  });
+  if(!response.ok)throw Error("FastPharma Access non disponibile (HTTP "+response.status+").");
+  const info=await response.json();
+  if(info.authentication!=="openid-connect"||
+     info.oidcClientId!=="fastpharma-contatti"||
+     !/^https:\/\//.test(info.oidcAuthorization||"")||
+     !/^https:\/\//.test(info.oidcToken||""))
+   throw Error("Il backend Contatti non è configurato come client FastPharma Access.");
+  oidcMeta=info;
+  return info;
+ }
+ async function beginOidcLogin(){
+  if(!oidcMode||oidcBusy)return;
+  oidcBusy=true;$("#oidcLogin").disabled=true;
+  authFeedback("Collegamento al servizio centrale FastPharma Access…");
+  try{
+   const config=await fetchOidcMeta();
+   const verifier=asBase64Url(crypto.getRandomValues(new Uint8Array(32)));
+   const state=asBase64Url(crypto.getRandomValues(new Uint8Array(32)));
+   const nonce=asBase64Url(crypto.getRandomValues(new Uint8Array(32)));
+   const hash=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(verifier));
+   sessionStorage.setItem(oidcStorageKey,JSON.stringify({
+    state,nonce,verifier,redirect:oidcRedirectUri,
+    originalSearch:location.search,originalReferrer:document.referrer,at:Date.now()
+   }));
+   const url=new URL(config.oidcAuthorization);
+   url.searchParams.set("client_id","fastpharma-contatti");
+   url.searchParams.set("redirect_uri",oidcRedirectUri);
+   url.searchParams.set("response_type","code");
+   url.searchParams.set("response_mode","query");
+   url.searchParams.set("scope","openid profile contatti");
+   url.searchParams.set("state",state);
+   url.searchParams.set("nonce",nonce);
+   url.searchParams.set("code_challenge",asBase64Url(new Uint8Array(hash)));
+   url.searchParams.set("code_challenge_method","S256");
+   location.assign(url.toString());
+  }catch(error){
+   authFeedback("Accesso non avviato: "+(error.message||"errore di rete"),true);
+   oidcBusy=false;$("#oidcLogin").disabled=false;
+  }
+ }
+ async function completeOidcCallback(){
+  const args=new URLSearchParams(location.search);
+  const code=args.get("code"),error=args.get("error");
+  if(!code&&!error)return false;
+  const saved=sessionStorage.getItem(oidcStorageKey);
+  sessionStorage.removeItem(oidcStorageKey);
+  let pending;
+  try{pending=JSON.parse(saved||"null");}catch(_){pending=null;}
+  // Non lasciare codici monouso nella barra, nello storico o nei referrer.
+  history.replaceState(null,"",oidcRedirectUri.replace(location.origin,"")+
+   (pending?.originalSearch||"")+location.hash);
+  if(error)throw Error("FastPharma Access: "+error);
+  if(!pending||pending.state!==args.get("state")||!pending.verifier||
+     pending.redirect!==oidcRedirectUri||!Number.isFinite(pending.at)||
+     Date.now()-pending.at>10*60*1000)
+   throw Error("Autorizzazione non corrispondente o scaduta: ripeti l'accesso.");
+  const cfg=await fetchOidcMeta();
+  authFeedback("Verifica autorizzazione centralizzata…");
+  const form=new URLSearchParams({
+   grant_type:"authorization_code",client_id:"fastpharma-contatti",
+   code,redirect_uri:oidcRedirectUri,code_verifier:pending.verifier
+  });
+  const response=await fetch(cfg.oidcToken,{
+   method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},
+   cache:"no-store",credentials:"omit",body:form,signal:AbortSignal.timeout(35000)
+  });
+  const payload=await response.json().catch(()=>({}));
+  if(!response.ok||typeof payload.access_token!=="string")
+   throw Error("Token di accesso non ricevuto ("+(payload.error||"HTTP "+response.status)+").");
+  // Il backend verifica firma, issuer, audience, scope e scadenza.
+  await connect(payload.access_token);
+  return true;
+ }
+ async function initOidc(){
+  $("#legacyLogin").hidden=true;
+  $("#oidcLogin").hidden=false;
+  try{
+   if(await completeOidcCallback())return;
+   await beginOidcLogin(); // cookie centrale già valido → niente nuova password.
+  }catch(error){
+   $("#crmApp").hidden=true;$("#crmAuth").hidden=false;
+   authFeedback("Autenticazione non riuscita: "+(error.message||"errore"),true);
+   oidcBusy=false;$("#oidcLogin").disabled=false;
+  }
+ }
  async function connect(candidate){
   if(!hasApi)throw new Error("Servizio di accesso agli archivi non configurato");
   key=candidate;
@@ -630,6 +755,8 @@
    const kinds=Object.keys(models),incoming=await Promise.all(kinds.map(k=>get("/api/v1/"+k)));
    data=Object.fromEntries(kinds.map((k,i)=>[k,incoming[i]]));authenticated=true;
    $("#accessSection").classList.add("connected");
+   $("#crmAuth").hidden=true;
+   $("#crmApp").hidden=false;
    $("#accessMessage").textContent="Archivio collegato. Puoi consultare e aggiornare i dati.";
    $("#connectionBadge").textContent="Archivio collegato";$("#connectionBadge").classList.add("connected");
    // Mantieni il campo nel form ora nascosto: Chrome può riconoscere
@@ -651,6 +778,8 @@
   }catch(e){
    key="";authenticated=false;data=structuredClone(demo);
    $("#accessSection").classList.remove("connected");
+   $("#crmApp").hidden=true;
+   $("#crmAuth").hidden=false;
    $("#connectionBadge").textContent="Archivio non collegato";
    $("#connectionBadge").classList.remove("connected");
    shareArchiveSession();render();showChromePasswordUi();throw e;
@@ -678,7 +807,7 @@
   const url="/api/v1/"+target+(editId?"/"+encodeURIComponent(editId):"");
   $("#submitRecord").disabled=true;$("#dialogError").textContent="";
   try{
-   const res=await fetch(base+url,{method:editId?"PUT":"POST",headers:{"X-Demo-Key":key,"Content-Type":"application/json"},body:JSON.stringify(payload),signal:AbortSignal.timeout(20000)});
+   const res=await fetch(base+url,{method:editId?"PUT":"POST",headers:{...authHeaders(),"Content-Type":"application/json"},body:JSON.stringify(payload),signal:AbortSignal.timeout(20000)});
    if(!res.ok){const problem=await res.json().catch(()=>({}));throw new Error(problem.error||"Salvataggio non riuscito (HTTP "+res.status+")")}
    const result=await res.json();
    data[target]=await get("/api/v1/"+target);
@@ -813,7 +942,7 @@
    const url=base+"/api/v1/lists/"+encodeURIComponent(orgImportListId)+
      "/entries/"+encodeURIComponent(orgImportSelected)+"/import-organization";
    const response=await fetch(url,{
-    method:"POST",headers:{"X-Demo-Key":key},signal:AbortSignal.timeout(30000)
+    method:"POST",headers:{...authHeaders()},signal:AbortSignal.timeout(30000)
    });
    const result=await response.json().catch(()=>({}));
    if(!response.ok)throw new Error(result.error||"Importazione non riuscita (HTTP "+response.status+").");
@@ -913,7 +1042,7 @@
    const response=await fetch(base+"/api/v1/"+encodeURIComponent(target.module)+"/"+
      encodeURIComponent(target.id),{
       method:"DELETE",
-      headers:{"X-Demo-Key":key,"X-Confirm-Delete":"true",
+      headers:{...authHeaders(),"X-Confirm-Delete":"true",
        ...(target.module==="organizations"?{"X-Confirm-Cascade":"true"}:{})},
       signal:AbortSignal.timeout(20000)
    });
@@ -1010,6 +1139,7 @@
  $("#cancelDialog").addEventListener("click",()=>$("#recordDialog").close());
  $("#chromeLoadKey").addEventListener("click",loadFromChromePasswordManager);
  $("#chromeSaveKey").addEventListener("click",()=>{void saveToChromePasswordManager();});
+ $("#oidcLogin").addEventListener("click",()=>{void beginOidcLogin();});
  $("#loginForm").addEventListener("submit",async e=>{
   e.preventDefault();const candidate=$("#demoKey").value.trim();if(!candidate){showNotice("Inserisci la chiave di accesso.",true);return}
   const b=$("#connectButton");
@@ -1026,12 +1156,17 @@
    showNotice("Accesso non riuscito: "+message,true);
   }finally{
    b.disabled=false;
-   b.textContent="Verifica e apri";
+   b.textContent="Accedi";
   }
  });
  render();
  showChromePasswordUi();
- if(!desktop){
+ $("#crmApp").hidden=true;
+ $("#crmAuth").hidden=false;
+ $("#legacyLogin").hidden=oidcMode;
+ $("#oidcLogin").hidden=!oidcMode;
+ if(oidcMode)void initOidc();
+ if(!desktop&&!oidcMode){
   void loadAdminCredentialName();
   // Se il primo fetch fallisce durante il cold start di Render Free,
   // rileggere ADMINKEYNAME quando l'utente torna sulla pagina.
