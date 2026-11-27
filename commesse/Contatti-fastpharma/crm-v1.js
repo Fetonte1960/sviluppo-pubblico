@@ -56,13 +56,13 @@
     email:String(org.email||"")};
    window.opener.postMessage({type:"fastpharma-preventivi.organization-selected",
      nonce:pickerNonce,organization:fields},location.origin);
-   showNotice("Organizzazione inviata a Preventivi. Torna al preventivo e lascia aperta questa finestra per la nota.");
+   showNotice("Contatto/Cliente inviato a Preventivi. Torna al preventivo e lascia aperta questa finestra per la nota.");
    window.opener.focus();
    return;
   }
   window.opener.postMessage({type:"fastpharma-commesse.organization-selected",
    nonce:pickerNonce,id:String(org.id),name:String(org.name)},location.origin);
-  showNotice("Organizzazione selezionata e comunicata a Gestione Commesse.");
+  showNotice("Contatto/Cliente selezionato e comunicato a Gestione Commesse.");
   window.close();
  }
  // Preventivi can request a CRM organization or log the new quote via this authenticated popup.
@@ -85,7 +85,7 @@
       nonce:pickerNonce,quoteId:qid,ok,error},location.origin);
   if(!/^[0-9a-f-]{36}$/i.test(qid)||orgId!==selectedForPreventivi||
      !getRecord("organizations",orgId)||!ref||!subject){
-   respond(false,"Organizzazione o preventivo non valido");return;
+   respond(false,"Contatto/Cliente o preventivo non valido");return;
   }
   if(recordedNotes.has(qid)){respond(true);return;}
   try{
@@ -97,23 +97,23 @@
     signal:AbortSignal.timeout(20000)});
    if(!res.ok){if(res.status===401)onOidcExpired();throw Error("HTTP "+res.status);}
    recordedNotes.add(qid);respond(true);
-   showNotice("Attività «Iniziato un nuovo preventivo» registrata su Contatti.");
+   showNotice("Attività «Iniziato un nuovo preventivo» registrata nel gestionale Referenti.");
   }catch(e){respond(false,"La nota non è stata registrata: "+(e.message||"errore"));}
  });
  const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
  const fmt=v=>{if(!v)return "";let d=new Date(v);return Number.isFinite(d.getTime())?d.toLocaleString("it-IT",{dateStyle:"short",timeStyle:"short"}):String(v)};
  const models={
-  contacts:{title:"Contatti",single:"Contatto",group:"Commerciale",desc:"Referenti collegati all’organizzazione selezionata.",
+  contacts:{title:"Referenti",single:"Referente",group:"Commerciale",desc:"Persone di riferimento collegate al Contatto/Cliente selezionato.",
    cols:[["first_name","Nome"],["last_name","Cognome"],["company","Azienda"],["email","Email"],["phone","Telefono"],["status","Stato"]],
-   fields:[["first_name","Nome","text",true],["last_name","Cognome","text",true],["organization_id","Organizzazione","org",true],["company","Azienda (descrizione)","text"],["email","Email","email"],["phone","Telefono","tel"],["status","Stato","contactStatus"],["notes","Note","textarea"]],
+   fields:[["first_name","Nome","text",true],["last_name","Cognome","text",true],["organization_id","Contatto/Cliente","org",true],["company","Azienda (descrizione)","text"],["email","Email","email"],["phone","Telefono","tel"],["status","Stato","contactStatus"],["notes","Note","textarea"]],
    titleOf:r=>[r.first_name,r.last_name].filter(Boolean).join(" "),subtitle:r=>r.email||r.company||"Persona / referente"},
-  organizations:{title:"Organizzazioni",single:"Organizzazione",group:"Anagrafiche",desc:"Farmacie, aziende e partner collegati ai contatti.",
-   cols:[["name","Organizzazione"],["type","Tipo"],["city","Città"],["phone","Telefono"],["email","Email"]],
+  organizations:{title:"Contatti/Clienti",single:"Contatto/Cliente",group:"Anagrafiche",desc:"Farmacie, aziende e clienti collegati ai referenti.",
+   cols:[["name","Contatto/Cliente"],["type","Tipo"],["city","Città"],["phone","Telefono"],["email","Email"]],
    fields:[["name","Ragione sociale / Nome","text",true],["type","Tipo","orgType"],["city","Città","text"],["phone","Telefono","tel"],["email","Email","email"],["address","Indirizzo","text"],["postal_code","CAP","text"],["province","Provincia","text"],["region","Regione","text"],["vat_number","Partita IVA","text"],["notes","Note","textarea"]],
    titleOf:r=>r.name,subtitle:r=>[r.city,r.type].filter(Boolean).join(" · ")},
   activities:{title:"Attività",single:"Attività",group:"Commerciale",desc:"Telefonate, richiami e appuntamenti da completare.",
-   cols:[["subject","Oggetto"],["type","Tipo"],["due_at","Scadenza"],["status","Stato"],["contact_id","Contatto"]],
-   fields:[["subject","Oggetto attività","text",true],["type","Tipo","activityType"],["status","Stato","activityStatus"],["due_at","Data e ora","datetime-local"],["contact_id","Contatto collegato","contact"],["organization_id","Organizzazione collegata","org"],["notes","Note","textarea"]],
+   cols:[["subject","Oggetto"],["type","Tipo"],["due_at","Scadenza"],["status","Stato"],["contact_id","Referente"]],
+   fields:[["subject","Oggetto attività","text",true],["type","Tipo","activityType"],["status","Stato","activityStatus"],["due_at","Data e ora","datetime-local"],["contact_id","Referente collegato","contact"],["organization_id","Contatto/Cliente collegato","org"],["notes","Note","textarea"]],
    titleOf:r=>r.subject,subtitle:r=>[r.type,fmt(r.due_at)].filter(Boolean).join(" · ")},
   deals:{title:"Trattative",single:"Trattativa",group:"Commerciale",desc:"Opportunità commerciali e fasi di trattativa.",
    cols:[["name","Trattativa"],["stage","Fase"],["value","Valore"],["organization_id","Organizzazione"],["contact_id","Contatto"]],
@@ -135,7 +135,9 @@
  let selectedOrganizationId=null;
  const selectedOrganization=()=>selectedOrganizationId&&getRecord("organizations",selectedOrganizationId);
  const commercial=k=>k==="contacts"||k==="activities"||k==="deals";
- const commercialTitle=k=>k==="contacts"?"Contatti di: ":k==="activities"?"Attività di: ":"Trattative di: ";
+ // Trattative conserva modello e dati, ma resta fuori dalle viste UI.
+ const visibleModule=k=>k!=="deals";
+ const commercialTitle=k=>k==="contacts"?"Referenti di: ":k==="activities"?"Attività di: ":"Trattative di: ";
  const belongsToOrganization=(r,id)=>String(r.organization_id||"")===String(id)||
   (!r.organization_id&&!!r.contact_id&&String(getRecord("contacts",r.contact_id)?.organization_id||"")===String(id));
  const clearOrganization=()=>{selectedOrganizationId=null;};
@@ -148,9 +150,9 @@
   const contact=r.contact_id&&getRecord("contacts",r.contact_id);
   const indirect=contact?.organization_id&&getRecord("organizations",contact.organization_id);
   if(indirect?.name)return indirect.name;
-  return r.organization_id||contact?.organization_id?"Organizzazione non disponibile":"Nessuna organizzazione collegata";
+  return r.organization_id||contact?.organization_id?"Contatto/Cliente non disponibile":"Nessun Contatto/Cliente collegato";
  };
- const associatedTitle=(kind,r)=>(kind==="contacts"?"Contatto":kind==="activities"?"Attività":"Trattativa")+" di: "+organizationOf(r);
+ const associatedTitle=(kind,r)=>(kind==="contacts"?"Referente":kind==="activities"?"Attività":"Trattativa")+" di: "+organizationOf(r);
  const val=(field,value)=>{
   if(field==="organization_id")return name("organizations",value);
   if(field==="contact_id")return name("contacts",value);
@@ -211,6 +213,7 @@
  }
  function openModule(next){
   if(!authenticated && next!=="dashboard")return;
+  if(!visibleModule(next))return;
   if(commercial(next)&&!selectedOrganization())return;
   if(next==="lists"){clearOrganization();module="lists";screen="lists";activeId=null;render();return;}
   if(next!=="dashboard"&&!models[next])return;
@@ -229,7 +232,7 @@
 
  function drawReminders(){
   const rows=remindersRows.filter(r=>r.status==="Da fare");
-  $("#remindersCount").textContent=rows.length+" attività da completare · Tutte le organizzazioni";
+  $("#remindersCount").textContent=rows.length+" attività da completare · Tutti i Contatti/Clienti";
   $("#remindersRows").innerHTML=rows.length?rows.map(r=>{
    const org=String(r.resolved_organization_id||r.organization_id||"");
    const contactName=String(r.contact_name||name("contacts",r.contact_id)||"");
@@ -241,7 +244,7 @@
     '<td>'+esc(contactName||"—")+'</td>'+
     '<td><div class="reminder-actions">'+
     '<button type="button" class="primary" data-reminder-action="complete" data-id="'+esc(r.id)+'">Fatto</button>'+
-    '<button type="button" class="secondary" data-reminder-action="select" data-id="'+esc(r.id)+'" data-org="'+esc(org)+'" '+(!org?'disabled title="Organizzazione non disponibile"':'')+'>Seleziona</button>'+
+    '<button type="button" class="secondary" data-reminder-action="select" data-id="'+esc(r.id)+'" data-org="'+esc(org)+'" '+(!org?'disabled title="Contatto/Cliente non disponibile"':'')+'>Seleziona</button>'+
     '</div></td></tr>';
   }).join(""):'<tr><td colspan="6" class="empty-row">Nessuna attività in stato «Da fare».</td></tr>';
  }
@@ -292,7 +295,7 @@
     if(cached)cached.status="Completata";
     remindersRows=remindersRows.filter(r=>String(r.id)!==String(id));
     drawReminders();dashboard();
-    showNotice("Attività completata e conservata nello storico dell'Organizzazione.");
+    showNotice("Attività completata e conservata nello storico del Contatto/Cliente.");
    }else if(action==="select"){
     // Recupero puntuale: le normali liste CRM sono limitate a 500 record.
     const [org,activity]=await Promise.all([
@@ -313,7 +316,7 @@
     });
     selectedOrganizationId=orgId;module="activities";screen="detail";activeId=id;tab="summary";
     render();
-    showNotice("Organizzazione e Attività selezionate.");
+    showNotice("Contatto/Cliente e Attività selezionati.");
    }
   }catch(e){
    $("#remindersError").textContent=e.message;
@@ -336,6 +339,7 @@
   }
   $$(".navlink").forEach(b=>{
    const requiresAccess=b.dataset.module!=="dashboard";
+   b.hidden=!visibleModule(b.dataset.module);
    b.disabled=(requiresAccess&&!authenticated)||(commercial(b.dataset.module)&&!selectedOrganization());
    b.setAttribute("aria-disabled",String(b.disabled));
    b.classList.toggle("is-active",b.dataset.module===module);
@@ -346,6 +350,7 @@
   $("#remindersNav").setAttribute("aria-disabled",String(!authenticated));
   $("#remindersNav").classList.toggle("is-active",screen==="reminders");
   $$("[data-jump]").forEach(b=>{
+   b.hidden=!visibleModule(b.dataset.jump);
    b.disabled=!authenticated||(commercial(b.dataset.jump)&&!selectedOrganization());
    b.setAttribute("aria-disabled",String(b.disabled));
   });
@@ -363,7 +368,7 @@
   $("#pageTitle").textContent=screen==="reminders"?"Attività da completare":screen==="lists"?"Liste":screen==="archives"?"Salvataggio e ripristino archivi":
    commercial(module)&&selectedOrganization()?
    commercialTitle(module)+selectedOrganization().name:m?m.title:"Dashboard";
-  $("#pageSubtitle").textContent=screen==="reminders"?"Tutte le attività in stato «Da fare», indipendentemente dall'Organizzazione.":screen==="lists"?"Elenchi esterni di enti pubblici e privati, separati dalle Organizzazioni.":screen==="archives"?"Backup e ripristino guidato dei soli dati Contatti.":m?m.desc:"Un unico punto per contatti, aziende e attività commerciali.";
+  $("#pageSubtitle").textContent=screen==="reminders"?"Tutte le attività in stato «Da fare», indipendentemente dal Contatto/Cliente.":screen==="lists"?"Elenchi esterni di enti pubblici e privati, separati dai Contatti/Clienti.":screen==="archives"?"Backup e ripristino guidato dei soli dati Contatti.":m?m.desc:"Un unico punto per clienti, referenti e attività commerciali.";
   $("#newRecord").hidden=!m;$("#newRecord").disabled=!authenticated||(commercial(module)&&!selectedOrganization());
   $("#importFromLists").hidden=!(module==="organizations" && screen==="list");
   $("#importFromLists").disabled=!authenticated;
@@ -391,7 +396,7 @@
   $("#recordsBody").innerHTML=filtered.length?filtered.map(r=>`<tr tabindex="0" data-id="${esc(r.id)}">`+m.cols.map(([field],i)=>`<td class="${i===0?"primary-cell":""}">${esc(display(field,r)||"—")}</td>`).join("")+(canPick?`<td><button class="primary" type="button" data-pick-org="${esc(r.id)}">${preventiviPicker?"Usa in Preventivi":"Usa in Commesse"}</button></td>`:"")+"</tr>").join(""):`<tr><td colspan="${m.cols.length+(canPick?1:0)}" class="empty-row">Nessun record trovato.</td></tr>`;
  }
  function openRecord(id){
-  if(!authenticated||!getRecord(module,id))return;
+  if(!authenticated||!visibleModule(module)||!getRecord(module,id))return;
   if(module==="organizations")selectedOrganizationId=id;
   if(commercial(module)&&(!selectedOrganization()||
    !belongsToOrganization(getRecord(module,id),selectedOrganizationId)))return;
@@ -399,7 +404,7 @@
  }
  function detail(){
   const m=models[module],r=getRecord(module,activeId);
-  if(!r||(commercial(module)&&!belongsToOrganization(r,selectedOrganizationId))){
+  if(!visibleModule(module)||!r||(commercial(module)&&!belongsToOrganization(r,selectedOrganizationId))){
    screen="list";render();return;
   }
   $("#detailCaption").textContent=m.single+" · "+(authenticated?"Archivio collegato":"Accesso richiesto");
@@ -458,7 +463,7 @@
  function related(r){
   const linked={};
   for(const kind of Object.keys(models)){
-   if(kind===module)continue;
+   if(kind===module||!visibleModule(kind))continue;
    if(kind==="organizations")linked[kind]=r.organization_id?[getRecord(kind,r.organization_id)].filter(Boolean):[];
    else if(kind==="contacts")linked[kind]=data.contacts.filter(c=>module==="organizations"?c.organization_id===r.id:c.id===r.contact_id);
    else linked[kind]=data[kind].filter(x=>{
@@ -491,8 +496,9 @@
  function showForm(id=null,settings={}){
   if(!authenticated){showNotice("Accedi agli archivi per apportare modifiche.",true);return}
   formModule=settings.target||module;
+  if(!visibleModule(formModule))return;
   if(commercial(formModule)&&!selectedOrganization()){
-   showNotice("Apri prima il dettaglio di un'Organizzazione.",true);return;
+   showNotice("Apri prima il dettaglio di un Contatto/Cliente.",true);return;
   }
   formContext=settings.context||null;
   editId=id;
@@ -509,7 +515,7 @@
    }:{})
   }:commercial(formModule)?{organization_id:selectedOrganizationId}:{};
   const selectedOrg=commercial(formModule)?selectedOrganizationId:(r?.organization_id??defaults.organization_id??"");
-  $("#dialogHeading").textContent=(id?"Modifica ":(["activities","organizations","deals"].includes(formModule)?"Nuova ":"Nuovo "))+m.single;
+  $("#dialogHeading").textContent=(id?"Modifica ":(["activities","deals"].includes(formModule)?"Nuova ":"Nuovo "))+m.single;
   $("#dialogError").textContent="";
   $("#formFields").innerHTML=m.fields.map(([field,label,type,required])=>{
    const value=r?.[field]??defaults[field]??"";
@@ -554,7 +560,7 @@
    const valid=contact.querySelector('option[value="'+old+'"]');
    if(!valid || !old)contact.value="";
    if(old && !valid)$("#dialogError").textContent=
-    "Referente azzerato: non appartiene all'organizzazione selezionata.";
+    "Referente azzerato: non appartiene al Contatto/Cliente selezionato.";
    else $("#dialogError").textContent="";
   }
  }
@@ -563,7 +569,7 @@
   authenticated=false;key="";data=structuredClone(demo);
   $("#crmApp").hidden=true;$("#crmAuth").hidden=false;
   $("#oidcLogin").disabled=false;oidcBusy=false;
-  authFeedback("La sessione Contatti è scaduta. Accedi di nuovo con FastPharma Access.",true);
+  authFeedback("La sessione Referenti è scaduta. Accedi di nuovo con FastPharma Access.",true);
  }
  window.addEventListener("fastpharma-auth-expired",onOidcExpired);
  async function get(path){
@@ -669,7 +675,7 @@
      info.oidcClientId!=="fastpharma-contatti"||
      !/^https:\/\//.test(info.oidcAuthorization||"")||
      !/^https:\/\//.test(info.oidcToken||""))
-   throw Error("Il backend Contatti non è configurato come client FastPharma Access.");
+   throw Error("Il servizio Referenti non è configurato per FastPharma Access.");
   oidcMeta=info;
   return info;
  }
@@ -768,7 +774,7 @@
    if(pickerEnabled){module="organizations";screen="list";activeId=null;sortBy="";desc=false;}
    render();
    if(pickerEnabled)showNotice(preventiviPicker?
-    "Seleziona «Usa in Preventivi» oppure crea una nuova Organizzazione. Lascia aperta la finestra per registrare la nota.":
+    "Seleziona «Usa in Preventivi» oppure crea un nuovo Contatto/Cliente. Lascia aperta la finestra per registrare la nota.":
     "Seleziona «Usa in Commesse» accanto alla farmacia desiderata.");
    sendOrganizationsToPreventivi();
    showChromePasswordUi();
@@ -790,7 +796,7 @@
   const payload={};
   const target=formModule;
   if(commercial(target)&&!selectedOrganization()){
-   $("#dialogError").textContent="Organizzazione di lavoro non più disponibile.";return;
+   $("#dialogError").textContent="Contatto/Cliente selezionato non più disponibile.";return;
   }
   for(const [field,,type] of models[target].fields){
    let value=$("#f_"+field)?.value.trim()||"";
@@ -801,7 +807,7 @@
   if(commercial(target)){
    payload.organization_id=selectedOrganizationId;
    if(payload.contact_id&&String(getRecord("contacts",payload.contact_id)?.organization_id||"")!==String(selectedOrganizationId)){
-    $("#dialogError").textContent="Il contatto scelto non appartiene all'organizzazione selezionata.";return;
+    $("#dialogError").textContent="Il referente scelto non appartiene al Contatto/Cliente selezionato.";return;
    }
   }
   const url="/api/v1/"+target+(editId?"/"+encodeURIComponent(editId):"");
@@ -884,7 +890,7 @@
   orgImportTimer=setTimeout(()=>{void findImportEntries();},280);
  }
  async function openOrgImporter(){
-  if(!authenticated || module!=="organizations"){showNotice("Accedi agli archivi e apri Organizzazioni.",true);return;}
+  if(!authenticated || module!=="organizations"){showNotice("Accedi e apri Contatti/Clienti.",true);return;}
   const dialog=orgImportEl("orgImportDialog");
   orgImportError();resetOrgImportSelection();
   orgImportOffset=0;orgImportLists=[];orgImportListId="";
@@ -928,7 +934,7 @@
       '<strong>'+esc(m.name)+'</strong> · '+esc(m.city||"")+
       '<small>'+esc(m.reason)+'</small></div>').join("")+
      (preview.can_import?'<p class="hint">La stessa partita IVA può appartenere a più sedi: verifica prima di importare.</p>':''):
-     '<p class="hint">Nessuna organizzazione corrispondente trovata.</p>';
+     '<p class="hint">Nessun Contatto/Cliente corrispondente trovato.</p>';
    orgImportEl("orgImportConfirm").disabled=!preview.can_import;
    if(!preview.can_import)orgImportError("Importazione bloccata: questa farmacia risulta già presente.");
   }catch(e){orgImportError(e.message);}
@@ -936,7 +942,7 @@
  async function confirmOrgImport(){
   if(orgImportBusy || !orgImportPreview?.can_import || !orgImportSelected || !authenticated)return;
   const entry=orgImportPreview.entry;
-  if(!window.confirm("Importare in Organizzazioni solo «"+entry.name+"»?"))return;
+  if(!window.confirm("Importare in Contatti/Clienti solo «"+entry.name+"»?"))return;
   orgImportBusy=true;orgImportEl("orgImportConfirm").disabled=true;orgImportError();
   try{
    const url=base+"/api/v1/lists/"+encodeURIComponent(orgImportListId)+
@@ -952,7 +958,7 @@
    // questa farmacia il contesto di lavoro per Attività e Trattative.
    module="organizations";
    openRecord(result.id);
-   showNotice("Farmacia «"+result.name+"» importata in Organizzazioni. Completa i dati commerciali dalla scheda.");
+   showNotice("Farmacia «"+result.name+"» importata in Contatti/Clienti. Completa i dati commerciali dalla scheda.");
   }catch(e){
    orgImportError(e.message);
   }finally{
@@ -993,7 +999,7 @@
   deleteTarget={module,id:record.id,title:models[module].titleOf(record)};
   $("#deleteDialogTitle").textContent="Cancella "+models[module].single.toLowerCase();
   $("#deleteDialogHelp").textContent=module==="organizations"?
-   "Eliminando l'Organizzazione saranno rimossi anche tutti i Contatti, le Attività e le Trattative collegati. La cancellazione non è annullabile dalla schermata.":
+   "Eliminando il Contatto/Cliente saranno rimossi anche tutti i Referenti, le Attività e le eventuali Trattative archiviate collegate. La cancellazione non è annullabile dalla schermata.":
    "Verrà eliminato solo questo record, purché non abbia collegamenti bloccanti.";
   $("#deleteRecordName").textContent=deleteTarget.title;
   $("#deleteDependencyStatus").textContent="Controllo dei collegamenti sul database in corso…";
@@ -1005,17 +1011,23 @@
    if(token!==deleteRequestId||!deleteDialog.open)return;
    deletePreview=result;
    const linked=Object.entries(result.linked||{}).filter(([,count])=>Number(count)>0);
+   // Solo nomenclatura a schermo: le chiavi e le API restano invariati.
+   const dependencyLabel=(kind,count)=>{
+    const labels={contatti:["referente","referenti"],attivita:["attività","attività"],
+     trattative:["trattativa archiviata","trattative archiviate"]};
+    return (labels[kind]||[kind,kind])[Number(count)===1?0:1];
+   };
    if(result.cascade){
-    $("#deleteDependencyStatus").textContent="La cancellazione comprenderà questa Organizzazione e "+
-     (linked.length?linked.map(([kind,count])=>count+" "+kind).join(", ")+" collegati. ":"nessun altro record. ")+
+    $("#deleteDependencyStatus").textContent="La cancellazione comprenderà questo Contatto/Cliente e "+
+     (linked.length?linked.map(([kind,count])=>count+" "+dependencyLabel(kind,count)).join(", ")+" in archivio. ":"nessun altro record. ")+
      "Le Liste ministeriali resteranno intatte.";
     $("#deleteConfirmText").textContent=
-     "Confermo di cancellare definitivamente l'organizzazione con tutti i Contatti, le Attività e le Trattative collegati.";
+     "Confermo di cancellare definitivamente il Contatto/Cliente con tutti i Referenti, le Attività e le eventuali Trattative archiviate collegate.";
     deleteCheck.disabled=false;
    }else if(linked.length){
-    $("#deleteDependencyStatus").textContent="Cancellazione non consentita: "+
-      linked.map(([kind,count])=>count+" "+kind).join(", ")+
-      " collegati. Eliminali o riassegnali prima di riprovare.";
+    $("#deleteDependencyStatus").textContent="Cancellazione non consentita. Sono presenti collegamenti: "+
+      linked.map(([kind,count])=>count+" "+dependencyLabel(kind,count)).join(", ")+
+      ". Eliminali o riassegnali prima di riprovare.";
     deleteCheck.checked=false;deleteCheck.disabled=true;
    }else{
     $("#deleteDependencyStatus").textContent=
@@ -1129,6 +1141,7 @@
  $$(".tab").forEach(b=>b.addEventListener("click",()=>{tab=b.dataset.tab;detail()}));
  $("#detailContent").addEventListener("click",e=>{
   const b=e.target.closest("button[data-kind]");if(!b)return;
+  if(!visibleModule(b.dataset.kind))return;
   if(b.dataset.kind==="organizations")selectedOrganizationId=b.dataset.id;
   if(commercial(b.dataset.kind)&&(!selectedOrganization()||
    !belongsToOrganization(getRecord(b.dataset.kind,b.dataset.id)||{},selectedOrganizationId)))return;
