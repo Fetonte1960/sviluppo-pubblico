@@ -223,3 +223,15 @@
 /* V1.0.24: tre indicatori visibili; Trattative resta disattivato.
    Il layout compatto preesistente continua a usare due colonne. */
 @media(min-width:1051px){.kpis{grid-template-columns:repeat(3,minmax(140px,1fr))}}
+
+/* V1.0.25 — ritorno al Menu generale FastPharma nella caption del CRM. */
+.general-menu-link{display:inline-flex;align-items:center;justify-content:center;min-height:35px;
+ padding:7px 11px;border:1px solid #81adbd;border-radius:8px;background:#ffffff17;
+ color:#f2fbfc;text-decoration:none;font-size:12px;font-weight:700;white-space:nowrap}
+.general-menu-link:hover{background:#ffffff2b;border-color:#b8dde7;color:#fff}
+.general-menu-link:focus-visible{outline:3px solid #ffce75;outline-offset:2px}
+@media(max-width:720px){
+ .appbar{height:auto;min-height:70px;flex-wrap:wrap;padding-top:10px;padding-bottom:10px}
+ .top-actions{gap:8px;flex-wrap:wrap;justify-content:flex-end}
+ .general-menu-link{font-size:11px;padding:7px 9px}
+}
