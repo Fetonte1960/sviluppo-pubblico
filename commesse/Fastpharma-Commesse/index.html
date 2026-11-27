@@ -349,7 +349,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 <script>
 (function(){
 'use strict';
-const UI_VERSION='4.14.0';
+const UI_VERSION='4.15.0';
 const pages=JSON.parse(document.getElementById('screens').textContent);
 // Archivio originale ricevuto: non convertirne le proposte in requisiti approvati.
 const originalClientAnalysis=JSON.parse(document.getElementById('client-analysis-original').textContent);
@@ -872,8 +872,8 @@ const supplierReadOnlyTables=[
   note:'Fatture passive della commessa: importi e pagamenti già registrati. L’IVA non specificata resta da verificare.',
   headers:['ID fattura','Fornitore','ID fornitore FastPharma','Riferimento','Descrizione','Data documento','Imponibile','IVA','Totale documento','Pagato','Residuo documento']},
  {id:'pagamenti',label:'Pagamenti',title:'Pagamenti ai fornitori',
-  note:'Movimenti effettivamente registrati, collegati alla fattura e quindi alla commessa. Nessuna modifica consentita da questa griglia.',
-  headers:['ID pagamento','Fornitore','ID fornitore FastPharma','Fattura','Riferimento pagamento','Data pagamento','Importo']}
+  note:'Movimenti in uscita attribuiti alla commessa corrente in Contabilità generale. Vista di sola lettura; nessun collegamento automatico a fatture o fornitori.',
+  headers:['ID movimento','Data','Descrizione','Uscite','Banca','Conto','Codice commessa']}
 ];
 function setSupplierSubtab(id){
  activeSupplierSubtab=id;
@@ -919,14 +919,14 @@ function makeSupplierSubtabs(legacyNodes){
    const header=document.createElement('tr');
    for(const label of spec.headers){const th=document.createElement('th');th.scope='col';th.textContent=label;header.append(th);}
    table.append(header);wrap.append(table);
-   section.append(h,note,contactNote,wrap);pane.append(section);
+   section.append(h,note);if(spec.id!=='pagamenti')section.append(contactNote);section.append(wrap);pane.append(section);
   }
   panes.push(pane);
  }
  container.append(nav,...panes);
  return container;
 }
-function renderSupplierReadOnlyGrids(offerte,passive,pagamenti){
+function renderSupplierReadOnlyGrids(offerte,passive,movimenti){
  const supplierId=x=>x?.fornitoreId||'—';
  const shown=x=>x==null||x===''?'—':x;
  const date=x=>x?String(x).slice(0,10):'—';
@@ -942,10 +942,7 @@ function renderSupplierReadOnlyGrids(offerte,passive,pagamenti){
   x.iva==null?'Da verificare':euro(number(x.imponibile)+number(x.iva)),
   euro(x.pagato),x.iva==null?'Da verificare':euro(Math.max(0,number(x.imponibile)+number(x.iva)-number(x.pagato)))
  ]));
- renderRows(readOnly('pagamenti'),pagamenti.map(x=>[
-  x.id,shown(x.fornitore),supplierId(x),shown(x.fatturaRiferimento||x.fatturaId),
-  shown(x.riferimento),date(x.dataPagamento),euro(x.importo)
- ]));
+ renderRows(readOnly('pagamenti'),movimenti.map(x=>projectBankMovementRow(x)));
 }
 
 
@@ -955,8 +952,8 @@ const financeReadOnlySpecs=[
   description:'Fatturazione attiva della commessa. Importi derivati dalle righe, IVA e incassi registrati in Neon TEST; le bozze non sono fatture trasmesse.',
   headers:['ID fattura','Numero','Data','Scadenza','Committente','Emittente (preventivo)','Stato','Imponibile','IVA','Totale','Incassato','Residuo indicativo']},
  {id:'pagamenti',label:'Pagamenti',title:'Pagamenti del committente / incassi',
-  description:'Somme ricevute dall’emittente, registrate come incassi delle fatture attive della commessa. Non sono pagamenti ai fornitori.',
-  headers:['ID incasso','Data incasso','Committente','Emittente (preventivo)','Fattura emessa','Riferimento bancario','Importo ricevuto']}
+  description:'Movimenti in entrata attribuiti alla commessa corrente in Contabilità generale. Vista di sola lettura; nessun collegamento automatico a fatture.',
+  headers:['ID movimento','Data','Descrizione','Entrate','Banca','Conto','Codice commessa']}
 ];
 function setFinanceSubtab(id){
  activeFinanceSubtab=id;
@@ -994,7 +991,7 @@ function makeFinanceSubtabs(analysisNodes){
    const section=document.createElement('section');
    const title=document.createElement('h2');title.textContent=spec.title;
    const note=document.createElement('p');note.className='finance-note';
-   note.textContent=spec.description+' Identità emittente ripresa dalla copia del preventivo, se disponibile; non sostituisce la verifica fiscale del documento.';
+   note.textContent=spec.description+(spec.id==='fatture'?' Identità emittente ripresa dalla copia del preventivo, se disponibile; non sostituisce la verifica fiscale del documento.':'');
    const wrap=document.createElement('div');wrap.className='finance-readonly-table';
    const table=document.createElement('table');
    table.dataset.financeReadonly=spec.id;
@@ -1020,11 +1017,10 @@ function financePartyNames(identity){
  const customer=identity?.cliente?.trim()||'Committente non disponibile';
  return {issuer,customer};
 }
-function renderFinanceReadOnlyGrids(fatture,incassi,identity){
+function renderFinanceReadOnlyGrids(fatture,movimenti,identity){
  const {issuer,customer}=financePartyNames(identity);
  const date=value=>value?String(value).slice(0,10):'—';
  const due=value=>value==null?'—':date(value);
- const invoiceById=new Map(fatture.map(x=>[Number(x.id),x]));
  renderRows(view.querySelector('table[data-finance-readonly="fatture"]'),
   fatture.map(x=>{
    const total=number(x.imponibile)+number(x.iva);
@@ -1033,11 +1029,23 @@ function renderFinanceReadOnlyGrids(fatture,incassi,identity){
     euro(Math.max(0,total-number(x.incassato)))];
   }));
  renderRows(view.querySelector('table[data-finance-readonly="pagamenti"]'),
-  incassi.map(x=>{
-   const invoice=invoiceById.get(Number(x.fatturaId));
-   return [x.id,date(x.dataIncasso),customer,issuer,
-    invoice?.numero||('ID '+x.fatturaId),x.riferimento||'—',euro(x.importo)];
-  }));
+  movimenti.map(x=>projectBankMovementRow(x)));
+}
+function projectBankMovementRow(x){
+ return [x.id,accountingDate(x.dataOperazione),x.descrizione,accountingMoney(Math.abs(Number(x.importo))),x.banca,accountingMaskAccount(x.riferimentoConto),x.codiceCommessa];
+}
+async function readProjectBankMovements(code,direction,requestSerial){
+ if(!code||code==='Da attribuire')throw Error('Codice commessa non valido');
+ const rows=[];
+ for(let page=0;;page++){
+  const params=new URLSearchParams({commessa:code,direzione:direction,pagina:String(page)});
+  const response=await apiCall('/api/v4/contabilita/prima-nota/movimenti?'+params);
+  const batch=await response.json();
+  if(requestSerial!==renderSerial)return [];
+  if(!Array.isArray(batch))throw Error('Risposta movimenti non valida');
+  rows.push(...batch);
+  if(batch.length<200)return rows;
+ }
 }
 function updateFinanceMetrics(main,active,incassi,passive,pagamenti){
  const sums=(items,key)=>items.reduce((total,x)=>total+number(x[key]),0);
@@ -2071,10 +2079,10 @@ async function loadTestData(page){
     '/api/v4/commesse/'+currentProjectId+'/costi',
     '/api/v4/commesse/'+currentProjectId+'/incassi',
     '/api/v4/commesse/'+currentProjectId+'/files'];
-   const items=await Promise.all([...paths.map(p=>readList(base+p)),...extra.map(readList)]);
+   const items=await Promise.all([...paths.map(p=>readList(base+p)),...extra.map(readList),page==='fornitori'||page==='fatture'?readProjectBankMovements(identity.codice,page==='fornitori'?'uscite':'entrate',requestSerial):Promise.resolve([])]);
    if(requestSerial!==renderSerial)return;
    const [voci,offerte,varianti,sal,passive,active,attivita,docs,
-      fornitori,affidamenti,pagamenti,costi,incassi,files]=items;
+      fornitori,affidamenti,pagamenti,costi,incassi,files,movimenti]=items;
    const header=main.querySelector('h1');
    if(header)header.textContent=(page==='fornitori'?'Fornitori — ':page==='fatture'?'Fatture e pagamenti — ':'')+quadro.codice+' — '+quadro.titolo;
    const metrics=page==='commessa'?main.querySelectorAll('.metric b'):[];
@@ -2087,7 +2095,7 @@ async function loadTestData(page){
      renderRows(main.querySelector('table[data-grid="suppliers"]'),
       fornitori.map(x=>[x.nome,x.categoria,x.email||'',x.id]),
       'fornitore',fornitori.map(x=>x.id));
-     renderSupplierReadOnlyGrids(offerte,passive,pagamenti);
+     renderSupplierReadOnlyGrids(offerte,passive,movimenti);
    }
    renderRows(tables[0],voci.map(x=>[x.codice,x.descrizione,x.categoria,euro(x.budget)]),'voce',voci.map(x=>x.id));
    renderRows(tables[1],offerte.map(x=>[
@@ -2106,7 +2114,7 @@ async function loadTestData(page){
    renderRows(tables[10],passive.map(x=>[x.riferimento,euro(x.imponibile),
     x.iva==null?'DA VERIFICARE':euro(x.iva),x.iva==null?'DA VERIFICARE':euro(number(x.imponibile)+number(x.iva)),
     euro(x.pagato),x.iva==null?'Da verificare':'Indicata']),'fattura-passiva',passive.map(x=>x.id));
-   if(page==='fatture')renderFinanceReadOnlyGrids(active,incassi,identity);
+   if(page==='fatture')renderFinanceReadOnlyGrids(active,movimenti,identity);
    updateFinanceMetrics(main,active,incassi,passive,pagamenti);
    renderRows(tables[11],attivita.map(x=>[x.tipo,x.descrizione,x.scadenza||'',x.stato]),'attivita',attivita.map(x=>x.id));
    const fileMap=new Map(files.map(x=>[Number(x.id),x]));
@@ -2497,7 +2505,7 @@ document.getElementById('tab-invoices').onclick=()=>{if(currentProjectId)goTo('f
  document.getElementById('tab-accounting').onclick=()=>goTo('contabilita');
 document.getElementById('commesse-version').textContent='V'+UI_VERSION;
 syncCommessaTabs('commesse');
-document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse V4.14.0 TEST: seleziona i movimenti e attribuiscili alla commessa corrente.  Contabilità generale offre globalmente Carica con AI ed Elabora Cassetto primanota con feedback sopra le sottoschede. Movimenti contiene soltanto una griglia unica: prima riga con filtri Banca (Tutte le banche), Conto (Tutti i conti), Commessa (Tutte le commesse), Entrate/Uscite (Tutti); seguono tutti i movimenti, senza colonna Estratto, dettaglio documento o paginazione visibile. Codice commessa iniziale Da attribuire; nessuna perdita di dati.  4A Anagrafica fornitori è autonoma da Contatti, sempre accessibile, con modifiche e storico DURC.  la scheda 4 Fornitori ospita preventivi, fatture e pagamenti ai fornitori con analisi Scaramozzino separata. La scheda 5 ospita fatture emesse, incassi del committente e relativa Analisi Scaramozzino. Le prime griglie sono di sola lettura; i moduli storici sono conservati.');
+document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse V4.15.0 TEST: i Pagamenti delle schede 4 e 5 leggono i movimenti attribuiti in Contabilità generale.  seleziona i movimenti e attribuiscili alla commessa corrente.  Contabilità generale offre globalmente Carica con AI ed Elabora Cassetto primanota con feedback sopra le sottoschede. Movimenti contiene soltanto una griglia unica: prima riga con filtri Banca (Tutte le banche), Conto (Tutti i conti), Commessa (Tutte le commesse), Entrate/Uscite (Tutti); seguono tutti i movimenti, senza colonna Estratto, dettaglio documento o paginazione visibile. Codice commessa iniziale Da attribuire; nessuna perdita di dati.  4A Anagrafica fornitori è autonoma da Contatti, sempre accessibile, con modifiche e storico DURC.  la scheda 4 Fornitori ospita preventivi, fatture e pagamenti ai fornitori con analisi Scaramozzino separata. La scheda 5 ospita fatture emesse, incassi del committente e relativa Analisi Scaramozzino. Le prime griglie sono di sola lettura; i moduli storici sono conservati.');
 backButton.addEventListener('click',()=>goTo(parentPage[location.hash.slice(1)]||'commesse'));
 window.addEventListener('hashchange',()=>{if(authToken)show(location.hash.slice(1));});
 // Avvio chiuso: nessuna vista gestionale prima di login().
