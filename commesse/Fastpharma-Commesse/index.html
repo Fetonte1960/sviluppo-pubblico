@@ -1156,7 +1156,7 @@ function accountingFeedback(node){
   ?'Elaborazione non riuscita: '+result.error
   :'Note lette: '+result.letti+' · Nuovi documenti/integrati: '+result.importati+
    ' · Già presenti: '+result.giaPresenti+' · Altre note ignorate: '+(result.ignorate||0)+
-   ' · Da verificare: '+result.daVerificare+' · Nuovi movimenti: '+result.movimentiInseriti+'.';
+   ' · Da verificare: '+result.daVerificare+' · Nuovi movimenti: '+result.movimentiInseriti+' · Documenti attribuiti: '+(result.attribuzioniEseguite||0)+'.';
  node.append(summary);
  if(result.message){const p=document.createElement('p');p.textContent=result.message;node.append(p);}
  if(Array.isArray(result.risultati)&&result.risultati.length){
@@ -1624,7 +1624,7 @@ function buildGeneralAccounting(){
  const feedbackContent=document.createElement('div');
  feedback.append(feedbackTitle,feedbackContent);
  process.addEventListener('click',async()=>{
-  if(!window.confirm('Elaborare le note contabili del cassetto MCP unico? Saranno registrati soltanto i tipi già supportati, senza duplicazioni.'))return;
+  if(!window.confirm('Elaborare il cassetto FASTPHARMA? Saranno importati gli estratti supportati e applicate le attribuzioni AI approvate, senza sovrascrivere attribuzioni esistenti.'))return;
   process.disabled=true;process.textContent='Elaborazione in corso…';
   try{
    const response=await apiCall('/api/v4/contabilita/elabora-cassetto',{method:'POST'});
@@ -1635,7 +1635,7 @@ function buildGeneralAccounting(){
    process.disabled=false;process.textContent='Elabora Cassetto primanota';
    feedback.hidden=false;accountingFeedback(feedbackContent);
    accountingCatalog=null;accountingProjects=null;
-   if(activeAccountingSubtab==='movimenti'){if(activeMovementSubtab==='movimenti')void accountingLoadRows(true);else void loadBankAccounts();}
+   if(activeAccountingSubtab==='movimenti'){if(activeMovementSubtab==='movimenti')void accountingLoadRows(true);else void loadBankAccounts();}else view.querySelector('#accounting-pane-'+activeAccountingSubtab)?.dispatchEvent(new Event('fiscalrefresh'));
   }
  });
  actions.append(aiGpt,aiClaude,process);
@@ -2822,7 +2822,7 @@ document.getElementById('tab-invoices').onclick=()=>{if(currentProjectId)goTo('f
 document.getElementById('commesse-version').textContent='V'+UI_VERSION;
 syncCommessaTabs('commesse');
 document.getElementById('generalMenu').onclick=()=>{location.assign('menu.html');};
-document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse V4.21.3 TEST: filtro Da attribuire sempre disponibile in entrambe le griglie fatture.  le schede Pagamenti della commessa mostrano incassi e uscite bancarie attribuiti, con totali.  importazione movimenti anche senza saldi iniziali.  Carica con GPT e Carica con Claude usano lo stesso bootstrap contabile.  verifica identità MCP FASTPHARMA prima di depositare.  gli estratti possono censire nuovi conti durante Elabora Cassetto primanota.  seleziona fatture e attribuiscile alla commessa corrente o ad altra commessa.  clicca il numero per consultare il corpo fattura completo.  Fatture Emesse e Fatture ricevute importano XML dal cassetto fiscale senza AI; i fornitori sono aggiornati solo per ricevute.  Movimenti include Banche e saldi con anagrafica e saldo calcolato.  i Pagamenti delle schede 4 e 5 leggono i movimenti attribuiti in Contabilità generale.  seleziona i movimenti e attribuiscili alla commessa corrente.  Contabilità generale offre globalmente Carica con AI ed Elabora Cassetto primanota con feedback sopra le sottoschede. Movimenti contiene soltanto una griglia unica: prima riga con filtri Banca (Tutte le banche), Conto (Tutti i conti), Commessa (Tutte le commesse), Entrate/Uscite (Tutti); seguono tutti i movimenti, senza colonna Estratto, dettaglio documento o paginazione visibile. Codice commessa iniziale Da attribuire; nessuna perdita di dati.  4A Anagrafica fornitori è autonoma da Contatti, sempre accessibile, con modifiche e storico DURC.  la scheda 4 Fornitori ospita preventivi, fatture e pagamenti ai fornitori con analisi Scaramozzino separata. La scheda 5 ospita fatture emesse, incassi del committente e relativa Analisi Scaramozzino. Le prime griglie sono di sola lettura; i moduli storici sono conservati.');
+document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse V4.22.0 TEST: Analisi aziendale con AI propone attribuzioni multiple di fatture e movimenti; Elabora Cassetto primanota le applica dopo conferma, senza sovrascritture.  filtro Da attribuire sempre disponibile in entrambe le griglie fatture.  le schede Pagamenti della commessa mostrano incassi e uscite bancarie attribuiti, con totali.  importazione movimenti anche senza saldi iniziali.  Carica con GPT e Carica con Claude usano lo stesso bootstrap contabile.  verifica identità MCP FASTPHARMA prima di depositare.  gli estratti possono censire nuovi conti durante Elabora Cassetto primanota.  seleziona fatture e attribuiscile alla commessa corrente o ad altra commessa.  clicca il numero per consultare il corpo fattura completo.  Fatture Emesse e Fatture ricevute importano XML dal cassetto fiscale senza AI; i fornitori sono aggiornati solo per ricevute.  Movimenti include Banche e saldi con anagrafica e saldo calcolato.  i Pagamenti delle schede 4 e 5 leggono i movimenti attribuiti in Contabilità generale.  seleziona i movimenti e attribuiscili alla commessa corrente.  Contabilità generale offre globalmente Carica con AI ed Elabora Cassetto primanota con feedback sopra le sottoschede. Movimenti contiene soltanto una griglia unica: prima riga con filtri Banca (Tutte le banche), Conto (Tutti i conti), Commessa (Tutte le commesse), Entrate/Uscite (Tutti); seguono tutti i movimenti, senza colonna Estratto, dettaglio documento o paginazione visibile. Codice commessa iniziale Da attribuire; nessuna perdita di dati.  4A Anagrafica fornitori è autonoma da Contatti, sempre accessibile, con modifiche e storico DURC.  la scheda 4 Fornitori ospita preventivi, fatture e pagamenti ai fornitori con analisi Scaramozzino separata. La scheda 5 ospita fatture emesse, incassi del committente e relativa Analisi Scaramozzino. Le prime griglie sono di sola lettura; i moduli storici sono conservati.');
 backButton.addEventListener('click',()=>goTo(parentPage[location.hash.slice(1)]||'commesse'));
 window.addEventListener('hashchange',()=>{if(authToken)show(location.hash.slice(1));});
 // Avvio chiuso: nessuna vista gestionale prima di login().
