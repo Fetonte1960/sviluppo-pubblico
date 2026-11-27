@@ -18,6 +18,9 @@
  })();
  // API in same-origin sul backend Render/Windows; su Pages config.js imposta apiBase.
  const hasApi=true;
+ // Destinazione canonica del portale, con sessione verificata da FastPharma Access.
+ // Su GitHub Pages il dominio API è quello configurato in config.js.
+ const generalMenuUrl=(base||location.origin)+"/fastpharma-menu";
  const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 
  // Selezione di Organizzazioni per Gestione Commesse, solo dopo login CRM.
@@ -1172,6 +1175,7 @@
    b.textContent="Accedi";
   }
  });
+ $("#generalMenuLink").href=generalMenuUrl;
  render();
  showChromePasswordUi();
  $("#crmApp").hidden=true;
