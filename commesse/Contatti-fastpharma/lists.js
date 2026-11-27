@@ -3,7 +3,7 @@
  const $=id=>document.getElementById(id);
  const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
  const fmt=v=>v?new Date(v).toLocaleDateString("it-IT"):"Mai";
- let key="",base="",lists=[],current=null,rows=[],offset=0,total=0;
+ let key="",base="",authMode="legacy",lists=[],current=null,rows=[],offset=0,total=0;
  let pollTimer=null,debounce=null,requestIndex=0,signature="";
  const pageSize=50;
  const controls=["listsCollection","listsRefresh","listsFile","listsSearch","listsRegion","listsProvince","listsCity","listsCategory"];
@@ -11,10 +11,10 @@
  async function api(path,options={}){
   if(!key)throw Error("Accedi agli archivi per continuare.");
   const res=await fetch(base+path,{
-   ...options,headers:{"X-Demo-Key":key,...(options.headers||{})},
+   ...options,headers:{...(authMode==="oidc"?{"Authorization":"Bearer "+key}:{"X-Demo-Key":key}),...(options.headers||{})},
    cache:"no-store",signal:AbortSignal.timeout(options.method==="POST"?300000:30000)
   });
-  if(res.status===401)throw Error("Chiave di accesso non riconosciuta.");
+  if(res.status===401)throw Error("Sessione di accesso non valida o scaduta.");
   const body=await res.json().catch(()=>({}));
   if(!res.ok)throw Error(body.error||"Richiesta non riuscita: HTTP "+res.status);
   return body;
@@ -153,9 +153,9 @@
   }catch(e){feedback(e.message,true);}
   finally{$("listsFile").value="";$("listsFile").disabled=false;}
  }
- async function open({key:newKey,base:newBase}){
+ async function open({key:newKey,base:newBase,authMode:newMode="legacy"}){
   const k=String(newKey||""),b=String(newBase||"").replace(/\/$/,"");
-  const changed=signature!==b+"|"+k;key=k;base=b;signature=b+"|"+k;
+  const changed=signature!==b+"|"+k+"|"+newMode;key=k;base=b;authMode=newMode;signature=b+"|"+k+"|"+newMode;
   if(!key){
    enabled(false);$("listsCount").textContent="Accedi per consultare le Liste.";
    feedback("Inserisci la chiave di accesso.");return;
