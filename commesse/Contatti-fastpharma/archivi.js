@@ -196,10 +196,10 @@
     consent.checked = false;
     restorePreview.hidden = false;
     $("#restoreComparison").textContent =
-      "Record Contatti locali: " + result.currentCount +
+      "Record Referenti locali: " + result.currentCount +
       " · Record nel backup: " + result.incomingCount +
       " · Migrazioni nell'archivio: " + result.incomingMigrations +
-      ". Il ripristino SOSTITUIRÀ lo schema Contatti locale.";
+      ". Il ripristino SOSTITUIRÀ lo archivio CRM locale.";
     report($("#restoreStatus"), "Backup verificato su una copia isolata. Nessun dato dell'archivio è stato modificato.");
     updateControls();
   }
@@ -251,7 +251,7 @@
       });
       resetPreview();
       report($("#restoreStatus"), "Ripristino completato: " + result.importedContacts +
-        " contatti. Copia di sicurezza locale: " + result.backup + ".");
+        " referenti. Copia di sicurezza locale: " + result.backup + ".");
       if (!standalone) {
         window.parent.postMessage({ type: "fastpharma-archive-data-changed" }, archiveOrigin);
       }
