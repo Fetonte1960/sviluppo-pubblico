@@ -1,4 +1,4 @@
-# Contabilità generale — bootstrap AI universale per la Prima Nota (V1.13)
+# Contabilità generale — bootstrap AI universale per la Prima Nota (V1.14)
 
 ## Importazione diretta fatture fiscali (V4.18.0)
 
@@ -10,7 +10,7 @@ Nelle due griglie fiscali cliccare il numero con **Corpo fattura**: il dettaglio
 
 ## Attribuzione manuale fatture alla commessa (V4.19.0)
 
-In Fatture Emesse e Fatture ricevute è disponibile la stessa procedura dei Movimenti: filtro Commessa (Tutte le commesse, Da attribuire quando presente, codici effettivi), checkbox per riga e checkbox di intestazione per tutte le righe visualizzate. Selezionare le fatture, poi usare Attribuisci alla commessa selezionata (commessa corrente) oppure scegliere una destinazione e usare Attribuisci ad una commessa. I comandi sono disabilitati senza selezione o destinazione valida; confermare l'operazione e verificare il codice aggiornato nella griglia. Si può correggere una precedente attribuzione con la stessa procedura. La transazione modifica esclusivamente codice_commessa dei documenti selezionati nella direzione corretta, non XML, righe, importi, anagrafica, fatture legacy o movimenti. Nessuna attribuzione automatica o ripartizione per righe. L'analisi AI READ_ONLY può spiegare la procedura ma non eseguire l'attribuzione.
+In Fatture Emesse e Fatture ricevute è disponibile la stessa procedura dei Movimenti: filtro Commessa (Tutte le commesse, Da assegnare (sempre presente, valore interno Da attribuire), codici effettivi), checkbox per riga e checkbox di intestazione per tutte le righe visualizzate. Selezionare le fatture, poi usare Attribuisci alla commessa selezionata (commessa corrente) oppure scegliere una destinazione e usare Attribuisci ad una commessa. I comandi sono disabilitati senza selezione o destinazione valida; confermare l'operazione e verificare il codice aggiornato nella griglia. Si può correggere una precedente attribuzione con la stessa procedura. La transazione modifica esclusivamente codice_commessa dei documenti selezionati nella direzione corretta, non XML, righe, importi, anagrafica, fatture legacy o movimenti. Nessuna attribuzione automatica o ripartizione per righe. L'analisi AI READ_ONLY può spiegare la procedura ma non eseguire l'attribuzione.
 
 ## Uniformità grafica con Movimenti (V4.19.1)
 
@@ -27,6 +27,10 @@ Il JSON schema 1.2 non cambia. Il backend crea il conto anche con data e saldo i
 ## Movimenti attribuiti nelle schede di commessa (V4.21.1)
 
 Dopo aver attribuito i movimenti in Contabilità generale, aprire la commessa interessata. In 4 · Fornitori → Pagamenti compaiono le uscite; in 5 · Fatture e pagamenti → Pagamenti compaiono le entrate (incassi). Le due griglie leggono la stessa prima nota, filtrata per codice commessa e segno, con tutte le pagine, importi visualizzati positivi e totale della rispettiva direzione. Nessun movimento Da attribuire è incluso. Se non ci sono movimenti attribuiti, il messaggio lo indica esplicitamente. Rientrando nella scheda si rileggono i dati aggiornati; non si duplicano movimenti e non si deducono collegamenti a specifiche fatture o fornitori. Il saldo bancario e l'Analisi Scaramozzino storica restano distinti.
+
+## Filtro fatture Da assegnare (V4.21.2)
+
+In Fatture Emesse e Fatture ricevute il filtro Commessa offre sempre la voce **Da assegnare**, anche quando nessuna fattura è ancora da attribuire. Selezionarla per vedere soltanto i documenti con codice interno `Da attribuire`; dopo l'assegnazione dell'ultimo documento il filtro resta selezionato e la griglia è vuota. Nessuna modifica agli archivi o alla procedura di attribuzione.
 
 ## Ambito e privilegi
 
