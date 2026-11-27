@@ -3,18 +3,34 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Gestione contatti FastPharma — V1.0.22</title>
-  <link rel="stylesheet" href="./crm-v1.css?v=1.0.22">
-  <script defer src="./config.js?v=1.0.22"></script>
-  <script defer src="./version.js?v=1.0.22"></script>
-  <script defer src="./lists.js?v=1.0.22"></script>
-  <script defer src="./crm-v1.js?v=1.0.22"></script>
+  <title>Gestione contatti FastPharma — V1.0.23</title>
+  <link rel="stylesheet" href="./crm-v1.css?v=1.0.23">
+  <script defer src="./config.js?v=1.0.23"></script>
+  <script defer src="./version.js?v=1.0.23"></script>
+  <script defer src="./lists.js?v=1.0.23"></script>
+  <script defer src="./crm-v1.js?v=1.0.23"></script>
 </head>
 <body>
+  <section id="crmAuth" aria-label="Autenticazione FastPharma">
+    <div class="crm-auth-box">
+      <div class="crm-auth-logo" aria-hidden="true">F</div>
+      <h1>FastPharma Access</h1>
+      <p>Un unico accesso per Contatti, Preventivi e Commesse. La password viene inserita soltanto nel servizio centrale.</p>
+      <p id="crmAuthStatus" role="status" aria-live="polite">Verifica della sessione centrale in corso…</p>
+      <button type="button" id="oidcLogin" class="primary">Accedi con FastPharma Access</button>
+      <div id="legacyLogin" hidden><section class="access" id="accessSection">
+        <div><strong>Accesso locale FastPharma</strong><p id="accessMessage">Inserisci la password FastPharma per accedere al gestionale locale.</p></div>
+        <form id="loginForm" autocomplete="on"><label class="sr-only" for="loginUsername">Profilo di accesso</label><input id="loginUsername" name="username" type="text" autocomplete="username" value="FastPharma" class="sr-only" tabindex="-1" aria-label="Profilo Gestione contatti FastPharma"><label class="sr-only" for="demoKey">Chiave di accesso</label><input id="demoKey" name="password" type="password" placeholder="Chiave di accesso" autocomplete="current-password" aria-describedby="loginFeedback"><button id="connectButton" type="submit" class="primary">Accedi</button><button id="chromeLoadKey" class="secondary" type="button" hidden>Usa password salvata in Chrome</button><p id="loginFeedback" class="login-feedback" role="status" aria-live="polite">Inserisci la password e premi Accedi.</p></form>
+        <div id="chromePasswordActions" class="chrome-password-actions" hidden><button type="button" id="chromeSaveKey" class="secondary">Salva la chiave in Chrome</button><span id="chromePasswordStatus" role="status" aria-live="polite"></span></div>
+      </section>
+      </div>
+    </div>
+  </section>
+  <div id="crmApp" hidden>
   <header class="appbar">
-    <div class="logo"><span class="logo-icon">F</span><div><strong>Gestione contatti FastPharma</strong><small>Anagrafiche e attività commerciali · <strong id="appVersion">V1.0.22</strong></small></div></div>
+    <div class="logo"><span class="logo-icon">F</span><div><strong>Gestione contatti FastPharma</strong><small>Anagrafiche e attività commerciali · <strong id="appVersion">V1.0.23</strong></small></div></div>
     <div class="top-actions">
-      <span id="releaseVersion" class="release-version">V1.0.22</span>
+      <span id="releaseVersion" class="release-version">V1.0.23</span>
       <span id="connectionBadge" class="connection-badge">Accesso richiesto</span>
     </div>
   </header>
@@ -43,11 +59,6 @@
           <button id="newRecord" type="button" class="primary" hidden disabled>+ Aggiungi</button>
         </div>
       </div>
-      <section class="access" id="accessSection">
-        <div><strong>Accesso agli archivi</strong><p id="accessMessage">Inserisci la chiave di accesso per consultare e aggiornare le informazioni.</p></div>
-        <form id="loginForm" autocomplete="on"><label class="sr-only" for="loginUsername">Profilo di accesso</label><input id="loginUsername" name="username" type="text" autocomplete="username" value="FastPharma" class="sr-only" tabindex="-1" aria-label="Profilo Gestione contatti FastPharma"><label class="sr-only" for="demoKey">Chiave di accesso</label><input id="demoKey" name="password" type="password" placeholder="Chiave di accesso" autocomplete="current-password" aria-describedby="loginFeedback"><button id="connectButton" type="submit" class="primary">Verifica e apri</button><button id="chromeLoadKey" class="secondary" type="button" hidden>Usa password salvata in Chrome</button><p id="loginFeedback" class="login-feedback" role="status" aria-live="polite">Incolla la chiave e premi «Verifica e apri».</p></form>
-        <div id="chromePasswordActions" class="chrome-password-actions" hidden><button type="button" id="chromeSaveKey" class="secondary">Salva la chiave in Chrome</button><span id="chromePasswordStatus" role="status" aria-live="polite"></span></div>
-      </section>
       <p id="notice" class="notice" role="status" aria-live="polite"></p>
       <section id="dashboard" class="screen">
         <div class="kpis">
@@ -167,7 +178,7 @@
         </div>
         <div class="surface detail-content" id="detailContent"></div>
       </section>
-      <footer>Gestione contatti FastPharma · V1.0.22</footer>
+      <footer>Gestione contatti FastPharma · V1.0.23</footer>
     </main>
   </div>
   <dialog id="recordDialog" class="record-dialog">
@@ -253,5 +264,6 @@
       <button id="orgImportConfirm" class="primary" type="button" disabled>Importa questa farmacia</button>
     </div>
   </dialog>
+  </div>
   </body>
 </html>
