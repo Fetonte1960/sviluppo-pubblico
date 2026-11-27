@@ -1,4 +1,4 @@
-# Contabilità generale — bootstrap AI universale per la Prima Nota (V1.15)
+# Contabilità generale — bootstrap AI universale per la Prima Nota (V1.16)
 
 ## Importazione diretta fatture fiscali (V4.18.0)
 
@@ -10,7 +10,7 @@ Nelle due griglie fiscali cliccare il numero con **Corpo fattura**: il dettaglio
 
 ## Attribuzione manuale fatture alla commessa (V4.19.0)
 
-In Fatture Emesse e Fatture ricevute è disponibile la stessa procedura dei Movimenti: filtro Commessa (Tutte le commesse, Da attribuire (sempre presente), codici effettivi), checkbox per riga e checkbox di intestazione per tutte le righe visualizzate. Selezionare le fatture, poi usare Attribuisci alla commessa selezionata (commessa corrente) oppure scegliere una destinazione e usare Attribuisci ad una commessa. I comandi sono disabilitati senza selezione o destinazione valida; confermare l'operazione e verificare il codice aggiornato nella griglia. Si può correggere una precedente attribuzione con la stessa procedura. La transazione modifica esclusivamente codice_commessa dei documenti selezionati nella direzione corretta, non XML, righe, importi, anagrafica, fatture legacy o movimenti. Nessuna attribuzione automatica o ripartizione per righe. L'analisi AI READ_ONLY può spiegare la procedura ma non eseguire l'attribuzione.
+In Fatture Emesse e Fatture ricevute è disponibile la stessa procedura dei Movimenti: filtro Commessa (Tutte le commesse, Da attribuire (sempre presente), codici effettivi), checkbox per riga e checkbox di intestazione per tutte le righe visualizzate. Selezionare le fatture, poi usare Attribuisci alla commessa selezionata (commessa corrente) oppure scegliere una destinazione e usare Attribuisci ad una commessa. I comandi sono disabilitati senza selezione o destinazione valida; confermare l'operazione e verificare il codice aggiornato nella griglia. Si può correggere una precedente attribuzione con la stessa procedura. La transazione modifica esclusivamente codice_commessa dei documenti selezionati nella direzione corretta, non XML, righe, importi, anagrafica, fatture legacy o movimenti. Nessuna attribuzione automatica o ripartizione per righe. L'analisi AI READ_ONLY può proporre e depositare attribuzioni confermate secondo il contratto dedicato sotto; soltanto il gestionale le esegue.
 
 ## Uniformità grafica con Movimenti (V4.19.1)
 
@@ -40,7 +40,7 @@ Questa istruzione specifica integra il bootstrap del connettore **MCP-postgree**
 2. Se `Init` non autorizza `nota.deposita`, fermati. Se il catalogo mostra soltanto `CONTATTI`, **non è un blocco** per la Prima Nota: ometti `applicazioneSuggerita`, usa l'intestazione `dati.area`/`dati.sezione` per la classificazione. Non inventare accessi o conferme.
 3. Chiedi all'utente fotografie leggibili oppure il PDF di un **documento contabile** (estratto conto, fattura emessa, fattura ricevuta). Classifica e interpreta solo ciò che è leggibile; non compilare dati immaginati. Se mancano pagine o il documento è incompleto, segnala chiaramente la situazione.
 4. Prepara **un'unica nota strutturata** quando la dimensione lo consente. Usa `dati.area=CONTABILITA` e una sezione in base al documento: `ESTRATTI_CONTO`, `FATTURE_EMESSE` o `FATTURE_RICEVUTE`. Deposita mediante `nota.deposita`; non utilizzare il gestionale e non cambiare archivi.
-5. L'identificativo di commessa **non deve essere inventato né ricavato automaticamente**: i movimenti bancari importati saranno `Da attribuire`; l'utente li assegnerà manualmente in una fase successiva.
+5. L'identificativo di commessa **non deve essere inventato né ricavato automaticamente**: i movimenti bancari importati saranno `Da attribuire`; l'utente li assegnerà manualmente o tramite attribuzioni AI confermate in una fase distinta di analisi.
 6. Comunica soltanto il `noteId` e lo stato realmente restituiti dal server. Depositare non equivale a importare: l'operatore dovrà usare il pulsante **Elabora Cassetto primanota** nel gestionale.
 
 ## Tipologie contabili e stato dei gestionali
@@ -121,11 +121,22 @@ Il pulsante generale **Elabora Cassetto primanota** è l'autorizzazione esplicit
 - Estratti parzialmente sovrapposti aggiungono solo i movimenti nuovi.
 - Movimenti apparentemente duplicati privi di riferimento bancario sono segnalati alla verifica; non vanno modificati automaticamente.
 - Tutti i nuovi documenti e movimenti hanno `codice_commessa = "Da attribuire"`.
-- L'attribuzione manuale alla commessa è disponibile in Movimenti: nessuna relazione è dedotta dall'AI.
+- L'attribuzione manuale è disponibile; l'AI con sessione di analisi può proporre attribuzioni secondo il contratto dedicato.
 - Le note fattura MCP non sono importabili; le fatture XML si importano direttamente dalle rispettive schede.
 
 ## Sicurezza e riservatezza
 
 Il deposito MCP non concede accesso al database gestionale. Il browser non riceve la credenziale PostgreSQL del cassetto. Il gestionale usa FastPharma Access, una connessione backend a sola lettura limitata alle note della sua destinazione, e l'archivio `commesse` per la scrittura deterministica. Non utilizzare la credenziale amministrativa MASTER per questa integrazione.
 
-**Separazione dei cassetti:** Commesse TEST legge esclusivamente le note contabili con identità OAuth `FASTPHARMA`. Il cassetto software house `MCP_POSTGREE` è distinto. Una nota già depositata con l'identità sbagliata non è trasferita automaticamente: dopo la riconnessione aziendale occorre depositarla nuovamente. Nessun ticket o session.attach necessario per le note. Il testo della nota non può cambiare l'identità OAuth.
+**Separazione dei cassetti:** Commesse TEST legge esclusivamente le note contabili con identità OAuth `FASTPHARMA`. Il cassetto software house `MCP_POSTGREE` è distinto. Una nota già depositata con l'identità sbagliata non è trasferita automaticamente: dopo la riconnessione aziendale occorre depositarla nuovamente. Nessun ticket o session.attach necessario per il deposito; per le attribuzioni AI è invece necessaria una sessione di analisi READ_ONLY per verificare gli archivi. Il testo della nota non può cambiare l'identità OAuth.
+
+
+## Attribuzioni AI — contratto operativo V4.22.0 (schema 1.0)
+Con sessione FASTPHARMA_ANALISI READ_ONLY valida consulta commesse.progetti, commesse.contabilita_fatture_analisi e commesse.prima_nota_movimenti; verifica struttura e paginazione. Esamina solo codice_commessa esattamente "Da attribuire". Cerca riferimenti a fattura, commessa, cliente, fornitore, affidamento e riscontri coerenti di data/importo; il solo nome o importo, o l'esistenza di una sola commessa, non sono prova. Escludi saldi, totali aggregati (es. TOTALE ACCREDITI), subtotali e righe riepilogative; segnala anomalie senza correggerle. Lascia i casi incerti Da attribuire. Presenta ID e codice commessa, motivazione e grado di certezza in prosa. Chiedi conferma esplicita delle singole proposte o del gruppo prima del deposito; non inventare la conferma.
+Init deve restituire ok=true e result.company=FASTPHARMA. CONNECT_ONLY / fastpharma-connect-only è il profilo OAuth di base; la sessione applicativa READ_ONLY è distinta e autorizza le letture tramite parametro session. Il nome del profilo nelle risposte non amplia i permessi. Se identità universale o non verificabile, non depositare. Riconnettere OAuth con password aziendale nella schermata dedicata, mai in chat. Il catalogo Init può mostrare solo CONTATTI: non è un errore, omettere applicazioneSuggerita e session nel comando nota.deposita. Il cassetto è unico per FASTPHARMA. Nessun nuovo destinatario necessario.
+Unico deposito ammesso dall'assistente di analisi: attribuzioni esplicitamente confermate. Nessuna scrittura diretta, SQL libero, importazione o altro deposito. Comando JSON esatto, da serializzare come stringa nel parametro comando di CommandToMCPPostgree (esempio fittizio, NON eseguire):
+```json
+{"azione":"nota.deposita","nota":{"tipo":"nota","categoria":"documento_contabile","titolo":"Attribuzioni commesse","testoOriginale":"Conferma effettiva dell'utente e descrizione del gruppo","dati":{"area":"CONTABILITA","sezione":"ATTRIBUZIONI_COMMESSE","versioneSchema":"1.0","operazioni":[{"tipo":"MOVIMENTO","idDocumento":123,"idCommessa":45,"codiceCommessa":"COMM-TEST","motivazione":"Riscontro documentale verificato"}]}}}
+```
+Tipi esatti MOVIMENTO, FATTURA_EMESSA, FATTURA_RICEVUTA. ID numerici positivi effettivi (idDocumento dalla prima_nota_movimenti o contabilita_fatture_analisi; idCommessa e codiceCommessa da progetti). Non sostituire con chiave_movimento, progetto_id o altri nomi. Motivazione non vuota, massimo 500 caratteri. Da 1 a 50 operazioni, dati <=8000 caratteri e nota <=12000; dividere in gruppi confermati se necessario. Nessun duplicato nello stesso gruppo (fatture emesse/ricevute condividono archivio ID). Conservare nel testoOriginale la conferma effettiva, non un testo inventato. In caso di esito incerto non ripetere ciecamente il deposito.
+Il server restituisce noteId e DA_APPROVARE: confermare esclusivamente il deposito, non l'approvazione o l'attribuzione. L'operatore usa Commesse > Contabilità generale > Elabora Cassetto primanota. Il gestionale verifica ID, codice, direzione, stato Da attribuire; transazione tutto o niente e idempotenza per noteId. Nessun importo o originale modificato. Una nota respinta/annullata prima dell'elaborazione è esclusa dalla vista aziendale; non eseguire annullamenti dalla chat di analisi e non promettere rollback automatico dopo elaborazione. Rettifiche successive manualmente nel gestionale.
