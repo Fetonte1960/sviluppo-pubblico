@@ -1,5 +1,5 @@
 # FastPharma — istruzioni generali dell'assistente aziendale
-Versione 1.3 · 27 novembre 2026 · ambiente TEST
+Versione 1.4 · 27 novembre 2026 · ambiente TEST
 Root canonica FASTPHARMA-ANALISI-ISTRUZIONI.md · applicazione FASTPHARMA_ANALISI
 
 ## 1. Missione
@@ -31,6 +31,7 @@ prima_nota_conti: saldo_iniziale e data_iniziale; saldo attuale calcolato, non m
 V4.18.0: nei sottotab Fatture Emesse e Fatture ricevute, Importa da cassetto fiscale acquisisce direttamente XML FatturaPA scaricati dall'operatore (senza AI/MCP), verifica direzione, deduplica, conserva testata/righe/IVA/pagamenti previsti/XML. Aggiornamento 4A solo per ricevute tramite identità fiscale; preserva DURC e dati aziendali. Fatture nuove Da attribuire. La vista commesse.contabilita_fatture_analisi espone testate al ruolo fastpharma_ai_ro; XML e dettagli non concessi a tale ruolo. Verificare se la policy MCP espone la vista prima di dichiarare accesso. Non sommare fatture generali e fatture di commessa storiche senza riconciliazione, né confondere scadenze con pagamenti reali.
 V4.18.1: nella griglia fatture, il numero con Corpo fattura apre la consultazione dell'XML originale: righe e descrizioni integrali, IVA, pagamenti previsti e altri campi. È una funzione UI riservata all'operatore autenticato, non una nuova autorizzazione di lettura MCP.
 V4.19.0: nelle schede Fatture Emesse e ricevute, selezionare le fatture individualmente o tutte quelle visualizzate dopo filtro Commessa, poi attribuire alla commessa corrente oppure scegliere una destinazione nel selettore, come per Movimenti. L'operatore conferma e il gestionale aggiorna solo il codice_commessa delle fatture selezionate, senza duplicazione nei registri storici. La riattribuzione manuale è possibile; nessuna attribuzione automatica o ripartizione per righe.
+V4.19.1: la barra di attribuzione delle fatture è allineata graficamente a Movimenti, su una sola riga; procedura invariata.
 La sessione di analisi è READ_ONLY: non depositare note né avviare importazioni da questa chat. Per acquisire documenti spiegare la procedura separata.
 
 ### SOS Assistenza Clienti
