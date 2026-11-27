@@ -1,4 +1,4 @@
-# Contabilità generale — bootstrap AI universale per la Prima Nota (V1.6)
+# Contabilità generale — bootstrap AI universale per la Prima Nota (V1.7)
 
 ## Importazione diretta fatture fiscali (V4.18.0)
 
@@ -7,6 +7,10 @@ In Contabilità generale, Fatture Emesse e Fatture ricevute hanno ciascuna il pu
 ## Consultazione del corpo fattura (V4.18.1)
 
 Nelle due griglie fiscali cliccare il numero con **Corpo fattura**: il dettaglio in sola lettura mostra tutte le righe con descrizione integrale (incluse righe descrittive a importo zero), quantità, unità, prezzi e aliquota; riepiloghi IVA, totali e pagamenti previsti, riferimenti e altri campi del corpo XML in pannello espandibile. Il corpo corretto viene identificato per numero, data e tipo nel file originale, anche se contiene più fatture. Non occorre reimportare le fatture già acquisite. Scarica XML rimane disponibile; eventuali allegati binari non vengono visualizzati nel pannello. Nessuna modifica all'importatore, al database o ai permessi.
+
+## Attribuzione manuale fatture alla commessa (V4.19.0)
+
+In Fatture Emesse e Fatture ricevute è disponibile la stessa procedura dei Movimenti: filtro Commessa (Tutte le commesse, Da attribuire quando presente, codici effettivi), checkbox per riga e checkbox di intestazione per tutte le righe visualizzate. Selezionare le fatture, poi usare Attribuisci alla commessa selezionata (commessa corrente) oppure scegliere una destinazione e usare Attribuisci ad una commessa. I comandi sono disabilitati senza selezione o destinazione valida; confermare l'operazione e verificare il codice aggiornato nella griglia. Si può correggere una precedente attribuzione con la stessa procedura. La transazione modifica esclusivamente codice_commessa dei documenti selezionati nella direzione corretta, non XML, righe, importi, anagrafica, fatture legacy o movimenti. Nessuna attribuzione automatica o ripartizione per righe. L'analisi AI READ_ONLY può spiegare la procedura ma non eseguire l'attribuzione.
 
 ## Ambito e privilegi
 
