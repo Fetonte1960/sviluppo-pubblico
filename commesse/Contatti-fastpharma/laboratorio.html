@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>FastPharma V1.0.23 — Salvataggio e ripristino archivi</title>
-  <link rel="stylesheet" href="./archivi.css?v=1.0.23">
-  <script defer src="./config.js?v=1.0.23"></script>
-  <script defer src="./archivi.js?v=1.0.23"></script>
+  <title>FastPharma V1.0.24 — Salvataggio e ripristino archivi</title>
+  <link rel="stylesheet" href="./archivi.css?v=1.0.24">
+  <script defer src="./config.js?v=1.0.24"></script>
+  <script defer src="./archivi.js?v=1.0.24"></script>
 </head>
 <body>
   <main class="archive-page">
     <section id="accessBox" class="archive-access" hidden>
-      <p>Per salvare o ripristinare gli archivi, accedi prima a Gestione contatti.
+      <p>Per salvare o ripristinare gli archivi, accedi prima a Gestione referenti.
       Se hai aperto direttamente questa pagina, inserisci la chiave qui.</p>
       <form id="accessForm" autocomplete="off">
         <label for="accessKey">Chiave di accesso agli archivi</label>
@@ -25,7 +25,7 @@
     <section class="archive-card">
       <div class="card-heading"><span class="card-number">1</span><div>
         <h2>Salvataggio (backup)</h2>
-        <p>Scarica sul computer una copia completa dello schema Contatti nel formato PostgreSQL <code>.backup</code>.</p>
+        <p>Scarica sul computer una copia completa dell'archivio CRM nel formato PostgreSQL <code>.backup</code>.</p>
       </div></div>
       <button id="backupButton" class="primary" type="button" disabled>Scarica backup archivi</button>
       <p class="help">Il file può contenere informazioni riservate. Conservalo in un luogo protetto.</p>
@@ -35,7 +35,7 @@
     <section class="archive-card">
       <div class="card-heading"><span class="card-number">2</span><div>
         <h2>Ripristino (restore)</h2>
-        <p>Verifica un backup prima di applicarlo. Il ripristino sostituisce i dati dello schema Contatti.</p>
+        <p>Verifica un backup prima di applicarlo. Il ripristino sostituisce i dati dell'archivio CRM.</p>
       </div></div>
 
       <div id="restoreLocal" hidden>
@@ -54,7 +54,7 @@
           <p id="restoreComparison"></p>
           <label class="confirm">
             <input id="restoreConsent" type="checkbox">
-            <span>Confermo di voler sostituire l'archivio Contatti locale dopo la creazione del backup di sicurezza.</span>
+            <span>Confermo di voler sostituire l'archivio CRM locale dopo la creazione del backup di sicurezza.</span>
           </label>
           <button id="confirmRestore" class="danger" type="button" disabled>Conferma il ripristino</button>
         </div>
