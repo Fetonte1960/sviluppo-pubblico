@@ -349,7 +349,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 <script>
 (function(){
 'use strict';
-const UI_VERSION='4.13.0';
+const UI_VERSION='4.14.0';
 const pages=JSON.parse(document.getElementById('screens').textContent);
 // Archivio originale ricevuto: non convertirne le proposte in requisiti approvati.
 const originalClientAnalysis=JSON.parse(document.getElementById('client-analysis-original').textContent);
@@ -1086,6 +1086,7 @@ let accountingDirection='';
 let accountingCatalog=null;
 let accountingProjects=null;
 let accountingLoadVersion=0;
+let accountingAssigning=false;
 const accountingMaskAccount=account=>'••••'+String(account||'').slice(-4);
 const accountingMoney=x=>{
  if(x===null||x===undefined||x==='')return '—';
@@ -1189,16 +1190,24 @@ function accountingRenderMovements(target,items,message){
   },2),
   accountingFilterCell('Entrate/Uscite',directionOptions,accountingDirection,value=>{
    accountingDirection=value;reload();
-  },1)
+  },2)
  );
  const columnRow=document.createElement('tr');
+ const allCell=document.createElement('th');
+ const all=document.createElement('input');all.type='checkbox';all.setAttribute('aria-label','Seleziona tutti i movimenti visualizzati');allCell.append(all);columnRow.append(allCell);
+ const checks=[];
+ const assign=document.createElement('button');assign.type='button';assign.textContent='Attribuisci alla commessa selezionata';
+ const sync=()=>{const n=checks.filter(x=>x.checked).length;all.checked=checks.length>0&&n===checks.length;all.indeterminate=n>0&&n<checks.length;all.disabled=!checks.length||accountingAssigning||!!message;assign.disabled=accountingAssigning||!!message||!currentProjectId||!n;assign.style.opacity=assign.disabled?'0.5':'1';};
+ all.addEventListener('change',()=>{for(const check of checks)check.checked=all.checked;sync();});
+ assign.addEventListener('click',async()=>{const ids=checks.filter(x=>x.checked).map(x=>Number(x.value));const projectId=currentProjectId;if(!ids.length||!projectId||accountingAssigning)return;if(!window.confirm('Attribuire '+ids.length+' movimenti alla commessa '+currentProjectCaption+'?'))return;accountingAssigning=true;for(const c of checks)c.disabled=true;sync();try{const response=await apiCall('/api/v4/contabilita/prima-nota/attribuisci',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({progettoId:projectId,movimentiIds:ids})});const result=await response.json();if(result.aggiornati!==ids.length)throw Error('Attribuzione non confermata');accountingAssigning=false;await accountingLoadRows(true);}catch(error){window.alert('Attribuzione non riuscita: '+error.message);}finally{accountingAssigning=false;for(const c of checks)c.disabled=false;sync();}});
+ const actionCell=document.createElement('th');actionCell.colSpan=8;actionCell.append(assign);const actionRow=document.createElement('tr');actionRow.append(actionCell);
  for(const label of ['Data','Descrizione','Entrate','Uscite','Banca','Conto','Codice commessa']){
   const th=document.createElement('th');th.textContent=label;columnRow.append(th);
  }
- thead.append(filterRow,columnRow);table.append(thead);
+ thead.append(actionRow,filterRow,columnRow);table.append(thead);
  const body=document.createElement('tbody');
  if(!items.length){
-  const tr=document.createElement('tr'),cell=document.createElement('td');cell.colSpan=7;
+  const tr=document.createElement('tr'),cell=document.createElement('td');cell.colSpan=8;
   cell.textContent=message||'Nessun movimento per i filtri selezionati.';
   tr.append(cell);body.append(tr);
  }else{
@@ -1209,6 +1218,7 @@ function accountingRenderMovements(target,items,message){
     amount<0?accountingMoney(-amount):'—',
     item.banca,accountingMaskAccount(item.riferimentoConto),item.codiceCommessa];
    const tr=document.createElement('tr');
+   const selectionCell=document.createElement('td');const check=document.createElement('input');check.type='checkbox';check.value=String(item.id);check.setAttribute('aria-label','Seleziona movimento '+item.id);check.disabled=accountingAssigning||!!message;check.addEventListener('change',sync);checks.push(check);selectionCell.append(check);tr.append(selectionCell);
    for(const value of values){
     const cell=document.createElement('td');
     cell.textContent=value===null||value===undefined?'—':String(value);tr.append(cell);
@@ -1216,7 +1226,7 @@ function accountingRenderMovements(target,items,message){
    body.append(tr);
   }
  }
- table.append(body);holder.append(table);target.append(holder);
+ table.append(body);holder.append(table);target.append(holder);sync();
 }
 async function accountingLoadRows(refreshCatalog=false){
  const pane=view.querySelector('[data-accounting-pane="movimenti"]');
@@ -2487,7 +2497,7 @@ document.getElementById('tab-invoices').onclick=()=>{if(currentProjectId)goTo('f
  document.getElementById('tab-accounting').onclick=()=>goTo('contabilita');
 document.getElementById('commesse-version').textContent='V'+UI_VERSION;
 syncCommessaTabs('commesse');
-document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse V4.13.0 TEST: Contabilità generale offre globalmente Carica con AI ed Elabora Cassetto primanota con feedback sopra le sottoschede. Movimenti contiene soltanto una griglia unica: prima riga con filtri Banca (Tutte le banche), Conto (Tutti i conti), Commessa (Tutte le commesse), Entrate/Uscite (Tutti); seguono tutti i movimenti, senza colonna Estratto, dettaglio documento o paginazione visibile. Codice commessa iniziale Da attribuire; nessuna perdita di dati.  4A Anagrafica fornitori è autonoma da Contatti, sempre accessibile, con modifiche e storico DURC.  la scheda 4 Fornitori ospita preventivi, fatture e pagamenti ai fornitori con analisi Scaramozzino separata. La scheda 5 ospita fatture emesse, incassi del committente e relativa Analisi Scaramozzino. Le prime griglie sono di sola lettura; i moduli storici sono conservati.');
+document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse V4.14.0 TEST: seleziona i movimenti e attribuiscili alla commessa corrente.  Contabilità generale offre globalmente Carica con AI ed Elabora Cassetto primanota con feedback sopra le sottoschede. Movimenti contiene soltanto una griglia unica: prima riga con filtri Banca (Tutte le banche), Conto (Tutti i conti), Commessa (Tutte le commesse), Entrate/Uscite (Tutti); seguono tutti i movimenti, senza colonna Estratto, dettaglio documento o paginazione visibile. Codice commessa iniziale Da attribuire; nessuna perdita di dati.  4A Anagrafica fornitori è autonoma da Contatti, sempre accessibile, con modifiche e storico DURC.  la scheda 4 Fornitori ospita preventivi, fatture e pagamenti ai fornitori con analisi Scaramozzino separata. La scheda 5 ospita fatture emesse, incassi del committente e relativa Analisi Scaramozzino. Le prime griglie sono di sola lettura; i moduli storici sono conservati.');
 backButton.addEventListener('click',()=>goTo(parentPage[location.hash.slice(1)]||'commesse'));
 window.addEventListener('hashchange',()=>{if(authToken)show(location.hash.slice(1));});
 // Avvio chiuso: nessuna vista gestionale prima di login().
