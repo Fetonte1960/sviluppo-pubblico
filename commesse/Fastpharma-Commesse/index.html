@@ -1,4 +1,4 @@
-<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gestione Commesse V4.9.0 · FastPharma TEST</title>
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gestione Commesse V4.10.0 · FastPharma TEST</title>
 <style>body{font:15px system-ui,sans-serif;background:#f2f6f8;color:#203648;margin:0}header{background:#163849;color:white;padding:22px max(20px,calc((100% - 1100px)/2))}main{max-width:1100px;margin:26px auto;padding:0 16px}a{color:#116b74}header a{color:#c8e8df;margin-right:20px}section{background:white;padding:22px;border:1px solid #e1e8ed;border-radius:12px;margin:15px 0}h1{margin:0 0 6px}h2{font-size:19px}.muted{color:#687b87}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}.metric{padding:14px;background:#edf5f7;border-radius:9px}.metric b{display:block;font-size:20px}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid #e5edf0;padding:9px;text-align:left}label{display:block;margin:9px 0;font-size:13px;font-weight:600}input,select,textarea{display:block;width:100%;max-width:500px;padding:9px;margin-top:5px;box-sizing:border-box}button{background:#087d78;color:white;border:0;border-radius:7px;padding:10px 14px;cursor:pointer}.warn{padding:12px;background:#fff0d9;border-left:4px solid #d58e14}.bad{color:#aa2834}.good{color:#168057}.test{font-weight:bold;background:#ffe8ad;color:#5b3b00;padding:5px 10px;border-radius:6px}.inline{display:inline}.inline button{font-size:12px;padding:5px 8px}@media(max-width:700px){table{display:block;overflow-x:auto}}
 /* Solo cornice della specifica offline, l'interfaccia V4 conserva lo stile originale. */
 .demo-ribbon{background:#f8edd6;color:#6b4900;padding:10px 20px;text-align:center;font:600 13px system-ui,sans-serif;border-bottom:1px solid #e6d5ab}
@@ -129,6 +129,18 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 
 
 
+
+
+/* V4.10: contabilità generale, sola struttura UI; nessuna connessione contabile. */
+.accounting-subtabs{display:flex;flex-wrap:wrap;gap:7px;align-items:stretch;margin:12px 0 14px;border-bottom:2px solid #bfd1e0}
+.accounting-subtab{padding:10px 15px;border-radius:6px 6px 0 0;background:#e0eaf4;color:#264e6a;font-size:.88rem}
+.accounting-subtab[aria-selected="true"]{background:#fff;color:#114b74;border-bottom:3px solid #1773a6}
+.accounting-subtab[aria-selected="false"]:hover{background:#cee1f0}
+.accounting-pane[hidden]{display:none!important}
+.accounting-explanation{color:#4b6172;font-size:.87rem;line-height:1.6}
+.accounting-placeholder{padding:22px;border:1px dashed #b8cbd9;border-radius:7px;background:#f8fbfd;color:#536777}
+.accounting-placeholder strong{display:block;margin-bottom:5px;color:#234b67}
+@media(max-width:720px){.accounting-subtab{flex:1 1 42%;padding:10px 8px;font-size:.8rem}}
 
 /* 4A · Anagrafica fornitori autonoma, indipendente da commessa e Contatti. */
 #page .registry-screen>section{margin:12px 0}
@@ -293,7 +305,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 </div>
 <div id="commesse-app" hidden>
 <header class="compact-header">
-  <strong class="brand-version">Gestione Commesse — <span id="commesse-version">V4.9.0</span> <small>TEST</small></strong>
+  <strong class="brand-version">Gestione Commesse — <span id="commesse-version">V4.10.0</span> <small>TEST</small></strong>
   <span id="currentProjectHeader">Commessa in elaborazione: nessuna</span>
   <span class="header-actions">
     <button type="button" id="help">Informazioni</button>
@@ -308,6 +320,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
     <button id="tab-suppliers" class="step-tab" role="tab" type="button" aria-selected="false" aria-controls="page" disabled>4 · Fornitori</button>
     <button id="tab-supplier-registry" class="step-tab" role="tab" type="button" aria-selected="false" aria-controls="page">4A · Anagrafica fornitori</button>
     <button id="tab-invoices" class="step-tab" role="tab" type="button" aria-selected="false" aria-controls="page" disabled>5 · Fatture e pagamenti</button>
+    <button id="tab-accounting" class="step-tab" role="tab" type="button" aria-selected="false" aria-controls="page">6 · Contabilità generale</button>
   </nav>
   <nav id="demo-navigation" class="demo-navigation" aria-label="Navigazione interna ai dati della commessa" hidden>
     <button id="demo-back" type="button">← Indietro</button><span id="demo-current"></span>
@@ -321,7 +334,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 <script>
 (function(){
 'use strict';
-const UI_VERSION='4.9.0';
+const UI_VERSION='4.10.0';
 const pages=JSON.parse(document.getElementById('screens').textContent);
 // Archivio originale ricevuto: non convertirne le proposte in requisiti approvati.
 const originalClientAnalysis=JSON.parse(document.getElementById('client-analysis-original').textContent);
@@ -329,8 +342,8 @@ const view=document.getElementById('page'),toast=document.getElementById('toast'
 const navigation=document.getElementById('demo-navigation');
 const backButton=document.getElementById('demo-back');
 const currentLabel=document.getElementById('demo-current');
-const parentPage={commesse:null,commessa:'commesse',preventivo:'commesse',fornitori:'commesse',anagrafica:'commesse',fatture:'commesse',fattura:'fatture'};
-const pageLabel={commesse:'Commesse',commessa:'Dati commessa',preventivo:'Preventivo',fornitori:'Fornitori',anagrafica:'Anagrafica fornitori',fatture:'Fatture e pagamenti',fattura:'Dettaglio fattura'};
+const parentPage={commesse:null,commessa:'commesse',preventivo:'commesse',fornitori:'commesse',anagrafica:'commesse',fatture:'commesse',fattura:'fatture',contabilita:'commesse'};
+const pageLabel={commesse:'Commesse',commessa:'Dati commessa',preventivo:'Preventivo',fornitori:'Fornitori',anagrafica:'Anagrafica fornitori',fatture:'Fatture e pagamenti',fattura:'Dettaglio fattura',contabilita:'Contabilità generale'};
 let toastTimeout;
 function alertDemo(message){toast.textContent=message;toast.style.display='block';clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>toast.style.display='none',4500)}
 function routeFor(href){if(href==='/')return 'commesse';if(href.startsWith('/fornitori'))return 'fornitori';if(href.startsWith('/fatture'))return 'fatture';if(href.startsWith('/fattura-attiva'))return 'fattura';if(href.startsWith('/commessa'))return 'commessa';return null}
@@ -491,7 +504,7 @@ async function completeOidcCallback(){
  await apiCall('/api/auth/check');
  document.getElementById('commesse-auth').hidden=true;
  document.getElementById('commesse-app').hidden=false;
- show(location.hash.slice(1)==='anagrafica'||pages[location.hash.slice(1)]?location.hash.slice(1):'commesse');
+ show(['anagrafica','contabilita'].includes(location.hash.slice(1))||pages[location.hash.slice(1)]?location.hash.slice(1):'commesse');
  authFeedback('Sessione FastPharma Access valida. Commesse collegato.');
  return true;
 }
@@ -532,12 +545,14 @@ function syncCommessaTabs(page='commesse'){
   preventivo:document.getElementById('tab-quote'),
   fornitori:document.getElementById('tab-suppliers'),
   anagrafica:document.getElementById('tab-supplier-registry'),
-  fatture:document.getElementById('tab-invoices')
+  fatture:document.getElementById('tab-invoices'),
+  contabilita:document.getElementById('tab-accounting')
  };
- for(const [key,tab] of Object.entries(tabs))if(key!=='commesse'&&key!=='anagrafica')tab.disabled=!selected;
+ for(const [key,tab] of Object.entries(tabs))if(key!=='commesse'&&key!=='anagrafica'&&key!=='contabilita')tab.disabled=!selected;
  tabs.anagrafica.disabled=false;
+ tabs.contabilita.disabled=false;
  const current=page==='fattura'?'fatture':page;
- const active=(tabs[current]&&(selected||current==='anagrafica')?tabs[current]:tabs.commesse).id;
+ const active=(tabs[current]&&(selected||current==='anagrafica'||current==='contabilita')?tabs[current]:tabs.commesse).id;
  for(const tab of Object.values(tabs)){
   const on=tab.id===active;tab.classList.toggle('active',on);
   tab.setAttribute('aria-selected',String(on));tab.tabIndex=on?0:-1;
@@ -1038,6 +1053,53 @@ function updateFinanceMetrics(main,active,incassi,passive,pagamenti){
  }
 }
 
+
+
+/* Scheda 6 — contenitori vuoti; nessun archivio, API, importazione o dato dimostrativo. */
+const accountingSections=[
+ {id:'emesse',label:'Fatture Emesse'},
+ {id:'ricevute',label:'Fatture ricevute'},
+ {id:'movimenti',label:'Movimenti'},
+ {id:'estratti',label:'Estratti Conto'}
+];
+let activeAccountingSubtab='emesse';
+function setAccountingSubtab(id){
+ if(!accountingSections.some(section=>section.id===id))return;
+ activeAccountingSubtab=id;
+ for(const tab of view.querySelectorAll('.accounting-subtab')){
+  const selected=tab.dataset.accountingSubtab===id;
+  tab.setAttribute('aria-selected',String(selected));
+  tab.tabIndex=selected?0:-1;
+ }
+ for(const pane of view.querySelectorAll('.accounting-pane'))
+  pane.hidden=pane.dataset.accountingPane!==id;
+}
+function buildGeneralAccounting(){
+ const main=document.createElement('main');main.className='accounting-screen';
+ const title=document.createElement('h1');title.textContent='6 · Contabilità generale';
+ const note=document.createElement('p');note.className='accounting-explanation';
+ note.textContent='Area amministrativa generale indipendente dalla commessa selezionata. Le funzioni contabili e i relativi archivi saranno definiti successivamente.';
+ const nav=document.createElement('nav');nav.className='accounting-subtabs';
+ nav.setAttribute('role','tablist');nav.setAttribute('aria-label','Sottoschede di Contabilità generale');
+ main.append(title,note,nav);
+ for(const entry of accountingSections){
+  const tab=document.createElement('button');tab.type='button';
+  tab.id='accounting-tab-'+entry.id;tab.className='accounting-subtab';
+  tab.dataset.accountingSubtab=entry.id;tab.textContent=entry.label;
+  tab.setAttribute('role','tab');tab.setAttribute('aria-controls','accounting-pane-'+entry.id);
+  tab.addEventListener('click',()=>setAccountingSubtab(entry.id));nav.append(tab);
+  const section=document.createElement('section');section.className='accounting-pane';
+  section.id='accounting-pane-'+entry.id;section.dataset.accountingPane=entry.id;
+  section.setAttribute('role','tabpanel');section.setAttribute('aria-labelledby',tab.id);
+  const heading=document.createElement('h2');heading.textContent=entry.label;
+  const placeholder=document.createElement('div');placeholder.className='accounting-placeholder';
+  const message=document.createElement('strong');message.textContent='Archivio non ancora collegato';
+  const detail=document.createElement('p');
+  detail.textContent='Sottoscheda predisposta. Tabelle, campi, sorgenti dati e funzioni verranno definiti in seguito.';
+  placeholder.append(message,detail);section.append(heading,placeholder);main.append(section);
+ }
+ view.replaceChildren(main);setAccountingSubtab(activeAccountingSubtab);
+}
 
 /* Archivio generale fornitori indipendente dalle singole commesse.
    Usa un ID BIGINT di commesse.fornitori, non l'UUID di Contatti. */
@@ -1702,6 +1764,7 @@ async function loadTestData(page){
  const main=view.querySelector('main');if(!main)return;
  if(page==='preventivo'){await readQuoteTab(requestSerial);return;}
  if(page==='anagrafica'){await loadSupplierRegistry(requestSerial);return;}
+ if(page==='contabilita')return; // Scheda predisposta: nessun archivio collegato o chiamata API.
  const note=document.createElement('p');note.className='demo-cloud-status';
  note.textContent='Caricamento dati persistenti da Neon TEST…';main.prepend(note);
  try{
@@ -2030,12 +2093,13 @@ window.addEventListener('message',async event=>{
 });
 
 function show(page,scrollTop=true){
- if(page!=='preventivo'&&page!=='fatture'&&page!=='anagrafica'&&!pages[page])page='commesse';
- if(page!=='commesse'&&page!=='anagrafica'&&(!Number.isSafeInteger(currentProjectId)||currentProjectId<=0)){
+ if(page!=='preventivo'&&page!=='fatture'&&page!=='anagrafica'&&page!=='contabilita'&&!pages[page])page='commesse';
+ if(page!=='commesse'&&page!=='anagrafica'&&page!=='contabilita'&&(!Number.isSafeInteger(currentProjectId)||currentProjectId<=0)){
   page='commesse';alertDemo('Seleziona prima una commessa nella scheda Generale.');
  }
  if(page==='preventivo')buildQuoteTab();
  else if(page==='anagrafica')buildSupplierRegistry();
+  else if(page==='contabilita')buildGeneralAccounting();
  else {
   view.innerHTML=['commessa','fornitori','fatture'].includes(page)?pages.commessa:pages[page];
   if(page==='commesse')decorateGeneral();
@@ -2056,8 +2120,8 @@ function show(page,scrollTop=true){
  loadTestData(page);
 }
 function goTo(page){
- if(page!=='preventivo'&&page!=='fatture'&&page!=='anagrafica'&&!pages[page])page='commesse';
- if(page!=='commesse'&&page!=='anagrafica'&&!currentProjectId){show('commesse');return;}
+ if(page!=='preventivo'&&page!=='fatture'&&page!=='anagrafica'&&page!=='contabilita'&&!pages[page])page='commesse';
+ if(page!=='commesse'&&page!=='anagrafica'&&page!=='contabilita'&&!currentProjectId){show('commesse');return;}
  if(location.hash.slice(1)===page)show(page);else location.hash=page;
 }
 document.addEventListener('click',e=>{
@@ -2188,9 +2252,10 @@ document.getElementById('tab-quote').onclick=()=>{if(currentProjectId)goTo('prev
 document.getElementById('tab-suppliers').onclick=()=>{if(currentProjectId)goTo('fornitori');};
  document.getElementById('tab-supplier-registry').onclick=()=>goTo('anagrafica');
 document.getElementById('tab-invoices').onclick=()=>{if(currentProjectId)goTo('fatture');};
+ document.getElementById('tab-accounting').onclick=()=>goTo('contabilita');
 document.getElementById('commesse-version').textContent='V'+UI_VERSION;
 syncCommessaTabs('commesse');
-document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse V4.9.0 TEST: 4A Anagrafica fornitori è autonoma da Contatti, sempre accessibile, con modifiche e storico DURC.  la scheda 4 Fornitori ospita preventivi, fatture e pagamenti ai fornitori con analisi Scaramozzino separata. La scheda 5 ospita fatture emesse, incassi del committente e relativa Analisi Scaramozzino. Le prime griglie sono di sola lettura; i moduli storici sono conservati.');
+document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse V4.10.0 TEST: 6 Contabilità generale è sempre accessibile, con Fatture Emesse, Fatture ricevute, Movimenti ed Estratti Conto, tutti predisposti senza archivi collegati.  4A Anagrafica fornitori è autonoma da Contatti, sempre accessibile, con modifiche e storico DURC.  la scheda 4 Fornitori ospita preventivi, fatture e pagamenti ai fornitori con analisi Scaramozzino separata. La scheda 5 ospita fatture emesse, incassi del committente e relativa Analisi Scaramozzino. Le prime griglie sono di sola lettura; i moduli storici sono conservati.');
 backButton.addEventListener('click',()=>goTo(parentPage[location.hash.slice(1)]||'commesse'));
 window.addEventListener('hashchange',()=>{if(authToken)show(location.hash.slice(1));});
 // Avvio chiuso: nessuna vista gestionale prima di login().
