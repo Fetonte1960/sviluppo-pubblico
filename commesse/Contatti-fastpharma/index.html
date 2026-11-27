@@ -3,24 +3,24 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Gestione contatti FastPharma — V1.0.23</title>
-  <link rel="stylesheet" href="./crm-v1.css?v=1.0.23">
-  <script defer src="./config.js?v=1.0.23"></script>
-  <script defer src="./version.js?v=1.0.23"></script>
-  <script defer src="./lists.js?v=1.0.23"></script>
-  <script defer src="./crm-v1.js?v=1.0.23"></script>
+  <title>Gestione referenti FastPharma — V1.0.24</title>
+  <link rel="stylesheet" href="./crm-v1.css?v=1.0.24">
+  <script defer src="./config.js?v=1.0.24"></script>
+  <script defer src="./version.js?v=1.0.24"></script>
+  <script defer src="./lists.js?v=1.0.24"></script>
+  <script defer src="./crm-v1.js?v=1.0.24"></script>
 </head>
 <body>
   <section id="crmAuth" aria-label="Autenticazione FastPharma">
     <div class="crm-auth-box">
       <div class="crm-auth-logo" aria-hidden="true">F</div>
       <h1>FastPharma Access</h1>
-      <p>Un unico accesso per Contatti, Preventivi e Commesse. La password viene inserita soltanto nel servizio centrale.</p>
+      <p>Un unico accesso per Referenti, Preventivi e Commesse. La password viene inserita soltanto nel servizio centrale.</p>
       <p id="crmAuthStatus" role="status" aria-live="polite">Verifica della sessione centrale in corso…</p>
       <button type="button" id="oidcLogin" class="primary">Accedi con FastPharma Access</button>
       <div id="legacyLogin" hidden><section class="access" id="accessSection">
         <div><strong>Accesso locale FastPharma</strong><p id="accessMessage">Inserisci la password FastPharma per accedere al gestionale locale.</p></div>
-        <form id="loginForm" autocomplete="on"><label class="sr-only" for="loginUsername">Profilo di accesso</label><input id="loginUsername" name="username" type="text" autocomplete="username" value="FastPharma" class="sr-only" tabindex="-1" aria-label="Profilo Gestione contatti FastPharma"><label class="sr-only" for="demoKey">Chiave di accesso</label><input id="demoKey" name="password" type="password" placeholder="Chiave di accesso" autocomplete="current-password" aria-describedby="loginFeedback"><button id="connectButton" type="submit" class="primary">Accedi</button><button id="chromeLoadKey" class="secondary" type="button" hidden>Usa password salvata in Chrome</button><p id="loginFeedback" class="login-feedback" role="status" aria-live="polite">Inserisci la password e premi Accedi.</p></form>
+        <form id="loginForm" autocomplete="on"><label class="sr-only" for="loginUsername">Profilo di accesso</label><input id="loginUsername" name="username" type="text" autocomplete="username" value="FastPharma" class="sr-only" tabindex="-1" aria-label="Profilo Gestione referenti FastPharma"><label class="sr-only" for="demoKey">Chiave di accesso</label><input id="demoKey" name="password" type="password" placeholder="Chiave di accesso" autocomplete="current-password" aria-describedby="loginFeedback"><button id="connectButton" type="submit" class="primary">Accedi</button><button id="chromeLoadKey" class="secondary" type="button" hidden>Usa password salvata in Chrome</button><p id="loginFeedback" class="login-feedback" role="status" aria-live="polite">Inserisci la password e premi Accedi.</p></form>
         <div id="chromePasswordActions" class="chrome-password-actions" hidden><button type="button" id="chromeSaveKey" class="secondary">Salva la chiave in Chrome</button><span id="chromePasswordStatus" role="status" aria-live="polite"></span></div>
       </section>
       </div>
@@ -28,9 +28,9 @@
   </section>
   <div id="crmApp" hidden>
   <header class="appbar">
-    <div class="logo"><span class="logo-icon">F</span><div><strong>Gestione contatti FastPharma</strong><small>Anagrafiche e attività commerciali · <strong id="appVersion">V1.0.23</strong></small></div></div>
+    <div class="logo"><span class="logo-icon">F</span><div><strong>Gestione referenti FastPharma</strong><small>Anagrafiche e attività commerciali · <strong id="appVersion">V1.0.24</strong></small></div></div>
     <div class="top-actions">
-      <span id="releaseVersion" class="release-version">V1.0.23</span>
+      <span id="releaseVersion" class="release-version">V1.0.24</span>
       <span id="connectionBadge" class="connection-badge">Accesso richiesto</span>
     </div>
   </header>
@@ -40,20 +40,20 @@
       <button class="navlink is-active" data-module="dashboard" type="button"><span>▦</span> Dashboard</button>
       <div class="navgroup">ANAGRAFICHE</div>
       <button class="navlink" data-module="lists" type="button" disabled aria-disabled="true"><span>☷</span> Liste</button>
-      <button class="navlink" data-module="organizations" type="button" disabled aria-disabled="true"><span>▤</span> Organizzazioni</button>
+      <button class="navlink" data-module="organizations" type="button" disabled aria-disabled="true"><span>▤</span> Contatti/Clienti</button>
       <div class="navgroup">COMMERCIALE</div>
-      <button class="navlink" data-module="contacts" type="button" disabled aria-disabled="true"><span>♙</span> Contatti</button>
+      <button class="navlink" data-module="contacts" type="button" disabled aria-disabled="true"><span>♙</span> Referenti</button>
       <button class="navlink" data-module="activities" type="button" disabled aria-disabled="true"><span>◷</span> Attività</button>
-      <button class="navlink" data-module="deals" type="button" disabled aria-disabled="true"><span>◇</span> Trattative</button>
+      <button class="navlink" data-module="deals" type="button" hidden disabled aria-disabled="true"><span>◇</span> Trattative</button>
       <div class="navgroup">PROMEMORIA</div>
       <button class="navlink" id="remindersNav" type="button" disabled aria-disabled="true"><span>☑</span> Attività da completare</button>
       <div class="navgroup">AMMINISTRAZIONE</div>
       <button class="navlink" id="archivesNav" type="button" disabled aria-disabled="true"><span>⤓</span> Salvataggio e ripristino archivi</button>
-      <div class="navbottom"><p>Gestione contatti FastPharma</p></div>
+      <div class="navbottom"><p>Gestione referenti FastPharma</p></div>
     </aside>
     <main class="main">
       <div class="pagetop">
-        <div><p class="eyebrow" id="breadcrumb">CRM / Panoramica</p><h1 id="pageTitle">Dashboard</h1><p class="subtitle" id="pageSubtitle">Un unico punto per contatti, aziende e attività commerciali.</p></div>
+        <div><p class="eyebrow" id="breadcrumb">CRM / Panoramica</p><h1 id="pageTitle">Dashboard</h1><p class="subtitle" id="pageSubtitle">Un unico punto per clienti, referenti e attività commerciali.</p></div>
         <div class="page-actions">
           <button id="importFromLists" type="button" class="secondary" hidden disabled>Importa da Liste</button>
           <button id="newRecord" type="button" class="primary" hidden disabled>+ Aggiungi</button>
@@ -62,10 +62,10 @@
       <p id="notice" class="notice" role="status" aria-live="polite"></p>
       <section id="dashboard" class="screen">
         <div class="kpis">
-          <button class="kpi" type="button" data-jump="contacts" disabled aria-disabled="true"><span>Contatti</span><strong id="metricContacts">0</strong><small>Persone in rubrica</small></button>
-          <button class="kpi" type="button" data-jump="organizations" disabled aria-disabled="true"><span>Organizzazioni</span><strong id="metricOrganizations">0</strong><small>Aziende / farmacie</small></button>
+          <button class="kpi" type="button" data-jump="contacts" disabled aria-disabled="true"><span>Referenti</span><strong id="metricContacts">0</strong><small>Persone in rubrica</small></button>
+          <button class="kpi" type="button" data-jump="organizations" disabled aria-disabled="true"><span>Contatti/Clienti</span><strong id="metricOrganizations">0</strong><small>Aziende / farmacie</small></button>
           <button class="kpi" type="button" data-jump="activities" disabled aria-disabled="true"><span>Attività aperte</span><strong id="metricActivities">0</strong><small>Da fare o in corso</small></button>
-          <button class="kpi" type="button" data-jump="deals" disabled aria-disabled="true"><span>Trattative</span><strong id="metricDeals">0</strong><small>Opportunità commerciali</small></button>
+          <button class="kpi" type="button" data-jump="deals" hidden disabled aria-disabled="true"><span>Trattative</span><strong id="metricDeals">0</strong><small>Opportunità commerciali</small></button>
         </div>
         <div class="dashgrid">
           <section class="surface">
@@ -73,18 +73,18 @@
             <div id="upcoming" class="upcoming"></div>
           </section>
           <section class="surface">
-            <div class="surface-head"><h2>Gestione contatti</h2></div>
+            <div class="surface-head"><h2>Gestione referenti</h2></div>
             <div class="welcome">
-              <p>Consulta anagrafiche, organizzazioni, attività e trattative in un unico archivio.</p>
-              <p>Puoi organizzare i contatti, programmare richiami e importare singole farmacie dalle Liste.</p>
-              <button class="secondary" data-jump="contacts" type="button" disabled aria-disabled="true">Vai alla lista contatti</button>
+              <p>Consulta Contatti/Clienti, Referenti e Attività in un unico archivio.</p>
+              <p>Puoi gestire i referenti, programmare richiami e importare singole farmacie dalle Liste.</p>
+              <button class="secondary" data-jump="contacts" type="button" disabled aria-disabled="true">Vai all'elenco Referenti</button>
             </div>
           </section>
         </div>
       </section>
       <section id="listsScreen" class="screen" hidden>
         <div class="surface lists-overview">
-          <div class="surface-head"><div><h2>Elenchi di provenienza esterna</h2><p class="hint">I record delle Liste non vengono inseriti automaticamente nelle Organizzazioni commerciali.</p></div></div>
+          <div class="surface-head"><div><h2>Elenchi di provenienza esterna</h2><p class="hint">I record delle Liste non vengono inseriti automaticamente nei Contatti/Clienti commerciali.</p></div></div>
           <div class="lists-toolbar">
             <label for="listsCollection">Elenco
               <select id="listsCollection"><option value="">In attesa di collegamento</option></select>
@@ -131,17 +131,17 @@
       <section id="remindersScreen" class="screen" hidden>
         <div class="surface records">
           <div class="records-head">
-            <div><h2>Attività da completare · Tutte le organizzazioni</h2><p id="remindersCount" class="hint" role="status" aria-live="polite">Apri Promemoria per aggiornare le attività.</p></div>
+            <div><h2>Attività da completare · Tutti i Contatti/Clienti</h2><p id="remindersCount" class="hint" role="status" aria-live="polite">Apri Promemoria per aggiornare le attività.</p></div>
             <button id="remindersRefresh" type="button" class="secondary" disabled>Aggiorna elenco</button>
           </div>
           <p id="remindersError" class="dialog-error reminders-error" role="alert" aria-live="polite"></p>
-          <div class="table-scroll reminders-scroll" role="region" aria-label="Attività da fare in tutte le organizzazioni" tabindex="0">
+          <div class="table-scroll reminders-scroll" role="region" aria-label="Attività da fare per tutti i Contatti/Clienti" tabindex="0">
             <table>
-              <thead><tr><th>Organizzazione</th><th>Attività</th><th>Tipo</th><th>Scadenza</th><th>Contatto</th><th>Azioni</th></tr></thead>
+              <thead><tr><th>Contatto/Cliente</th><th>Attività</th><th>Tipo</th><th>Scadenza</th><th>Referente</th><th>Azioni</th></tr></thead>
               <tbody id="remindersRows"><tr><td colspan="6" class="empty-row">Accedi per consultare le attività.</td></tr></tbody>
             </table>
           </div>
-          <div class="tablefoot">«Fatto» registra lo stato Completata senza cancellare la scheda. «Seleziona» apre l'attività nell'organizzazione corrispondente.</div>
+          <div class="tablefoot">«Fatto» registra lo stato Completata senza cancellare la scheda. «Seleziona» apre l'attività nel Contatto/Cliente corrispondente.</div>
         </div>
       </section>
       <section id="archivesScreen" class="screen" hidden>
@@ -178,7 +178,7 @@
         </div>
         <div class="surface detail-content" id="detailContent"></div>
       </section>
-      <footer>Gestione contatti FastPharma · V1.0.23</footer>
+      <footer>Gestione referenti FastPharma · V1.0.24</footer>
     </main>
   </div>
   <dialog id="recordDialog" class="record-dialog">
@@ -202,7 +202,7 @@
       </div>
       <button id="deleteDialogClose" class="iconbutton" type="button" aria-label="Chiudi senza cancellare">×</button>
     </div>
-    <p id="deleteDialogHelp">La cancellazione dell’organizzazione elimina anche tutti i Contatti, le Attività e le Trattative associati. I dati cancellati non sono recuperabili dalla schermata.</p>
+    <p id="deleteDialogHelp">La cancellazione del Contatto/Cliente elimina anche tutti i Referenti, le Attività e le eventuali Trattative archiviate collegate. I dati cancellati non sono recuperabili dalla schermata.</p>
     <p id="deleteRecordName" class="delete-record-name"></p>
     <div id="deleteDependencyStatus" class="delete-dependency-status" role="status" aria-live="polite">Verifica dei collegamenti in corso…</div>
     <label id="deleteConfirmLabel" class="delete-confirm-label">
@@ -217,9 +217,9 @@
   </dialog>
   <dialog id="orgImportDialog" class="record-dialog org-import-dialog" aria-labelledby="orgImportHeading">
     <div class="dialog-title">
-      <div><p class="eyebrow">ANAGRAFICHE · ORGANIZZAZIONI</p>
+      <div><p class="eyebrow">ANAGRAFICHE · CONTATTI/CLIENTI</p>
         <h2 id="orgImportHeading">Importa una farmacia da Liste</h2>
-        <p class="hint">Un solo elemento per volta. Le organizzazioni esistenti non vengono modificate.</p>
+        <p class="hint">Un solo elemento per volta. I Contatti/Clienti esistenti non vengono modificati.</p>
       </div>
       <button id="orgImportClose" class="iconbutton" type="button" aria-label="Chiudi importazione">×</button>
     </div>
