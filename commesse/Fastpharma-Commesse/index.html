@@ -350,7 +350,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 <script>
 (function(){
 'use strict';
-const UI_VERSION='4.21.0';
+const UI_VERSION='4.21.1';
 const pages=JSON.parse(document.getElementById('screens').textContent);
 // Archivio originale ricevuto: non convertirne le proposte in requisiti approvati.
 const originalClientAnalysis=JSON.parse(document.getElementById('client-analysis-original').textContent);
@@ -943,7 +943,7 @@ function renderSupplierReadOnlyGrids(offerte,passive,movimenti){
   x.iva==null?'Da verificare':euro(number(x.imponibile)+number(x.iva)),
   euro(x.pagato),x.iva==null?'Da verificare':euro(Math.max(0,number(x.imponibile)+number(x.iva)-number(x.pagato)))
  ]));
- renderRows(readOnly('pagamenti'),movimenti.map(x=>projectBankMovementRow(x)));
+ renderProjectBankMovements(readOnly('pagamenti'),movimenti,'uscite');
 }
 
 
@@ -1029,21 +1029,42 @@ function renderFinanceReadOnlyGrids(fatture,movimenti,identity){
     x.stato,euro(x.imponibile),euro(x.iva),euro(total),euro(x.incassato),
     euro(Math.max(0,total-number(x.incassato)))];
   }));
- renderRows(view.querySelector('table[data-finance-readonly="pagamenti"]'),
-  movimenti.map(x=>projectBankMovementRow(x)));
+ renderProjectBankMovements(view.querySelector('table[data-finance-readonly="pagamenti"]'),movimenti,'entrate');
+}
+function projectBankTotal(rows,direction){
+ if(!['entrate','uscite'].includes(direction))throw Error('Direzione non valida');
+ return rows.reduce((cents,r)=>{
+  const v=Number(r.importo);
+  if(!Number.isFinite(v)||(direction==='entrate'?v<=0:v>=0))throw Error('Importo movimento non coerente con la direzione');
+  return cents+Math.round(Math.abs(v)*100);
+ },0)/100;
+}
+function renderProjectBankMovements(table,rows,direction){
+ if(!table)return;
+ const total=projectBankTotal(rows,direction);
+ renderRows(table,rows.map(projectBankMovementRow));
+ if(!rows.length){
+  const empty=table.querySelector('td');
+  if(empty)empty.textContent='Nessun movimento '+(direction==='entrate'?'in entrata':'in uscita')+' attribuito a questa commessa. Assegna i movimenti in Contabilità generale.';
+ }
+ const foot=document.createElement('tfoot'),tr=document.createElement('tr');
+ const caption=document.createElement('th');caption.colSpan=3;caption.scope='row';caption.textContent=(direction==='entrate'?'Totale incassi':'Totale pagamenti')+' ('+rows.length+' movimenti)';
+ const amount=document.createElement('th');amount.textContent=accountingMoney(total);
+ const rest=document.createElement('td');rest.colSpan=3;
+ tr.append(caption,amount,rest);foot.append(tr);table.append(foot);
 }
 function projectBankMovementRow(x){
  return [x.id,accountingDate(x.dataOperazione),x.descrizione,accountingMoney(Math.abs(Number(x.importo))),x.banca,accountingMaskAccount(x.riferimentoConto),x.codiceCommessa];
 }
 async function readProjectBankMovements(code,direction,requestSerial){
- if(!code||code==='Da attribuire')throw Error('Codice commessa non valido');
+ if(!code||code==='Da attribuire'||!['entrate','uscite'].includes(direction))throw Error('Commessa o direzione non valida');
  const rows=[];
  for(let page=0;;page++){
   const params=new URLSearchParams({commessa:code,direzione:direction,pagina:String(page)});
   const response=await apiCall('/api/v4/contabilita/prima-nota/movimenti?'+params);
   const batch=await response.json();
   if(requestSerial!==renderSerial)return [];
-  if(!Array.isArray(batch))throw Error('Risposta movimenti non valida');
+  if(!Array.isArray(batch)||batch.some(x=>x.codiceCommessa!==code||!Number.isFinite(Number(x.importo))||(direction==='entrate'?Number(x.importo)<=0:Number(x.importo)>=0)))throw Error('Risposta movimenti non coerente con commessa e direzione');
   rows.push(...batch);
   if(batch.length<200)return rows;
  }
@@ -2801,7 +2822,7 @@ document.getElementById('tab-invoices').onclick=()=>{if(currentProjectId)goTo('f
 document.getElementById('commesse-version').textContent='V'+UI_VERSION;
 syncCommessaTabs('commesse');
 document.getElementById('generalMenu').onclick=()=>{location.assign('menu.html');};
-document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse V4.21.0 TEST: importazione movimenti anche senza saldi iniziali.  Carica con GPT e Carica con Claude usano lo stesso bootstrap contabile.  verifica identità MCP FASTPHARMA prima di depositare.  gli estratti possono censire nuovi conti durante Elabora Cassetto primanota.  seleziona fatture e attribuiscile alla commessa corrente o ad altra commessa.  clicca il numero per consultare il corpo fattura completo.  Fatture Emesse e Fatture ricevute importano XML dal cassetto fiscale senza AI; i fornitori sono aggiornati solo per ricevute.  Movimenti include Banche e saldi con anagrafica e saldo calcolato.  i Pagamenti delle schede 4 e 5 leggono i movimenti attribuiti in Contabilità generale.  seleziona i movimenti e attribuiscili alla commessa corrente.  Contabilità generale offre globalmente Carica con AI ed Elabora Cassetto primanota con feedback sopra le sottoschede. Movimenti contiene soltanto una griglia unica: prima riga con filtri Banca (Tutte le banche), Conto (Tutti i conti), Commessa (Tutte le commesse), Entrate/Uscite (Tutti); seguono tutti i movimenti, senza colonna Estratto, dettaglio documento o paginazione visibile. Codice commessa iniziale Da attribuire; nessuna perdita di dati.  4A Anagrafica fornitori è autonoma da Contatti, sempre accessibile, con modifiche e storico DURC.  la scheda 4 Fornitori ospita preventivi, fatture e pagamenti ai fornitori con analisi Scaramozzino separata. La scheda 5 ospita fatture emesse, incassi del committente e relativa Analisi Scaramozzino. Le prime griglie sono di sola lettura; i moduli storici sono conservati.');
+document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse V4.21.1 TEST: le schede Pagamenti della commessa mostrano incassi e uscite bancarie attribuiti, con totali.  importazione movimenti anche senza saldi iniziali.  Carica con GPT e Carica con Claude usano lo stesso bootstrap contabile.  verifica identità MCP FASTPHARMA prima di depositare.  gli estratti possono censire nuovi conti durante Elabora Cassetto primanota.  seleziona fatture e attribuiscile alla commessa corrente o ad altra commessa.  clicca il numero per consultare il corpo fattura completo.  Fatture Emesse e Fatture ricevute importano XML dal cassetto fiscale senza AI; i fornitori sono aggiornati solo per ricevute.  Movimenti include Banche e saldi con anagrafica e saldo calcolato.  i Pagamenti delle schede 4 e 5 leggono i movimenti attribuiti in Contabilità generale.  seleziona i movimenti e attribuiscili alla commessa corrente.  Contabilità generale offre globalmente Carica con AI ed Elabora Cassetto primanota con feedback sopra le sottoschede. Movimenti contiene soltanto una griglia unica: prima riga con filtri Banca (Tutte le banche), Conto (Tutti i conti), Commessa (Tutte le commesse), Entrate/Uscite (Tutti); seguono tutti i movimenti, senza colonna Estratto, dettaglio documento o paginazione visibile. Codice commessa iniziale Da attribuire; nessuna perdita di dati.  4A Anagrafica fornitori è autonoma da Contatti, sempre accessibile, con modifiche e storico DURC.  la scheda 4 Fornitori ospita preventivi, fatture e pagamenti ai fornitori con analisi Scaramozzino separata. La scheda 5 ospita fatture emesse, incassi del committente e relativa Analisi Scaramozzino. Le prime griglie sono di sola lettura; i moduli storici sono conservati.');
 backButton.addEventListener('click',()=>goTo(parentPage[location.hash.slice(1)]||'commesse'));
 window.addEventListener('hashchange',()=>{if(authToken)show(location.hash.slice(1));});
 // Avvio chiuso: nessuna vista gestionale prima di login().
