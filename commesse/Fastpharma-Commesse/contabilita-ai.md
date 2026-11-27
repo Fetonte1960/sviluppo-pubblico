@@ -1,4 +1,4 @@
-# Contabilità generale — bootstrap AI universale per la Prima Nota (V1.9)
+# Contabilità generale — bootstrap AI universale per la Prima Nota (V1.10)
 
 ## Importazione diretta fatture fiscali (V4.18.0)
 
@@ -20,7 +20,7 @@ Nelle griglie fatture, i due pulsanti di attribuzione e il selettore di destinaz
 
 Questa istruzione specifica integra il bootstrap del connettore **MCP-postgree** per il gestionale **FastPharma Commesse**, scheda **6 · Contabilità generale**. È documentazione di dominio e **non** cambia le autorizzazioni MCP. Usa esclusivamente `CommandToMCPPostgree(comando: string)`.
 
-1. Avvia `CommandToMCPPostgree("Init")` usando la connessione OAuth già attiva (Token 1). Non chiedere Token 2, ticket né `session.attach`. Il cassetto MCP è **uno solo**: non cercare un destinatario `GESTIONE_COMMESSE` in `Init` e non confonderlo con un cassetto dedicato.
+1. Avvia `CommandToMCPPostgree("Init")` usando la connessione OAuth già attiva (Token 1). Non chiedere Token 2, ticket né `session.attach`. Verificare `ok=true` e `result.company=FASTPHARMA` prima di acquisire il documento o depositare. Se il connettore restituisce `MCP_POSTGREE`, un'altra azienda o identità non verificabile, non depositare: scollegare e riconnettere MCP-postgree mediante la schermata OAuth con la password aziendale FastPharma, senza comunicarla in chat, poi ripetere Init. Il cassetto è unico per azienda: non cercare un destinatario `GESTIONE_COMMESSE`.
 2. Se `Init` non autorizza `nota.deposita`, fermati. Se il catalogo mostra soltanto `CONTATTI`, **non è un blocco** per la Prima Nota: ometti `applicazioneSuggerita`, usa l'intestazione `dati.area`/`dati.sezione` per la classificazione. Non inventare accessi o conferme.
 3. Chiedi all'utente fotografie leggibili oppure il PDF di un **documento contabile** (estratto conto, fattura emessa, fattura ricevuta). Classifica e interpreta solo ciò che è leggibile; non compilare dati immaginati. Se mancano pagine o il documento è incompleto, segnala chiaramente la situazione.
 4. Prepara **un'unica nota strutturata** quando la dimensione lo consente. Usa `dati.area=CONTABILITA` e una sezione in base al documento: `ESTRATTI_CONTO`, `FATTURE_EMESSE` o `FATTURE_RICEVUTE`. Deposita mediante `nota.deposita`; non utilizzare il gestionale e non cambiare archivi.
@@ -112,4 +112,4 @@ Il pulsante generale **Elabora Cassetto primanota** è l'autorizzazione esplicit
 
 Il deposito MCP non concede accesso al database gestionale. Il browser non riceve la credenziale PostgreSQL del cassetto. Il gestionale usa FastPharma Access, una connessione backend a sola lettura limitata alle note della sua destinazione, e l'archivio `commesse` per la scrittura deterministica. Non utilizzare la credenziale amministrativa MASTER per questa integrazione.
 
-**Nota TEST sulle organizzazioni:** il collegamento OAuth permanente esistente utilizza il profilo `MCP_POSTGREE`. L'isolamento definitivo tra organizzazioni richiederà un'identità OAuth di azienda e una vista per `FASTPHARMA`. Questa istruzione non attribuisce un'organizzazione per dichiarazione del testo del messaggio.
+**Separazione dei cassetti:** Commesse TEST legge esclusivamente le note contabili con identità OAuth `FASTPHARMA`. Il cassetto software house `MCP_POSTGREE` è distinto. Una nota già depositata con l'identità sbagliata non è trasferita automaticamente: dopo la riconnessione aziendale occorre depositarla nuovamente. Nessun ticket o session.attach necessario per le note. Il testo della nota non può cambiare l'identità OAuth.
