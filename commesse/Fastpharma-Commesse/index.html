@@ -323,6 +323,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
   <strong class="brand-version">Gestione Commesse — <span id="commesse-version">V4.10.0</span> <small>TEST</small></strong>
   <span id="currentProjectHeader">Commessa in elaborazione: nessuna</span>
   <span class="header-actions">
+    <button type="button" id="generalMenu">Ritorna al menu generale</button>
     <button type="button" id="help">Informazioni</button>
     <button type="button" id="commesse-logout">Esci</button>
   </span>
@@ -349,7 +350,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 <script>
 (function(){
 'use strict';
-const UI_VERSION='4.15.0';
+const UI_VERSION='4.15.1';
 const pages=JSON.parse(document.getElementById('screens').textContent);
 // Archivio originale ricevuto: non convertirne le proposte in requisiti approvati.
 const originalClientAnalysis=JSON.parse(document.getElementById('client-analysis-original').textContent);
@@ -2505,7 +2506,8 @@ document.getElementById('tab-invoices').onclick=()=>{if(currentProjectId)goTo('f
  document.getElementById('tab-accounting').onclick=()=>goTo('contabilita');
 document.getElementById('commesse-version').textContent='V'+UI_VERSION;
 syncCommessaTabs('commesse');
-document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse V4.15.0 TEST: i Pagamenti delle schede 4 e 5 leggono i movimenti attribuiti in Contabilità generale.  seleziona i movimenti e attribuiscili alla commessa corrente.  Contabilità generale offre globalmente Carica con AI ed Elabora Cassetto primanota con feedback sopra le sottoschede. Movimenti contiene soltanto una griglia unica: prima riga con filtri Banca (Tutte le banche), Conto (Tutti i conti), Commessa (Tutte le commesse), Entrate/Uscite (Tutti); seguono tutti i movimenti, senza colonna Estratto, dettaglio documento o paginazione visibile. Codice commessa iniziale Da attribuire; nessuna perdita di dati.  4A Anagrafica fornitori è autonoma da Contatti, sempre accessibile, con modifiche e storico DURC.  la scheda 4 Fornitori ospita preventivi, fatture e pagamenti ai fornitori con analisi Scaramozzino separata. La scheda 5 ospita fatture emesse, incassi del committente e relativa Analisi Scaramozzino. Le prime griglie sono di sola lettura; i moduli storici sono conservati.');
+document.getElementById('generalMenu').onclick=()=>{location.assign('menu.html');};
+document.getElementById('help').onclick=()=>alertDemo('Gestione Commesse V4.15.1 TEST: i Pagamenti delle schede 4 e 5 leggono i movimenti attribuiti in Contabilità generale.  seleziona i movimenti e attribuiscili alla commessa corrente.  Contabilità generale offre globalmente Carica con AI ed Elabora Cassetto primanota con feedback sopra le sottoschede. Movimenti contiene soltanto una griglia unica: prima riga con filtri Banca (Tutte le banche), Conto (Tutti i conti), Commessa (Tutte le commesse), Entrate/Uscite (Tutti); seguono tutti i movimenti, senza colonna Estratto, dettaglio documento o paginazione visibile. Codice commessa iniziale Da attribuire; nessuna perdita di dati.  4A Anagrafica fornitori è autonoma da Contatti, sempre accessibile, con modifiche e storico DURC.  la scheda 4 Fornitori ospita preventivi, fatture e pagamenti ai fornitori con analisi Scaramozzino separata. La scheda 5 ospita fatture emesse, incassi del committente e relativa Analisi Scaramozzino. Le prime griglie sono di sola lettura; i moduli storici sono conservati.');
 backButton.addEventListener('click',()=>goTo(parentPage[location.hash.slice(1)]||'commesse'));
 window.addEventListener('hashchange',()=>{if(authToken)show(location.hash.slice(1));});
 // Avvio chiuso: nessuna vista gestionale prima di login().
